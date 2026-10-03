@@ -1,0 +1,73 @@
+{
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "data": {
+    "event": {
+      "id": 9001,
+      "sets": {
+        "pageInfo": {
+          "total": 3,
+          "totalPages": 2
+        },
+        "nodes": [
+          {
+            "id": 7003,
+            "completedAt": 1760000200,
+            "winnerId": 104,
+            "displayScore": "FakeDelta 3 - FakeBravo 2",
+            "fullRoundText": "Losers Final",
+            "slots": [
+              {
+                "entrant": {
+                  "id": 102,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 2,
+                        "gamerTag": "FakeBravo",
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fakebrav"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 2
+                    }
+                  }
+                }
+              },
+              {
+                "entrant": {
+                  "id": 104,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 4,
+                        "gamerTag": "FakeDelta",
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fakedelt"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 3
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

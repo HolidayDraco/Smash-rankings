@@ -1,0 +1,40 @@
+query EventSetsPage($eventId: ID!, $page: Int!, $perPage: Int!) {
+  event(id: $eventId) {
+    id
+    sets(page: $page, perPage: $perPage, sortType: RECENT, filters: { state: [3] }) {
+      pageInfo {
+        total
+        totalPages
+      }
+      nodes {
+        id
+        completedAt
+        winnerId
+        displayScore
+        fullRoundText
+        slots {
+          entrant {
+            id
+            participants {
+              player {
+                id
+                gamerTag
+                prefix
+                user {
+                  slug
+                }
+              }
+            }
+          }
+          standing {
+            stats {
+              score {
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

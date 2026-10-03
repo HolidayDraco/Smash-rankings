@@ -15,7 +15,8 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "db:generate": "pnpm --filter @sr/db db:generate",
-    "db:migrate": "pnpm --filter @sr/db db:migrate"
+    "db:migrate": "pnpm --filter @sr/db db:migrate",
+    "codegen": "pnpm --filter @sr/startgg codegen"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

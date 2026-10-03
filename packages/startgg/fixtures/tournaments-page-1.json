@@ -1,0 +1,84 @@
+{
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "data": {
+    "tournaments": {
+      "pageInfo": {
+        "total": 3,
+        "totalPages": 2
+      },
+      "nodes": [
+        {
+          "id": 5001,
+          "name": "Fake Major",
+          "slug": "tournament/fake-5001",
+          "countryCode": "US",
+          "addrState": "CA",
+          "isOnline": false,
+          "numAttendees": 300,
+          "startAt": 1760000000,
+          "endAt": 1760086400,
+          "events": [
+            {
+              "id": 9001,
+              "name": "Ultimate Singles",
+              "slug": "tournament/fake-major/event/ultimate-singles",
+              "numEntrants": 212,
+              "isOnline": false,
+              "state": "COMPLETED",
+              "startAt": 1760000000,
+              "type": 1,
+              "teamRosterSize": null,
+              "videogame": {
+                "id": 1386
+              }
+            },
+            {
+              "id": 9002,
+              "name": "Ultimate Doubles",
+              "slug": "tournament/fake-major/event/ultimate-doubles",
+              "numEntrants": 60,
+              "isOnline": false,
+              "state": "COMPLETED",
+              "startAt": 1760000000,
+              "type": 5,
+              "teamRosterSize": {
+                "minPlayers": 2,
+                "maxPlayers": 2
+              },
+              "videogame": {
+                "id": 1386
+              }
+            }
+          ]
+        },
+        {
+          "id": 5002,
+          "name": "Fake Regional",
+          "slug": "tournament/fake-5002",
+          "countryCode": "US",
+          "addrState": "CA",
+          "isOnline": false,
+          "numAttendees": 300,
+          "startAt": 1760000000,
+          "endAt": 1760086400,
+          "events": [
+            {
+              "id": 9003,
+              "name": "Ultimate Singles",
+              "slug": "tournament/fake-major/event/ultimate-singles",
+              "numEntrants": 80,
+              "isOnline": false,
+              "state": "COMPLETED",
+              "startAt": 1760000000,
+              "type": 1,
+              "teamRosterSize": null,
+              "videogame": {
+                "id": 1386
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

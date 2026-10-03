@@ -1,0 +1,5 @@
+{
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "success": false,
+  "message": "Rate limit exceeded - api-token"
+}
