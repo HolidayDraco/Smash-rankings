@@ -1,5 +1,5 @@
 // Saves PR screenshots at 390 and 1280 px wide: `node screenshots.mjs` (P1-8 leaderboard scenes)
-// `node screenshots.mjs p1-9` (player page scenes), or `p1-10` (methodology and status), or `p2-1` (two-tab shell: / and /texas).
+// `node screenshots.mjs p1-9` (player page scenes), `p1-10` (methodology and status), `p2-1` (two-tab shell: / and /texas), or `p2-2` (Texas scenes).
 // Needs the API on API_PORT (default 8787) against a seeded database, and `pnpm e2e`'s web build in apps/app/dist.
 import { chromium } from "@playwright/test";
 import { spawn } from "node:child_process";
@@ -79,11 +79,24 @@ const shellScenes = {
     await page.getByRole("heading", { level: 1, name: "Texas" }).waitFor();
   },
 };
+const texasScenes = {
+  async collapsed(page) {
+    await page.goto(`http://localhost:${port}/texas`);
+    await page.getByRole("list", { name: "Texas cities" }).waitFor();
+  },
+  async expanded(page) {
+    await page.goto(`http://localhost:${port}/texas`);
+    await page.getByRole("button", { name: "Pin Houston" }).click();
+    await page.getByRole("button", { name: /^Dallas-Fort Worth, / }).click();
+    await page.getByRole("list", { name: "Dallas-Fort Worth ranking" }).waitFor();
+  },
+};
 const sceneSets = {
   "p1-8": scenes,
   "p1-9": playerScenes,
   "p1-10": infoScenes,
   "p2-1": shellScenes,
+  "p2-2": texasScenes,
 };
 
 try {
