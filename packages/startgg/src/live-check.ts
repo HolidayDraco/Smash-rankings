@@ -190,6 +190,8 @@ export interface LiveCheckResult {
   errors: { step: string; name: string; message: string }[];
   /** True when --event picked the event, so it was not checked against the launch rules. */
   eventChosenByFlag: boolean;
+  /** start.gg rejected `Tournament.city`; the tournaments step was retried without it. */
+  cityFieldRejected: boolean;
   schema: null | {
     tournamentFilterFields: string[];
     hasAddrStateFilter: boolean;
@@ -338,6 +340,7 @@ export async function runLiveCheck(
     event: null,
     noEventReason: null,
     eventChosenByFlag: options.eventId !== undefined,
+    cityFieldRejected: false,
   };
   const idTypes = new Map<string, Set<string>>();
   const noteId = (label: string, value: unknown) => {
@@ -488,11 +491,23 @@ export async function runLiveCheck(
       return { nodes, pageInfo: parsed.pageInfo };
     };
     const tournamentVars = { videogameIds: [ULTIMATE_VIDEOGAME_ID], ...window };
-    const tournamentsQuery = print(TournamentsPageDocument);
+    let tournamentsQuery = print(TournamentsPageDocument);
     let totalPages = 1;
     let perPage: number = DEFAULT_TOURNAMENTS_PER_PAGE;
     await attempt("tournaments", async () => {
-      const first = await paged("TournamentsPage", tournamentsQuery, tournamentVars, 1, perPage);
+      let first;
+      try {
+        first = await paged("TournamentsPage", tournamentsQuery, tournamentVars, 1, perPage);
+      } catch (error) {
+        // Tournament.city is unverified. If start.gg rejects it, retry once without it so one
+        // field can't hide every other answer (the agreed fallback: show state only).
+        const message = error instanceof Error ? error.message : String(error);
+        if (!/\bcity\b/i.test(message)) throw error;
+        fail("tournaments", "CityFieldRejected", message);
+        result.cityFieldRejected = true;
+        tournamentsQuery = tournamentsQuery.replace(/^\s*city\s*$/m, "");
+        first = await paged("TournamentsPage", tournamentsQuery, tournamentVars, 1, perPage);
+      }
       perPage = first.perPage;
       result.typedSchemaAccepts.tournaments = tournamentsDataSchema.safeParse(first.data).success;
       const page = absorb(first.data, true);
@@ -744,6 +759,10 @@ export function renderReport(r: LiveCheckResult): string {
     }
   } else out.push("- Not answered (request failed).");
   out.push("", "## Discover cost and location format");
+  if (r.cityFieldRejected)
+    out.push(
+      "- **Tournament.city was rejected by start.gg.** Remove it from the tournaments query and show state only (agreed fallback); the answers below come from a retry without it.",
+    );
   if (r.tournaments) {
     const t = r.tournaments;
     out.push(
