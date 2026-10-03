@@ -1,4 +1,4 @@
-// Tiny static server for the Expo web export. Mirrors Vercel's cleanUrls (/style-guide -> style-guide.html).
+// Tiny static server for the Expo web export. Mirrors Vercel's cleanUrls (/style-guide -> style-guide.html) and the /player rewrite in apps/app/vercel.json.
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve, sep } from "node:path";
@@ -33,7 +33,9 @@ createServer(async (req, res) => {
     res.writeHead(400, { "content-type": "text/plain" }).end("Bad request");
     return;
   }
-  const safe = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
+  let safe = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
+  // Mirrors vercel.json: any /player/... URL is served by the dynamic route's HTML.
+  if (safe.startsWith("/player/")) safe = "/player/[idSlug]";
   const candidates = [join(root, safe), join(root, `${safe}.html`), join(root, safe, "index.html")];
   let file = null;
   for (const c of candidates) {

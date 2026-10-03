@@ -3,5 +3,11 @@
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "buildCommand": "cd ../.. && pnpm --filter @sr/app build:web",
   "outputDirectory": "dist",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/player/:path*",
+      "destination": "/player/[idSlug].html"
+    }
+  ]
 }
