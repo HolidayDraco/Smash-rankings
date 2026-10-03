@@ -69,6 +69,8 @@ export interface PageResult<T> {
   page: number;
   perPage: number;
   totalPages: number;
+  /** Rows on this page that normalization dropped (byes, teams, entrants without a player). */
+  skipped: number;
   /** Save this as the checkpoint (events.sync_cursor); null when finished. */
   nextCursor: Cursor | null;
 }
@@ -258,8 +260,10 @@ export function createStartggClient(options: StartggClientOptions) {
       const totalPages = connection.totalPages ?? (nodes.length < perPage ? page : page + 1);
       const nextCursor = page < totalPages ? { page: page + 1, perPage } : null;
       log({ event: "startgg.page", queryName, page, perPage, objects: nodes.length, totalPages });
+      const items = fresh.map(toItem).filter((i): i is TItem => i !== null);
       yield {
-        items: fresh.map(toItem).filter((i): i is TItem => i !== null),
+        items,
+        skipped: fresh.length - items.length,
         page,
         perPage,
         totalPages,

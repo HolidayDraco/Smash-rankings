@@ -60,3 +60,15 @@ Signals still pending a live check, each in one function in `packages/core/src/q
 - Tournaments are paged by `startAt`, so pages can shift while the run is going (a tournament added mid-run). The daily rerun catches anything missed.
 - If a stored event now classifies as skip (fewer than 64 entrants, switched to doubles), its `qualifies` is set to false and `num_entrants` refreshed. Only existing rows are updated; skipped events are never inserted.
 - `tournaments.slug` and `events.slug` are unique, but a recreated tournament or event arrives with a new id and the old slug. Before upserting, the old row keeps its data and its slug is renamed to `<slug>~stale-<oldId>`. That cannot clash again, so the run neither fails nor loops, and nothing is deleted.
+
+## Sync job (P1-2)
+
+`jobs/src/sync.ts`. Only events with `qualifies = true` are ever requested (also with `--event`, which refuses others with exit 2). Online events stay metadata only.
+
+**Player fields stored (minimum data):** `id` (start.gg player id), `gamer_tag`, `prefix`, `user_slug` (public profile link). `country_code` and `region` are not filled: the location fields are not verified yet. A refreshed tag always overwrites; a null prefix or slug never erases a stored value.
+
+**Which events are picked:** `qualifies`, `start_at` in the past, and either status pending / partial / error, or `done` and due its one re-sync. Re-sync rule: `last_synced_at < start_at + 72 h` and `now > last_synced_at + 48 h`. That catches bracket corrections about two days after the event, and stops re-fetching once an event has been re-synced after the window. Oldest `start_at` first, at most 25 events per run (`MAX_EVENTS_PER_RUN`). An event that keeps failing stays in the queue and uses one of the 25 slots.
+
+**Per page:** sets are fetched 40 per page (completed only). Players, sets, and the `events.sync_cursor` checkpoint (`{"page","perPage"}`) are saved in one transaction. Standings follow (100 per page); standings for a player we never saw in a set are skipped and counted. On the last sets page the cursor keeps pointing at that page, so a stop during standings redoes one page only.
+
+**Request estimate:** per event, `ceil(sets / 40) + ceil(entrants / 100)`. A 64-entrant event has about 120 sets, so about 3 + 1 = 4 requests; a 256-entrant event about 500 sets, so about 13 + 3 = 16. A run of the full cap of 25 events is therefore roughly 100 to 400 requests, about 2 to 7 minutes at the 60 requests per minute limit. A re-sync costs the same as a first sync. Not measured live.

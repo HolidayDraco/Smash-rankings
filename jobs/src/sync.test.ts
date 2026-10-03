@@ -1,0 +1,406 @@
+import { readFileSync } from "node:fs";
+import { eq, sql } from "drizzle-orm";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { periodIndexFor } from "@sr/core";
+import {
+  createDb,
+  events,
+  ingestRuns,
+  players,
+  sets,
+  standings,
+  tournaments,
+  type Database,
+} from "@sr/db";
+import { runMigrations } from "@sr/db/migrate";
+import { runJob } from "./harness";
+import { parseCursor, selectEvents, sync } from "./sync";
+
+const TOKEN = "SECRET-TOKEN-abc123";
+const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+const HOUR = 3_600_000;
+const NOW = Date.parse("2026-10-03T12:00:00Z");
+const EVENT_START = new Date("2025-10-08T18:00:00Z");
+
+const fixture = (name: string): unknown =>
+  JSON.parse(
+    readFileSync(new URL(`../../packages/startgg/fixtures/${name}.json`, import.meta.url), "utf8"),
+  );
+
+type Reply = { status?: number; body: unknown };
+
+describe("parseCursor", () => {
+  it("reads a saved checkpoint and ignores garbage", () => {
+    expect(parseCursor('{"page":2,"perPage":40}')).toEqual({ page: 2, perPage: 40 });
+    expect(parseCursor("not json")).toBeUndefined();
+    expect(parseCursor(null)).toBeUndefined();
+  });
+});
+
+// CI must always run the database tests; a silent skip would hide a broken setup.
+if (process.env.CI && !testDatabaseUrl) throw new Error("TEST_DATABASE_URL must be set in CI");
+
+describe.skipIf(!testDatabaseUrl)(
+  "sync job (skipped: TEST_DATABASE_URL is not set; CI always sets it)",
+  () => {
+    let db: Database;
+    let close: () => Promise<void>;
+    const env = { STARTGG_TOKEN: TOKEN, DATABASE_URL: testDatabaseUrl };
+    let nowMs = NOW;
+    let sent: { query: string; eventId: number; page: number; perPage: number }[];
+    let queues: Record<string, Reply[]>;
+
+    /** Fake start.gg: one reply queue per "sets:<eventId>" / "standings:<eventId>". */
+    const fakeFetch = async (_url: string, init: RequestInit) => {
+      const { query, variables } = JSON.parse(String(init.body)) as {
+        query: string;
+        variables: { eventId: number; page: number; perPage: number };
+      };
+      const kind = query.includes("EventSetsPage") ? "sets" : "standings";
+      sent.push({ query: kind, ...variables });
+      const reply = queues[`${kind}:${variables.eventId}`]?.shift();
+      if (!reply) throw new Error(`fake fetch: no ${kind} reply queued for ${variables.eventId}`);
+      return new Response(JSON.stringify(reply.body), { status: reply.status ?? 200 });
+    };
+    const happy = (): Record<string, Reply[]> => ({
+      "sets:9001": [{ body: fixture("sets-page-1") }, { body: fixture("sets-page-2") }],
+      "standings:9001": [{ body: fixture("standings-page-1") }],
+    });
+
+    const run = (argv: string[] = [], out: string[] = []) => {
+      let clientNow = 1_000_000;
+      return runJob("sync", argv, sync, {
+        env,
+        now: () => nowMs,
+        clientOptions: {
+          fetch: fakeFetch,
+          clock: () => clientNow,
+          sleep: async (ms) => void (clientNow += ms),
+          logger: () => {},
+        },
+        out: (line) => out.push(line),
+      });
+    };
+    const quietly = async <T>(body: () => Promise<T>) => {
+      const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+      try {
+        const result = await body();
+        return { result, text: stderr.mock.calls.join("") };
+      } finally {
+        stderr.mockRestore();
+      }
+    };
+
+    async function seedEvent(
+      id: number,
+      fields: Partial<typeof events.$inferInsert> = {},
+    ): Promise<void> {
+      await db
+        .insert(tournaments)
+        .values({ id: 5000 + id, slug: `t-${id}`, name: `T ${id}` })
+        .onConflictDoNothing();
+      await db.insert(events).values({
+        id,
+        tournamentId: 5000 + id,
+        slug: `e-${id}`,
+        name: `E ${id}`,
+        startAt: EVENT_START,
+        qualifies: true,
+        ...fields,
+      });
+    }
+    const eventRow = async (id: number) =>
+      (await db.select().from(events).where(eq(events.id, id)))[0];
+    const setIds = async () => (await db.select().from(sets).orderBy(sets.id)).map((s) => s.id);
+
+    beforeAll(async () => {
+      if (!testDatabaseUrl) return;
+      if (/neon\.tech/i.test(testDatabaseUrl)) throw new Error("Use a disposable database.");
+      ({ db, close } = createDb(testDatabaseUrl, { maxConnections: 1 }));
+      await db.execute(sql`drop schema if exists drizzle cascade`);
+      await db.execute(sql`drop schema if exists public cascade`);
+      await db.execute(sql`create schema public`);
+      await runMigrations(db);
+    }, 30_000);
+    beforeEach(async () => {
+      await db.delete(standings);
+      await db.delete(sets);
+      await db.delete(players);
+      await db.delete(events);
+      await db.delete(tournaments);
+      await db.delete(ingestRuns);
+      nowMs = NOW;
+      sent = [];
+      queues = happy();
+    });
+    afterAll(async () => {
+      await close?.();
+    });
+
+    it("syncs through to the end, marks the event done, and writes one ingest_runs row", async () => {
+      await seedEvent(9001, { syncStatus: "partial", syncCursor: null });
+      const out: string[] = [];
+      expect(await run([], out)).toBe(0);
+      expect(out).toEqual([
+        "sync: 1 events, 3 sets (1 DQ), 2 standings, 0 entrants without player; 3 requests",
+      ]);
+      expect(await setIds()).toEqual([7001, 7002, 7003]);
+      expect((await db.select().from(standings)).map((s) => [s.playerId, s.placement])).toEqual(
+        expect.arrayContaining([
+          [1, 1],
+          [4, 2],
+        ]),
+      );
+      expect(await eventRow(9001)).toMatchObject({
+        syncStatus: "done",
+        syncCursor: null,
+        lastSyncedAt: new Date(NOW),
+      });
+      const runs = await db.select().from(ingestRuns);
+      expect(runs).toHaveLength(1);
+      expect(runs[0]).toMatchObject({
+        job: "sync",
+        status: "success",
+        requestsUsed: 3,
+        eventsTouched: 1,
+        error: null,
+      });
+      const [first] = await db.select().from(sets).where(eq(sets.id, 7001));
+      expect(first?.ratingPeriod).toBe(periodIndexFor(new Date(1760000000 * 1000)));
+    });
+
+    it("stores a DQ set with is_dq = true and null games", async () => {
+      await seedEvent(9001);
+      await run();
+      const [dq] = await db.select().from(sets).where(eq(sets.id, 7002));
+      expect(dq).toMatchObject({
+        isDq: true,
+        winnerGames: null,
+        loserGames: null,
+        winnerId: 3,
+        loserId: 4,
+      });
+      const [normal] = await db.select().from(sets).where(eq(sets.id, 7001));
+      expect(normal).toMatchObject({ isDq: false, winnerGames: 3, loserGames: 1 });
+    });
+
+    it("saves a partial cursor when the time budget runs out, then resumes without duplicating", async () => {
+      await seedEvent(9001);
+      queues = {
+        "sets:9001": [
+          {
+            get body() {
+              nowMs += 30 * 60_000; // the budget (20 min) ends while page 1 is being fetched
+              return fixture("sets-page-1");
+            },
+          },
+        ],
+      };
+      const out: string[] = [];
+      expect(await run([], out)).toBe(0);
+      expect(out[0]).toContain("stopped early: time budget");
+      expect(await eventRow(9001)).toMatchObject({
+        syncStatus: "partial",
+        syncCursor: '{"page":2,"perPage":40}',
+        lastSyncedAt: null,
+      });
+      expect(await setIds()).toEqual([7001, 7002]);
+      expect((await db.select().from(ingestRuns))[0]?.status).toBe("partial");
+
+      // Next run: only page 2 is requested.
+      sent = [];
+      queues = {
+        "sets:9001": [{ body: fixture("sets-page-2") }],
+        "standings:9001": [{ body: fixture("standings-page-1") }],
+      };
+      expect(await run()).toBe(0);
+      expect(sent.filter((r) => r.query === "sets").map((r) => r.page)).toEqual([2]);
+      expect(await setIds()).toEqual([7001, 7002, 7003]);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "done", syncCursor: null });
+    });
+
+    it("resumes from a saved cursor with its page size", async () => {
+      await seedEvent(9001, { syncStatus: "partial", syncCursor: '{"page":2,"perPage":20}' });
+      queues["sets:9001"] = [{ body: fixture("sets-page-2") }];
+      expect(await run()).toBe(0);
+      expect(sent[0]).toMatchObject({ query: "sets", page: 2, perPage: 20 });
+      expect(await setIds()).toEqual([7003]);
+    });
+
+    it("creates no duplicates when everything is synced again", async () => {
+      await seedEvent(9001);
+      await run();
+      await db.update(events).set({ syncStatus: "pending" }).where(eq(events.id, 9001));
+      queues = happy();
+      await run();
+      expect(await setIds()).toEqual([7001, 7002, 7003]);
+      expect(await db.select().from(players)).toHaveLength(4);
+      expect(await db.select().from(standings)).toHaveLength(2);
+      expect(await db.select().from(ingestRuns)).toHaveLength(2);
+    });
+
+    it("retries after a mid-run rate-limit error", async () => {
+      await seedEvent(9001);
+      queues["sets:9001"] = [
+        { body: fixture("error-rate-limit") },
+        { body: fixture("sets-page-1") },
+        { body: fixture("sets-page-2") },
+      ];
+      expect(await run()).toBe(0);
+      expect(await setIds()).toEqual([7001, 7002, 7003]);
+      expect((await db.select().from(ingestRuns))[0]?.requestsUsed).toBe(4);
+    });
+
+    it("shrinks the page size after a complexity error", async () => {
+      await seedEvent(9001);
+      queues["sets:9001"] = [
+        { body: fixture("error-complexity") },
+        { body: fixture("sets-page-1") },
+        { body: fixture("sets-page-2") },
+      ];
+      expect(await run()).toBe(0);
+      expect(sent.filter((r) => r.query === "sets").map((r) => [r.page, r.perPage])).toEqual([
+        [1, 40],
+        [1, 20],
+        [2, 20],
+      ]);
+      expect(await setIds()).toEqual([7001, 7002, 7003]);
+    });
+
+    it("applies a tag update but never erases a stored prefix or slug with null", async () => {
+      await seedEvent(9001);
+      await run();
+      const changed = fixture("sets-page-1") as {
+        data: {
+          event: { sets: { nodes: { slots: { entrant: { participants: unknown[] } }[] }[] } };
+        };
+      };
+      changed.data.event.sets.nodes[0]!.slots[0]!.entrant.participants = [
+        { player: { id: 1, gamerTag: "FakeAlphaRenamed", prefix: null, user: null } },
+      ];
+      queues = { ...happy(), "sets:9001": [{ body: changed }, { body: fixture("sets-page-2") }] };
+      await db.update(events).set({ syncStatus: "pending" }).where(eq(events.id, 9001));
+      await run();
+      const [player] = await db.select().from(players).where(eq(players.id, 1));
+      expect(player).toMatchObject({
+        gamerTag: "FakeAlphaRenamed",
+        prefix: "FAKE",
+        userSlug: "user/fakealph",
+      });
+    });
+
+    it("counts entrants without a start.gg player and skips them", async () => {
+      await seedEvent(9002);
+      queues = {
+        "sets:9002": [{ body: fixture("sets-noplayer") }],
+        "standings:9002": [{ body: fixture("standings-noplayer") }],
+      };
+      const out: string[] = [];
+      expect(await run([], out)).toBe(0);
+      expect(out[0]).toBe(
+        "sync: 1 events, 1 sets (0 DQ), 2 standings, 2 entrants without player; 2 requests",
+      );
+      expect(await setIds()).toEqual([7101]);
+    });
+
+    it("marks a failing event as error, keeps going, and keeps its cursor", async () => {
+      await seedEvent(9001, { startAt: new Date("2025-10-01T00:00:00Z") });
+      await seedEvent(9002);
+      queues = {
+        "sets:9001": [{ body: { errors: [{ message: "boom" }] } }],
+        "sets:9002": [{ body: fixture("sets-noplayer") }],
+        "standings:9002": [{ body: fixture("standings-noplayer") }],
+      };
+      await db
+        .update(events)
+        .set({ syncCursor: '{"page":2,"perPage":40}' })
+        .where(eq(events.id, 9001));
+      const { result } = await quietly(() => run());
+      expect(result).toBe(0);
+      expect(await eventRow(9001)).toMatchObject({
+        syncStatus: "error",
+        syncCursor: '{"page":2,"perPage":40}',
+      });
+      expect((await eventRow(9002))?.syncStatus).toBe("done");
+    });
+
+    it("gives a run error, leaks no token, and leaves events untouched on an auth failure", async () => {
+      await seedEvent(9001);
+      queues["sets:9001"] = [{ status: 401, body: { message: `bad ${TOKEN}` } }];
+      const { result, text } = await quietly(() => run());
+      expect(result).toBe(1);
+      const [row] = await db.select().from(ingestRuns);
+      expect(row).toMatchObject({ status: "error", requestsUsed: 1 });
+      expect(row?.error).toMatch(/token/i);
+      expect(`${row?.error}${text}`).not.toContain(TOKEN);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "pending" });
+    });
+
+    it("never requests a qualifies = false event, even with --event", async () => {
+      await seedEvent(9003, { qualifies: false, isOnline: true });
+      expect(await run()).toBe(0);
+      expect(sent).toEqual([]);
+      const { result, text } = await quietly(() => run(["--event", "9003"]));
+      expect(result).toBe(2);
+      expect(text).toMatch(/does not qualify/);
+      expect(sent).toEqual([]);
+      // Even a "done" non-qualifying event is not re-synced.
+      await db
+        .update(events)
+        .set({ syncStatus: "done", lastSyncedAt: new Date(EVENT_START.getTime() + HOUR) })
+        .where(eq(events.id, 9003));
+      await run();
+      expect(sent).toEqual([]);
+    });
+
+    it("syncs a single event with --event", async () => {
+      await seedEvent(9001);
+      await seedEvent(9002);
+      expect(await run(["--event", "9001"])).toBe(0);
+      expect(new Set(sent.map((r) => r.eventId))).toEqual(new Set([9001]));
+      expect((await eventRow(9002))?.syncStatus).toBe("pending");
+    });
+
+    it("dry run fetches and prints a summary but writes nothing", async () => {
+      await seedEvent(9001);
+      const out: string[] = [];
+      expect(await run(["--dry-run"], out)).toBe(0);
+      expect(out).toEqual([
+        "[dry run] sync: 1 events, 3 sets (1 DQ), 2 standings, 0 entrants without player; 3 requests",
+      ]);
+      expect(await db.select().from(sets)).toHaveLength(0);
+      expect(await db.select().from(players)).toHaveLength(0);
+      expect(await db.select().from(ingestRuns)).toHaveLength(0);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "pending", lastSyncedAt: null });
+    });
+
+    it("picks the right events: past, qualifying, due, oldest first, capped", async () => {
+      const day = 24 * HOUR;
+      const ago = (days: number) => new Date(NOW - days * day);
+      await seedEvent(1, { startAt: ago(3), syncStatus: "pending" });
+      await seedEvent(2, { startAt: new Date(NOW + day), syncStatus: "pending" }); // future
+      await seedEvent(3, { startAt: ago(9), qualifies: false }); // online metadata only
+      await seedEvent(4, {
+        startAt: ago(10),
+        syncStatus: "done",
+        lastSyncedAt: new Date(ago(10).getTime() + HOUR), // within 72 h of start, > 48 h ago
+      });
+      await seedEvent(5, {
+        startAt: ago(8),
+        syncStatus: "done",
+        lastSyncedAt: new Date(NOW - HOUR), // synced recently
+      });
+      await seedEvent(6, {
+        startAt: ago(7),
+        syncStatus: "done",
+        lastSyncedAt: new Date(ago(7).getTime() + 100 * HOUR), // already past the 72 h window
+      });
+      await seedEvent(7, { startAt: ago(6), syncStatus: "error" });
+      await seedEvent(8, { startAt: ago(5), syncStatus: "partial" });
+      await seedEvent(9, { startAt: null, syncStatus: "pending" }); // no start date
+      const picked = await selectEvents(db, new Date(NOW));
+      expect(picked.map((e) => e.id)).toEqual([4, 7, 8, 1]);
+      expect((await selectEvents(db, new Date(NOW), 2)).map((e) => e.id)).toEqual([4, 7]);
+    });
+  },
+);

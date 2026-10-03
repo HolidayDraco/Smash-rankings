@@ -7,6 +7,7 @@ ids and gamer tags. Each has a `_note` key. Tests use them and never call the li
 - `tournaments-edge.json`: one page with 64 vs 63 entrant events and an online 128-entrant event (discover job tests)
 - `sets-page-*.json`: two pages, including a DQ set (7002, displayScore "DQ", score -1; encoding is a guess until verified live)
 - `standings-page-1.json`: final placements
+- `sets-noplayer.json`, `standings-noplayer.json`: event 9002 with an entrant that has no start.gg player (sync job tests)
 - `error-rate-limit.json`, `error-complexity.json`: error bodies
 
 Re-record with a real token (manual only): `STARTGG_TOKEN=... pnpm --filter @sr/startgg fixtures:record`.
