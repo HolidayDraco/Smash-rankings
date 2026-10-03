@@ -60,7 +60,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 
 ## Testing rules
 - New logic needs unit tests in the same PR. Bug fixes start with a failing test.
-- `packages/ranking` must keep the Glickman worked-example test passing (r′=1464.06, RD′=151.52, σ′=0.05999).
+- `packages/ranking` must keep the Glickman worked-example test passing. The paper prints r′=1464.06, RD′=151.52, σ′=0.05999 but rounds intermediates; full precision gives 1464.0507 / 151.5165 / 0.059996. The test asserts both (see `glicko2.test.ts`). Don't bend the math to hit the paper's rounded digits.
 - Every user-visible page has at least one Playwright test, plus an axe check with no serious or critical violations.
 - Don't weaken, skip, or delete a test to make CI pass. Fix the cause, or explain in the PR and ask Clay.
 

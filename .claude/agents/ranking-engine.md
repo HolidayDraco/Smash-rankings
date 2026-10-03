@@ -16,7 +16,7 @@ Method (decided in ADR-0002; change only via a new ADR approved by Clay):
 
 Rules:
 1. Keep the engine pure: plain data in, plain data out. No DB, network, or clock access inside the math. Determinism is required, so use stable sort orders and handle ties explicitly.
-2. A mandatory test reproduces the paper's worked example: player 1500/200/0.06 vs opponents 1400/30, 1550/100, 1700/300 with results W, L, L and τ = 0.5 gives r′ ≈ 1464.06, RD′ ≈ 151.52, σ′ ≈ 0.05999 (2-decimal tolerance). Add property tests: a win never lowers a rating, RD shrinks after play, and RD grows when inactive.
+2. A mandatory test reproduces the paper's worked example: player 1500/200/0.06 vs opponents 1400/30, 1550/100, 1700/300 with results W, L, L and τ = 0.5 gives r′ ≈ 1464.06, RD′ ≈ 151.52, σ′ ≈ 0.05999 as printed in the paper, which rounds intermediates. Full precision gives 1464.0507 / 151.5165 / 0.059996. Assert the exact values tightly and the printed ones within 0.01 (σ within 0.00001). Add property tests: a win never lowers a rating, RD shrinks after play, and RD grows when inactive.
 3. Incremental recompute: recompute from the earliest week with changed sets onward. Rebuild `leaderboard` into a staging table and swap atomically. Bump `meta.data_version`.
 4. Backtests (Phase 2): hold out the last N weeks and report log-loss and accuracy for Glicko-2 vs Elo vs OpenSkill (`openskill` npm, MIT) in `docs/backtests/`. Recommend changes in plain English and don't apply them without approval.
 5. Keep `docs/METHODOLOGY.md` understandable to a casual fan: what's counted, why the conservative score is used, and what its limits are.

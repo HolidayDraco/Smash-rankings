@@ -10,9 +10,30 @@ const player = (rating: number, ratingDeviation: number, volatility = 0.06): Pla
 });
 
 describe("Glickman's worked example (mandatory)", () => {
-  // NOTE: exact arithmetic gives r′ = 1464.0507; the paper's 1464.06 comes from
-  // rounding intermediates to 4 decimals (μ′ = −0.2069). Kept as specified pending
-  // a decision from Clay; see the PR description.
+  // Glickman, "Example of the Glicko-2 system": a 1500/200/0.06 player beats a
+  // 1400/30, loses to a 1550/100 and a 1700/300, with τ = 0.5.
+  //
+  // The paper prints r′ = 1464.06, RD′ = 151.52, σ′ = 0.05999, but it rounds its
+  // intermediate values to 4 decimals (e.g. μ′ = −0.2069 → 1464.0578). Carrying
+  // full precision gives r′ = 1464.0507, RD′ = 151.5165, σ′ = 0.0599960 (checked
+  // against an independent Python implementation of the paper's steps). So we
+  // assert the exact values tightly, and agreement with the paper's printed
+  // figures to within the precision the paper actually carries.
+  const EXACT = { rating: 1464.0507, ratingDeviation: 151.5165, volatility: 0.059996 };
+
+  const expectMatchesPaper = (result: PlayerRating | undefined) => {
+    expect(result).toBeDefined();
+    if (!result) return;
+    // Exact (full-precision) values.
+    expect(result.rating).toBeCloseTo(EXACT.rating, 3);
+    expect(result.ratingDeviation).toBeCloseTo(EXACT.ratingDeviation, 3);
+    expect(result.volatility).toBeCloseTo(EXACT.volatility, 6);
+    // The paper's printed figures, within its intermediate rounding.
+    expect(Math.abs(result.rating - 1464.06)).toBeLessThan(0.01);
+    expect(Math.abs(result.ratingDeviation - 151.52)).toBeLessThan(0.01);
+    expect(Math.abs(result.volatility - 0.05999)).toBeLessThan(0.00001);
+  };
+
   it("reproduces r′ 1464.06, RD′ 151.52, σ′ 0.05999 with τ = 0.5", () => {
     const next = updatePlayer(
       player(1500, 200),
@@ -23,9 +44,7 @@ describe("Glickman's worked example (mandatory)", () => {
       ],
       { ...DEFAULT_GLICKO2_CONFIG, tau: 0.5 },
     );
-    expect(next.rating).toBeCloseTo(1464.06, 2);
-    expect(next.ratingDeviation).toBeCloseTo(151.52, 2);
-    expect(next.volatility).toBeCloseTo(0.05999, 5);
+    expectMatchesPaper(next);
   });
 
   it("gives the same answer through ratePeriod", () => {
@@ -40,9 +59,7 @@ describe("Glickman's worked example (mandatory)", () => {
       { winnerId: "c", loserId: "a" },
       { winnerId: "d", loserId: "a" },
     ];
-    const a = ratePeriod(ratings, sets).get("a");
-    expect(a?.rating).toBeCloseTo(1464.06, 2);
-    expect(a?.ratingDeviation).toBeCloseTo(151.52, 2);
+    expectMatchesPaper(ratePeriod(ratings, sets).get("a"));
   });
 });
 
