@@ -19,7 +19,8 @@
     "codegen": "pnpm --filter @sr/startgg codegen",
     "e2e": "pnpm --filter @sr/app build:web && pnpm --filter @sr/e2e e2e",
     "job:discover": "pnpm --filter @sr/jobs discover",
-    "job:sync": "pnpm --filter @sr/jobs sync"
+    "job:sync": "pnpm --filter @sr/jobs sync",
+    "db:seed": "pnpm --filter @sr/db db:seed"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

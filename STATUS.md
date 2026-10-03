@@ -232,3 +232,26 @@ Sample dry run (from the made-up test data): `discover: 4 events found, 2 qualif
 **Questions for Clay:** None.
 
 **Questions for Genghis:** start.gg can't filter tournaments by size, so discover pages through *every* Ultimate tournament in the 44-day window, at 20 per request. The daily target of ≤ 50 requests holds only up to ~1,000 tournaments in that window. If the live check (P1-12) shows more, the plan is to scan the full window weekly and only the last 3 days daily. That stays far under the 60/minute limit either way. OK?
+
+---
+
+## 2026-10-03 — Phase 1: API skeleton
+
+**Date:** October 3, 2026
+
+**What changed:** Added `apps/api`, the small read-only web service ("API") that the website and, later, the phone apps ask for data. There are two endpoints so far:
+
+- `/v1/meta`: when the rankings were last updated (this feeds the "Last updated" badge).
+- `/v1/status`: when each data job last ran and whether it worked. It shows only times and ok/failed, never error details.
+
+Every answer is checked against a strict format before it's sent, says "Data from start.gg", and is cached by Vercel's network for 15 minutes. That keeps it fast and keeps the free database mostly asleep. Only our own website's addresses may call it from a browser.
+
+Also added `pnpm db:seed`, which fills a test database with **made-up** data (30 players named like "Sample_Ace", 3 fake tournaments) so screens and tests have something to show before real start.gg data exists. It refuses to run against the real Neon database unless explicitly told to.
+
+ADR-0001's cache time was corrected to 15 minutes to match the plan.
+
+**What's next:** API endpoints for the leaderboard, player, and search; the sync and rate jobs; then the leaderboard page.
+
+**Questions for Clay:** When you connect Vercel, the API is a **second** Vercel project from the same repo: Root Directory `apps/api`, Framework "Other", plus `DATABASE_URL` and `ALLOWED_ORIGINS` (the app's web address) as environment variables.
+
+**Questions for Genghis:** In `/v1/status`, a run that hit its time limit and will resume next time ("partial") counts as ok. Agree?
