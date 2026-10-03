@@ -178,3 +178,19 @@ describe("properties", () => {
     );
   });
 });
+
+describe("input guards", () => {
+  it("rejects non-finite ratings and non-positive RD", () => {
+    expect(() => updatePlayer(player(Number.NaN, 200), [])).toThrow(RangeError);
+    expect(() => updatePlayer(player(1500, 0), [])).toThrow(RangeError);
+    expect(() =>
+      updatePlayer(player(1500, 200), [{ opponent: player(1500, Infinity), score: 1 }]),
+    ).toThrow(RangeError);
+  });
+
+  it("rejects a non-positive tau", () => {
+    expect(() =>
+      updatePlayer(player(1500, 200), [], { ...DEFAULT_GLICKO2_CONFIG, tau: 0 }),
+    ).toThrow(RangeError);
+  });
+});

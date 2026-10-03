@@ -102,6 +102,27 @@ function newVolatility(
   return Math.exp(lower / 2);
 }
 
+function assertValidRating(rating: PlayerRating): void {
+  const { rating: r, ratingDeviation, volatility } = rating;
+  if (
+    !Number.isFinite(r) ||
+    !(ratingDeviation > 0) ||
+    !(volatility > 0) ||
+    !Number.isFinite(ratingDeviation) ||
+    !Number.isFinite(volatility)
+  ) {
+    throw new RangeError(
+      "Invalid rating: rating must be finite; RD and volatility must be finite and > 0",
+    );
+  }
+}
+
+function assertValidConfig(config: Glicko2Config): void {
+  if (!(config.tau > 0) || !(config.epsilon > 0) || !(config.scale > 0)) {
+    throw new RangeError("Invalid Glicko-2 config: tau, epsilon and scale must be > 0");
+  }
+}
+
 /**
  * Update one player for one rating period. All opponents' ratings must be
  * their pre-period values. With no results, only RD inflation (step 6) applies.
@@ -111,6 +132,9 @@ export function updatePlayer(
   results: readonly GameResult[],
   config: Glicko2Config = DEFAULT_GLICKO2_CONFIG,
 ): PlayerRating {
+  assertValidConfig(config);
+  assertValidRating(player);
+  for (const { opponent } of results) assertValidRating(opponent);
   const { scale } = config;
   const mu = (player.rating - 1500) / scale;
   const phi = player.ratingDeviation / scale;

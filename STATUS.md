@@ -139,6 +139,6 @@ Also includes the weekly rating-period helper, the eligibility rule (10+ sets, 3
 
 **What's next:** start.gg client and app shell PRs, then Phase 1 data jobs.
 
-**Questions for Clay:** None. (The test note above is just a heads-up: the math is right; the paper rounded.)
+**Questions for Clay:** Claude updated the worked-example rule in `CLAUDE.md` to note the paper's rounding (the numbers you listed, 1464.06 / 151.52 / 0.05999, are still checked). Under your auto-merge rule this merged without waiting. If you'd rather that rule stay word-for-word, say so and Claude will revert just that line.
 
 **Questions for Genghis:** Does the worked-example test approach (exact values asserted tightly, plus the paper's printed figures within 0.01 and σ within 0.00001) look right to you?

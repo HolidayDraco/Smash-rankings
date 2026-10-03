@@ -1,12 +1,12 @@
 # How the rankings work
 
-_Draft. This page explains the numbers in plain English. The details are decided in ADR-0002._
+_Draft. This page explains the numbers in plain English. The technical decision record is `docs/adr/0002-ranking-method.md`._
 
 ## What counts
 
 - **Sets, not games.** A set win counts as a win and a set loss counts as a loss. The score inside the set (3-0 or 3-2) doesn't change anything.
 - **Only real results.** Disqualifications and forfeits are skipped, because nobody actually played.
-- **Only qualifying events.** Singles Super Smash Bros. Ultimate events on start.gg with at least 64 entrants. Small weeklies don't count.
+- **Only qualifying events.** In-person Super Smash Bros. Ultimate singles events on start.gg with at least 64 entrants. Online events and small weeklies don't count.
 
 ## How a rating changes
 
