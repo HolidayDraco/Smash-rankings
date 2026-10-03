@@ -17,6 +17,8 @@ export const LEADERBOARD_ELIGIBILITY = {
   minQualifyingEvents: 3,
   maxRatingDeviation: 110,
   trailingMonths: 12,
+  /** The 12-month window in whole rating periods (weeks) for set and event counts. */
+  trailingWeeks: 52,
 } as const;
 
 /** Client-side ceiling for start.gg requests (their hard limit is 80 per 60 s). */

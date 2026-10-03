@@ -36,6 +36,14 @@ In the last 12 months, a player needs:
 
 Everyone is still rated. Players who don't meet these rules just aren't shown on the ranked list yet.
 
+"The last 12 months" means the last 52 weekly rating periods, counting the current week.
+
+## Rank change over 7 days
+
+Next to each rank is how many places the player moved since the ranking one week earlier. A positive number means they moved up. Players who weren't ranked a week ago show as new, with no number.
+
+Ranks can change even in a week you didn't play. Other players' results move them, and your RD grows a little every week you sit out, which lowers your conservative score.
+
 ## Limits
 
 - **Only start.gg data.** Events run elsewhere are missing.

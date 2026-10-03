@@ -187,3 +187,25 @@ Per Clay's auto-merge rule, real screens start right after this merges.
 **Questions for Clay:** Do you like the look? Any feedback becomes a follow-up PR, so nothing waits on it. Connecting Vercel (setup step 1) will give you a tappable preview on every PR.
 
 **Questions for Genghis:** None.
+
+---
+
+## 2026-10-03 — Phase 1: rating history and leaderboard builder
+
+**Date:** October 3, 2026
+
+**What changed:** Added the pure math that turns a year of sets into a leaderboard (no database or internet involved):
+
+- **Week by week:** walks every week in order, rating everyone who played. Players who sat out a week become a little less certain (their RD grows). It keeps one history row per player per week, which will drive rating charts later.
+- **Who's eligible:** counts each player's rated sets and the qualifying events they attended in the last 52 weeks, then applies the rule: 10+ sets, 3+ events, RD ≤ 110.
+- **The leaderboard:** eligible players are ranked by conservative score. Everyone else is listed after them, unranked. **Rank change over 7 days** compares this week's ranks with last week's: positive means moved up, and it's blank for newly ranked or dropped players.
+- **Merged accounts:** if one person has two start.gg accounts and we've marked them as the same player, their results are combined.
+- **Speed:** a synthetic year of 2,000 players and 20,000 sets takes about 0.2 seconds. 50,000 players and 300,000 sets take about 11 seconds, which is fine for a job that runs every couple of hours.
+
+METHODOLOGY.md gained a short "rank change over 7 days" section.
+
+**What's next:** The rate job (P1-5) uses this to fill the database. Then come the leaderboard and player pages.
+
+**Questions for Clay:** None.
+
+**Questions for Genghis:** A player who entered an event but whose only sets there were DQs still gets credit for *attending* that event (it counts toward "3+ events"). The DQ sets themselves never count toward ratings or the "10+ sets" rule. OK?

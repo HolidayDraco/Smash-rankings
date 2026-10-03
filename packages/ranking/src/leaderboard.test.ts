@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { conservativeScore, isEligible, rankLeaderboard } from "./leaderboard";
+import type { PlayerRating } from "./glicko2";
+import type { PeriodSet } from "./history";
+import {
+  buildLeaderboard,
+  conservativeScore,
+  eligibilityStats,
+  isEligible,
+  rankLeaderboard,
+} from "./leaderboard";
 
 describe("conservativeScore", () => {
   it("is r − 2·RD", () => {
@@ -58,5 +66,123 @@ describe("rankLeaderboard", () => {
   it("rejects duplicate player ids", () => {
     const entry = { playerId: "x", rating: 1500, ratingDeviation: 50 };
     expect(() => rankLeaderboard([entry, entry])).toThrow(/duplicate/);
+  });
+});
+
+/** `count` sets won by `playerId`, spread round-robin over `events` events in week `period`. */
+const wins = (playerId: string, count: number, events: number, period = 100): PeriodSet[] =>
+  Array.from({ length: count }, (_, i) => ({
+    winnerId: playerId,
+    loserId: `opp${i}`,
+    period,
+    eventId: `${playerId}-ev${i % events}`,
+  }));
+
+const rated = (rating: number, ratingDeviation: number): PlayerRating => ({
+  rating,
+  ratingDeviation,
+  volatility: 0.06,
+});
+
+describe("eligibilityStats", () => {
+  it("counts non-DQ sets and distinct events in the trailing window only", () => {
+    const sets: PeriodSet[] = [
+      ...wins("p", 3, 3, 48), // week 48: just outside a 52-week window ending at 100
+      ...wins("p", 4, 2, 49), // week 49: first week inside the window
+      { winnerId: "p", loserId: "q", period: 100, eventId: "dq", isDq: true },
+      { winnerId: "p", loserId: "q", period: 101, eventId: "future" },
+    ];
+    const stats = eligibilityStats({
+      sets,
+      asOfPeriod: 100,
+      standingsEvents: [{ playerId: "p", eventId: "dq", period: 100 }],
+    });
+    expect(stats.get("p")).toEqual({ ratedSets: 4, qualifyingEvents: 3, lastActivePeriod: 49 });
+    expect(stats.has("q")).toBe(false);
+  });
+
+  it("merges aliases before counting", () => {
+    const stats = eligibilityStats({
+      sets: [
+        ...wins("alt", 2, 2),
+        ...wins("main", 2, 1),
+        { ...wins("alt", 1, 1)[0]!, loserId: "main" },
+      ],
+      asOfPeriod: 100,
+      aliases: new Map([["alt", "main"]]),
+    });
+    expect(stats.get("main")).toEqual({ ratedSets: 4, qualifyingEvents: 3, lastActivePeriod: 100 });
+    expect(stats.has("alt")).toBe(false);
+  });
+});
+
+describe("buildLeaderboard", () => {
+  const eligibleOf = (sets: PeriodSet[], rd: number): boolean => {
+    const stats = eligibilityStats({ sets, asOfPeriod: 100 });
+    const [row] = buildLeaderboard({ ratings: new Map([["p", rated(1800, rd)]]), stats });
+    return row?.eligible === true && row.rank === 1;
+  };
+
+  it("ranks a player exactly at every threshold", () => {
+    expect(eligibleOf(wins("p", 10, 3), 110)).toBe(true);
+  });
+
+  it("does not rank a 9-set player", () => {
+    expect(eligibleOf(wins("p", 9, 3), 60)).toBe(false);
+  });
+
+  it("does not rank a player with only 2 events", () => {
+    expect(eligibleOf(wins("p", 20, 2), 60)).toBe(false);
+  });
+
+  it("does not rank a player with RD 111", () => {
+    expect(eligibleOf(wins("p", 20, 3), 111)).toBe(false);
+  });
+
+  it("ranks eligible players first, then lists unranked players with rank null", () => {
+    const enough = { ratedSets: 10, qualifyingEvents: 3, lastActivePeriod: 1 };
+    const rows = buildLeaderboard({
+      ratings: new Map([
+        ["new", rated(2000, 300)],
+        ["b", rated(1700, 50)],
+        ["a", rated(1700, 50)],
+      ]),
+      stats: new Map([
+        ["a", enough],
+        ["b", enough],
+      ]),
+    });
+    expect(rows.map((row) => [row.playerId, row.rank, row.eligible])).toEqual([
+      ["a", 1, true],
+      ["b", 2, true],
+      ["new", null, false],
+    ]);
+    expect(rows[2]).toMatchObject({ ratedSets: 0, qualifyingEvents: 0, lastActivePeriod: null });
+    expect(rows[0]?.conservativeScore).toBe(1600);
+  });
+
+  it("computes the 7-day rank change: up, down, new, and dropped", () => {
+    const enough = { ratedSets: 10, qualifyingEvents: 3, lastActivePeriod: 1 };
+    const rows = buildLeaderboard({
+      ratings: new Map([
+        ["riser", rated(1900, 50)], // now #1, was #3
+        ["faller", rated(1800, 50)], // now #2, was #1
+        ["newcomer", rated(1700, 50)], // now #3, unranked before
+        ["dropped", rated(1600, 150)], // was #2, RD too high now
+      ]),
+      stats: new Map(["riser", "faller", "newcomer", "dropped"].map((id) => [id, enough])),
+      previousRanks: new Map<string, number | null>([
+        ["faller", 1],
+        ["dropped", 2],
+        ["riser", 3],
+        ["newcomer", null],
+      ]),
+    });
+    expect(rows.map((row) => [row.playerId, row.rank, row.rankDelta7d])).toEqual([
+      ["riser", 1, 2],
+      ["faller", 2, -1],
+      ["newcomer", 3, null],
+      ["dropped", null, null],
+    ]);
   });
 });
