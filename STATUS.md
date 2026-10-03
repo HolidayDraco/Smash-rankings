@@ -510,7 +510,7 @@ Discover still reads every Ultimate tournament nationwide and filters locally, s
   - **Sentry error alerts.**
   - **Texas only, 16+ entrants** (#20, #21).
 - **A start.gg courtesy email** is drafted in `docs/startgg-email-draft.md`, for you to send before sharing the site. Nothing has been sent.
-- **Fix found while writing this checklist:** the scheduled jobs now create the database tables themselves before running. Without this, the first run against a new Neon database would have failed.
+- **Fix found while writing this checklist (in this PR, #22):** the scheduled jobs now create the database tables themselves before running. Without this, the first run against a new Neon database would have failed.
 
 **What's next:** the first live run (P1-12). It needs your setup. Nothing costs money, since everything uses free plans. In order:
 
