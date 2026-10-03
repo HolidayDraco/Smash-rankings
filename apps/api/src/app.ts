@@ -16,6 +16,7 @@ import { ingestRuns, type Database } from "@sr/db";
 import { periodIndexFor } from "@sr/core";
 import { desc } from "drizzle-orm";
 import { Hono, type Context } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { cors } from "hono/cors";
 import { createMiddleware } from "hono/factory";
 import { validator } from "hono/validator";
@@ -93,9 +94,16 @@ export interface AppOptions {
   allowedOrigins: readonly string[];
   /** Optional anchored regex for extra origins, e.g. Vercel preview URLs of the app. */
   allowedOriginPattern?: RegExp | undefined;
+  /** Reports an unexpected (5xx) error, e.g. to Sentry. Never called for 4xx answers. */
+  reportError?: ((error: unknown) => Promise<void>) | undefined;
 }
 
-export function createApp({ getDb, allowedOrigins, allowedOriginPattern }: AppOptions) {
+export function createApp({
+  getDb,
+  allowedOrigins,
+  allowedOriginPattern,
+  reportError,
+}: AppOptions) {
   const isAllowedOrigin = (origin: string) =>
     allowedOrigins.includes(origin) || (allowedOriginPattern?.test(origin) ?? false);
 
@@ -265,8 +273,14 @@ export function createApp({ getDb, allowedOrigins, allowedOriginPattern }: AppOp
         );
       })
       .notFound((c) => c.json(errorBody("Not found"), 404))
-      .onError((error, c) => {
+      .onError(async (error, c) => {
+        // Hono's own 4xx rejections (like a malformed request) are the caller's problem, not ours.
+        if (error instanceof HTTPException && error.status < 500) {
+          return c.json(errorBody("Bad request"), error.status);
+        }
         console.error("Unhandled API error:", error instanceof Error ? error.name : "unknown");
+        // A broken error reporter must never change the answer.
+        await reportError?.(error).catch(() => undefined);
         return c.json(errorBody("Internal server error"), 500);
       })
   );

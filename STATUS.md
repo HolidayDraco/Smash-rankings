@@ -376,3 +376,30 @@ Because the website is built ahead of time, one shared player page loads each pl
 **Questions for Clay:** None. Check the phone screenshots in the PR.
 
 **Questions for Genghis:** The hosting rule for `/player/...` can only be confirmed on the first Vercel preview. If it fails there, it's a one-line fix.
+
+---
+
+## 2026-10-03 — Phase 1: Sentry error alerts
+
+**Date:** October 3, 2026
+
+**What changed:** Added **Sentry**, a free service that emails you when something breaks, so problems don't go unnoticed:
+
+- **Website:** if a page crashes, visitors see a friendly "Something went wrong" panel with a Reload button, and the error is reported.
+- **API:** server errors (not "bad request" ones) are reported.
+- **Data jobs:** a failed run is reported, tagged with which job. If start.gg rejects the token (they expire yearly), it's reported as **fatal: "start.gg token rejected (expired?)"** so it's loud.
+- **Missed-run alerts ("cron monitors")** for sync and rate. Sentry warns if two scheduled runs in a row don't check in.
+- **Privacy:** no personal data, cookies, or request headers are sent. Tokens, database addresses, and secret-looking web addresses are scrubbed before anything leaves (tested).
+- **Off until set up:** with no Sentry key it does nothing at all. The website doesn't even download the Sentry code until a key exists, so visitors' pages stay as small as before.
+
+Details are in `docs/monitoring.md`.
+
+**What's next:** Methodology and status pages (built, PR next). The scheduled data workflow (#16) is on hold for the Texas scope question.
+
+**Questions for Clay:**
+1. To turn on alerts:
+   - Create a free Sentry project.
+   - Add its key ("DSN") as a GitHub Actions secret `SENTRY_DSN`, as `SENTRY_DSN` on the Vercel API project, and as `EXPO_PUBLIC_SENTRY_DSN` on the Vercel app project. That last one is public by design, so it's not a secret.
+2. Sentry's free plan's number of missed-run monitors isn't confirmed. If it's limited, set the GitHub Actions variable `SENTRY_CRONS` to `sync`.
+
+**Questions for Genghis:** None.

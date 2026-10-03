@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { loadEnv, loadOptionalEnv, MissingEnvError } from "@sr/core";
 import { createDb, ingestRuns, type Database } from "@sr/db";
 import { createStartggClient, type StartggClient, type StartggClientOptions } from "@sr/startgg";
+import { startJobMonitor, type JobMonitor } from "./sentry";
 
 export const EXIT_OK = 0;
 /** The job ran and failed (start.gg error, bad token, DB error). */
@@ -176,6 +177,7 @@ async function execute(
   const now = deps.now ?? Date.now;
   let args: JobArgs;
   let env: { STARTGG_TOKEN?: string; DATABASE_URL?: string };
+  let monitor: JobMonitor;
   try {
     args = parseJobArgs(argv);
     if (needsStartgg && args.asOf) throw new UsageError("--as-of is only for the rate job");
@@ -186,6 +188,11 @@ async function execute(
         ...loadOptionalEnv(["DATABASE_URL"], deps.env),
       };
     } else env = loadEnv(["STARTGG_TOKEN", "DATABASE_URL"], deps.env);
+    // Error reports and cron check-ins; a no-op unless SENTRY_DSN is set.
+    monitor = startJobMonitor(job, deps.env ?? process.env, [
+      env.STARTGG_TOKEN ?? "",
+      env.DATABASE_URL ?? "",
+    ]);
   } catch (error) {
     if (error instanceof UsageError || error instanceof MissingEnvError) {
       process.stderr.write(`${job}: ${error.message}\n`);
@@ -229,6 +236,7 @@ async function execute(
       requestsUsed: requestsUsed(),
       eventsTouched: result.eventsTouched,
     });
+    await monitor.succeeded().catch(() => undefined);
     return EXIT_OK;
   } catch (error) {
     const message = redactError(error, secrets);
@@ -240,6 +248,7 @@ async function execute(
       eventsTouched: progress.eventsTouched,
       error: message,
     }).catch(() => undefined);
+    await monitor.failed(error, message).catch(() => undefined);
     return usage ? EXIT_USAGE : EXIT_JOB_FAILED;
   } finally {
     await database?.close();
