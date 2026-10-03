@@ -430,7 +430,8 @@ describe.skipIf(!testDatabaseUrl)(
     it("every new daily discover window starts before the previous pass began, so no start time falls in a gap", async () => {
       let previousStart: number | null = null;
       for (let pass = 0; pass < 4; pass++) {
-        nowMs = NOW + pass * 27 * 3_600_000; // the 24 h gate delays each pass
+        // 80 h apart (longer than the 3-day lookback), so the overlap with the previous pass decides.
+        nowMs = NOW + pass * 80 * 3_600_000;
         const passStart = nowMs;
         failTournamentsPage = 2; // page 1 saves the window, then the pass is cut short
         await run("sync", []);
