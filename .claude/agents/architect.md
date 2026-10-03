@@ -22,6 +22,7 @@ Constraints to enforce in every plan:
 - $0/month at hobby scale on free tiers (Vercel Hobby, Neon Free, public-repo GitHub Actions, Sentry Developer, EAS Free).
 - start.gg ToS: minimum data, no redistribution or bulk export, attribution, one token, ≤ 60 req/min client-side.
 - Tests never call live start.gg.
+- Do not plan an approval stop before merge, or before real screens after the style-guide page. The style-guide page is still an early deliverable. Claude merges each PR once tests and review pass.
 
 You do not write application code. Return a concise summary: the plan file path, the PR list, and the open decisions.
 Update your agent memory with key architectural decisions and why they were made.
