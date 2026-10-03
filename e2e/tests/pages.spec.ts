@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { colors } from "@sr/ui/tokens";
 
 const routes = [
-  { path: "/", title: "Bracket Index", heading: "Bracket Index" },
+  { path: "/", title: "Smash Ultimate Rankings | Bracket Index", heading: "Rankings" },
   { path: "/style-guide", title: "Style guide | Bracket Index", heading: "Style guide" },
 ] as const;
 
@@ -21,6 +21,10 @@ for (const route of routes) {
   test.describe(route.path, () => {
     test.beforeEach(async ({ page }) => {
       await page.goto(route.path);
+      // The leaderboard fades in; wait for it to finish so axe measures real colors.
+      if (route.path === "/") {
+        await expect(page.getByRole("list").first().locator("..")).toHaveCSS("opacity", "1");
+      }
     });
 
     test("renders title, heading, and attribution", async ({ page }) => {
@@ -44,10 +48,12 @@ for (const route of routes) {
   });
 }
 
-test("home links to the style guide", async ({ page }) => {
+test("header links to the style guide", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText(/unofficial fan project/i)).toBeVisible();
-  await page.getByRole("link", { name: "Open the style guide" }).click();
+  await page
+    .getByRole("navigation", { name: "Primary" })
+    .getByRole("link", { name: "Style guide" })
+    .click();
   await expect(page).toHaveURL(/\/style-guide$/);
 });
 

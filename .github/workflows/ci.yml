@@ -57,6 +57,24 @@ jobs:
     name: E2E (Playwright + axe)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      # Disposable Postgres seeded with synthetic players for the leaderboard tests.
+      # Throwaway credentials that exist only inside this CI job (not a secret).
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: sr_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sr_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/sr_e2e
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -67,6 +85,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Install Chromium (CI only)
         run: pnpm --filter @sr/e2e exec playwright install --with-deps chromium
+      - name: Migrate and seed the throwaway database
+        run: |
+          pnpm db:migrate
+          pnpm db:seed
+      # `pnpm e2e` builds the web app pointed at the API on :8787, and Playwright starts that API.
       - run: pnpm e2e
       - name: Upload Playwright report
         if: failure()

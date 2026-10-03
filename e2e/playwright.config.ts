@@ -38,10 +38,20 @@ export default defineConfig({
     { name: "mobile-390", use: { viewport: { width: 390, height: 844 }, isMobile: false } },
     { name: "desktop-1280", use: { viewport: { width: 1280, height: 800 } } },
   ],
-  webServer: {
-    command: "node scripts/serve.mjs",
-    url: `http://localhost:${PORT}/`,
-    reuseExistingServer: !process.env.CI,
-    env: { E2E_PORT: String(PORT) },
-  },
+  webServer: [
+    {
+      command: "node scripts/serve.mjs",
+      url: `http://localhost:${PORT}/`,
+      reuseExistingServer: !process.env.CI,
+      env: { E2E_PORT: String(PORT) },
+    },
+    {
+      // The API needs DATABASE_URL (a migrated, seeded throwaway database) in the environment.
+      command: "pnpm --filter @sr/api exec tsx src/dev.ts",
+      url: "http://localhost:8787/",
+      reuseExistingServer: !process.env.CI,
+      // The browser calls the API from the static server's origin, so CORS must allow it.
+      env: { ALLOWED_ORIGINS: `http://localhost:${PORT}` },
+    },
+  ],
 });
