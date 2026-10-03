@@ -5,6 +5,7 @@
  * All synthetic rows use ids in a reserved range far above real start.gg ids,
  * so re-seeding deletes exactly the rows it created and never touches real data.
  */
+import { periodIndexFor } from "@sr/core";
 import { and, gte, lt } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import type { Database } from "./client";
@@ -129,7 +130,7 @@ export async function seedSynthetic(
         winnerGames: 2,
         loserGames: Math.floor(random() * 2),
         completedAt,
-        ratingPeriod: Math.floor(completedAt.getTime() / WEEK_MS),
+        ratingPeriod: periodIndexFor(completedAt),
       });
       for (const player of [winner, loser])
         setsPlayed.set(player, (setsPlayed.get(player) ?? 0) + 1);

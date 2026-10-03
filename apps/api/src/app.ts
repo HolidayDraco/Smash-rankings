@@ -13,7 +13,7 @@ import {
   type JobStatus,
 } from "@sr/core";
 import { ingestRuns, type Database } from "@sr/db";
-import { periodIndexFor } from "@sr/ranking";
+import { periodIndexFor } from "@sr/core";
 import { desc } from "drizzle-orm";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";

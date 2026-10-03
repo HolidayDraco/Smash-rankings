@@ -15,7 +15,7 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CACHE_CONTROL_NO_STORE, CACHE_CONTROL_PUBLIC, createApp } from "./app";
 import { createApiClient } from "./client";
-import { periodIndexFor } from "@sr/ranking";
+import { periodIndexFor } from "@sr/core";
 
 // A throwaway Postgres server. This suite uses its own sibling database
 // (`<name>_api`) because @sr/db's tests drop the main one's schema in parallel.
