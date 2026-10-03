@@ -2,7 +2,7 @@
 
 **Status:** Accepted, October 3, 2026
 **Deciders:** architect subagent, under Clay's locked blueprint decisions 2–5
-**Changes to this method require a new ADR.**
+**Changes to this method require a new ADR.** Event scope (which events count) amended by [ADR-0003](0003-texas-launch-scope.md): Texas only, 16+ entrants.
 
 ## Context
 
