@@ -298,3 +298,28 @@ Every answer is checked against a strict format, carries "Data from start.gg", a
 **Questions for Clay:** None.
 
 **Questions for Genghis:** (1) This PR is ~660 lines (~350 code, ~220 tests, ~90 response formats), over the ~400 target you asked for. The tests weren't cut to fit. (2) Results from a merged player's *old* account aren't added to their record yet. That's a follow-up once alias merges are actually in use. OK?
+
+---
+
+## 2026-10-03 — Phase 1: rate job
+
+**Date:** October 3, 2026
+
+**What changed:** The `rate` job (`pnpm job:rate`) turns the stored sets into ratings and the leaderboard. It's the last piece of the data pipeline (discover → sync → rate). Each run:
+
+- Rates every week of the last 12 months from scratch with Glicko-2, using only sets from in-person, 64+ entrant events. DQs, online events, and sets between two accounts merged into one player are skipped.
+- Builds the leaderboard (players with 10+ sets, 3+ events, and low enough uncertainty), with each player's **last active** date taken from their actual last set.
+- Works out the **7-day rank change** by comparing against a snapshot of last week's final ranks, taken when the week rolls over. If there was no run last week, everyone shows "new" rather than a misleading number.
+- Saves everything in one step, so visitors see either the old leaderboard or the new one, never a half-built one. It then bumps the "last updated" time.
+- Keeps the database small. Week-by-week history is stored only for weeks a player actually played (plus the current week): about **25–40 MB** at 50,000 players, instead of about 300 MB for every week.
+- Prints the top 20 into the GitHub Actions run page, so each run can be eyeballed.
+
+Ranking tweaks: equal scores now break ties by the *numerically* lower start.gg id (ADR-0002), and some safety checks were added. METHODOLOGY.md now says: "7-day change is compared with the ranks at the end of last week", and "an event where every one of your sets was a DQ still counts toward the 3 events" (Genghis's ruling).
+
+**Speed:** a synthetic year of 2,000 players and 20,000 sets rates in about 1 second.
+
+**What's next:** The scheduled workflow (discover → sync → rate every 2 hours, hourly on weekends) and the backfill, then the leaderboard and player pages.
+
+**Questions for Clay:** None.
+
+**Questions for Genghis:** `--as-of <date>` re-rates the live leaderboard as of a past date. It's meant only for manual fixes, and the next normal run then shows everyone as "new" for the 7-day change. OK as a manual-only tool?

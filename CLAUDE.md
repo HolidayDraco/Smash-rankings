@@ -35,7 +35,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 - `pnpm db:generate` / `pnpm db:migrate`: Drizzle migrations
 - `pnpm codegen`: regenerate start.gg GraphQL types
 - `pnpm job:discover -- --dry-run`: find events in the last 14 / next 30 days without writing to the DB (`--from` / `--to` override the window)
-- `pnpm job:sync -- --dry-run`: run a job without writing to the DB (sync is a stub until P1-2)
+- `pnpm job:sync -- --dry-run`: fetch sets/standings for qualifying events without writing (`--event <id>` for one event). Needs `DATABASE_URL` even in dry runs
 - `pnpm job:rate`: recompute ratings and rebuild the leaderboard. Needs only `DATABASE_URL`. `-- --dry-run` prints the top 20 without writing; `-- --as-of 2026-09-01` rates as of a past date
 
 ## start.gg rules (IMPORTANT: Terms of Use and rate limits)
