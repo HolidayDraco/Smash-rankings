@@ -53,6 +53,7 @@ test.describe("/methodology", () => {
       /conservative score/,
       "Who appears on the leaderboard",
       "Rank change over 7 days",
+      "When the numbers update",
       "Limits",
     ]) {
       await expect(page.getByRole("heading", { level: 2, name })).toBeVisible();

@@ -402,4 +402,19 @@ Details are in `docs/monitoring.md`.
    - Add its key ("DSN") as a GitHub Actions secret `SENTRY_DSN`, as `SENTRY_DSN` on the Vercel API project, and as `EXPO_PUBLIC_SENTRY_DSN` on the Vercel app project. That last one is public by design, so it's not a secret.
 2. Sentry's free plan's number of missed-run monitors isn't confirmed. If it's limited, set the GitHub Actions variable `SENTRY_CRONS` to `sync`.
 
+## 2026-10-03 — Phase 1: "How rankings work" and "Data status" pages
+
+**Date:** October 3, 2026
+
+**What changed:**
+
+- **How rankings work** (`/methodology`): the ranking rules in plain English. It covers what counts, how ratings move, why the list uses a "conservative score", who appears, rank changes, and how often the numbers update. The text is the same as `docs/METHODOLOGY.md`, and a test fails if the two ever drift apart.
+- **Data status** (`/status`): when each data job last ran, and whether it worked. This shows at a glance whether the numbers are fresh.
+- Both pages are linked from the footer on every page.
+- The browser tests can now run on other ports, so parallel runs don't collide.
+
+**What's next:** The scheduled data workflow (#16), once the Texas scope is settled, plus its small follow-up that turns on job alerts (`SENTRY_DSN` in the workflow).
+
+**Questions for Clay:** The methodology page still says "at least 64 entrants" and covers all regions. If the Texas-only, 16+ entrant change posted on PR #16 is confirmed, this text changes with it.
+
 **Questions for Genghis:** None.
