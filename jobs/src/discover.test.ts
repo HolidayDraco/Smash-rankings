@@ -129,6 +129,27 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await db.select().from(tournaments)).map((t) => t.id)).toEqual([5101, 5102]);
     });
 
+    it("stores the tournament city, refreshes it when it changes, and keeps a null one null", async () => {
+      await run([], [{ body: fixture("tournaments-edge") }], env);
+      const cities = async () =>
+        (await db.select().from(tournaments))
+          .map((t) => [t.id, t.city])
+          .sort((a, b) => Number(a[0]) - Number(b[0]));
+      expect(await cities()).toEqual([
+        [5101, "Austin"],
+        [5102, "Houston"],
+      ]);
+      const changed = edge();
+      const nodes = changed.data.tournaments.nodes;
+      (nodes[0] ?? {})["city"] = "Round Rock";
+      (nodes[1] ?? {})["city"] = null;
+      await run([], [{ body: changed }], env);
+      expect(await cities()).toEqual([
+        [5101, "Round Rock"],
+        [5102, null],
+      ]);
+    });
+
     it("stops a stored event qualifying when its tournament is out of the launch region", async () => {
       await run([], [{ body: fixture("tournaments-edge") }], env);
       const moved = edge();

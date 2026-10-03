@@ -21,6 +21,7 @@ interface World {
   addrStateFilter?: boolean;
   addrState?: string;
   countryCode?: string;
+  city?: string | null;
   idsAsStrings?: boolean;
   noTexasEvent?: boolean;
   rateLimitFirst?: boolean;
@@ -29,6 +30,7 @@ interface World {
   weirdSets?: boolean;
   introspectionBlocked?: boolean;
   missingEvent?: boolean;
+  cityRejected?: boolean;
 }
 
 function fakeClient(world: World = {}) {
@@ -42,6 +44,7 @@ function fakeClient(world: World = {}) {
     slug: "t",
     countryCode: world.countryCode ?? "US",
     addrState: state,
+    city: world.city === undefined ? "Austin" : world.city,
     isOnline: false,
     numAttendees: 40,
     startAt: 1,
@@ -110,6 +113,11 @@ function fakeClient(world: World = {}) {
       };
     }
     if (body.query.includes("TournamentsPage")) {
+      if (world.cityRejected && /^\s*city\s*$/m.test(body.query)) {
+        return {
+          json: { errors: [{ message: 'Cannot query field "city" on type "Tournament".' }] },
+        };
+      }
       if (world.complexityAbove && (body.variables?.perPage ?? 0) > world.complexityAbove) {
         return { json: { errors: [{ message: "Query complexity too high" }] } };
       }
@@ -201,6 +209,17 @@ function fakeClient(world: World = {}) {
 }
 
 describe("live check report", () => {
+  it("retries the tournaments step without city if start.gg rejects that field", async () => {
+    const { client, sent } = fakeClient({ cityRejected: true });
+    const result = await runLiveCheck(client);
+    expect(result.cityFieldRejected).toBe(true);
+    expect(result.tournaments?.totalInWindow).toBe(700);
+    const tournamentQueries = sent.filter((b) => b.query.includes("TournamentsPage"));
+    expect(tournamentQueries).toHaveLength(2);
+    expect(tournamentQueries[1]?.query).not.toMatch(/^\s*city\s*$/m);
+    expect(renderReport(result)).toContain("Tournament.city was rejected by start.gg");
+  });
+
   it("still probes the state filter when introspection is blocked", async () => {
     const { client, queries } = fakeClient({ introspectionBlocked: true });
     const result = await runLiveCheck(client);
@@ -240,6 +259,16 @@ describe("live check report", () => {
     expect(result.schema?.hasAddrStateFilter).toBe(false);
     expect(queries.some((q) => q.includes("LiveCheckState"))).toBe(false);
     expect(renderReport(result)).toContain("addrState (filter by state on start.gg's side): no");
+  });
+
+  it("reports a sample of city values, and counts empty ones", async () => {
+    const seen = await runLiveCheck(fakeClient({ addrState: "TX" }).client);
+    expect(seen.tournaments?.citySamples).toEqual(["Austin"]);
+    expect(seen.tournaments?.cityMissing).toBe(0);
+    expect(renderReport(seen)).toContain('"Austin"');
+    const empty = await runLiveCheck(fakeClient({ addrState: "TX", city: null }).client);
+    expect(empty.tournaments?.citySamples).toEqual([]);
+    expect(empty.tournaments?.cityMissing).toBe(1);
   });
 
   it("reports TX vs Texas and warns about values the region rule rejects", async () => {

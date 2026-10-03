@@ -46,6 +46,7 @@ type Tournament {
   slug: String
   countryCode: String
   addrState: String
+  city: String
   isOnline: Boolean
   numAttendees: Int
   startAt: Timestamp

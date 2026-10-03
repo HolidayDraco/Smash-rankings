@@ -57,6 +57,7 @@ const TAG_WORDS = [
 ];
 const COUNTRIES = ["US", "CA", "MX", "JP", "FR", "GB"];
 const TOURNAMENT_NAMES = ["Sample Showdown", "Sample Invitational", "Sample Regional"];
+const TOURNAMENT_CITIES = ["Austin", "Houston", "Dallas"];
 const SETS_PER_EVENT = 45;
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
@@ -102,6 +103,7 @@ export async function seedSynthetic(
     startAt: new Date(now.getTime() - (3 - index) * 3 * WEEK_MS),
     countryCode: "US",
     region: "TX",
+    city: TOURNAMENT_CITIES[index % TOURNAMENT_CITIES.length] ?? null,
     numAttendees: 32 + index * 32,
   }));
   const eventRows = tournamentRows.map((tournament, index) => ({

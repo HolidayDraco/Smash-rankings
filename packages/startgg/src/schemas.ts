@@ -72,6 +72,7 @@ const tournamentNode = z.object({
   slug: nullableString,
   countryCode: nullableString,
   addrState: nullableString,
+  city: nullableString,
   isOnline: z.boolean().nullable(),
   numAttendees: nullableInt,
   startAt: nullableInt,

@@ -23,6 +23,7 @@ query TournamentsPage(
       slug
       countryCode
       addrState
+      city
       isOnline
       numAttendees
       startAt

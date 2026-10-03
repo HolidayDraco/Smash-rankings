@@ -42,6 +42,7 @@ export const tournaments = pgTable("tournaments", {
   endAt: timestampTz("end_at"),
   countryCode: text("country_code"),
   region: text("region"),
+  city: text("city"),
   isOnline: boolean("is_online").notNull().default(false),
   numAttendees: integer("num_attendees"),
   syncedAt: timestampTz("synced_at"),
