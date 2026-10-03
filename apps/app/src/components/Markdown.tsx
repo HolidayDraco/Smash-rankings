@@ -20,21 +20,17 @@ function Inlines({ parts }: { parts: Inline[] }) {
             </Text>
           );
         if (part.kind === "link") {
-          const web =
+          // On web the anchor opens the tab itself; an onPress too would open it twice.
+          const linkProps =
             Platform.OS === "web"
               ? ({
                   href: part.href,
                   hrefAttrs: { target: "_blank", rel: "noopener noreferrer" },
+                  "aria-label": `${part.text} (opens in a new tab)`,
                 } as object)
-              : {};
+              : { onPress: () => void Linking.openURL(part.href) };
           return (
-            <Text
-              key={index}
-              role="link"
-              style={styles.link}
-              onPress={() => void Linking.openURL(part.href)}
-              {...web}
-            >
+            <Text key={index} role="link" style={styles.link} {...linkProps}>
               {part.text}
             </Text>
           );

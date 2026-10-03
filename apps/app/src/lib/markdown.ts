@@ -9,7 +9,7 @@ export type Block =
   | { kind: "paragraph"; inline: Inline[] }
   | { kind: "list"; items: Inline[][] };
 
-const INLINE = /\*\*([^*]+)\*\*|_([^_]+)_|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+const INLINE = /\*\*([^*]+)\*\*|_([^_]+)_|\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g;
 
 export function parseInline(source: string): Inline[] {
   const out: Inline[] = [];

@@ -13,8 +13,8 @@ const run = (job: JobStatus["job"], hours: number, ok: boolean | null = true): J
 
 describe("jobState", () => {
   it("is ok inside the window and late outside it, per job", () => {
-    expect(jobState(run("sync", 2.9), now)).toBe("ok");
-    expect(jobState(run("rate", 3.1), now)).toBe("late");
+    expect(jobState(run("sync", 3.9), now)).toBe("ok");
+    expect(jobState(run("rate", 4.1), now)).toBe("late");
     expect(jobState(run("discover", 25), now)).toBe("ok");
     expect(jobState(run("backfill", 27), now)).toBe("late");
   });
@@ -26,5 +26,12 @@ describe("jobState", () => {
       "never",
     );
     expect(jobState({ ...run("rate", 0.1), lastFinishedAt: null, ok: null }, now)).toBe("running");
+  });
+  it("treats a run that never finished as failed once it's past its window", () => {
+    // GitHub kills a run at its time limit without writing a finish time.
+    expect(jobState({ ...run("sync", 10), lastFinishedAt: null, ok: null }, now)).toBe("failed");
+    expect(jobState({ ...run("backfill", 27), lastFinishedAt: null, ok: null }, now)).toBe(
+      "failed",
+    );
   });
 });

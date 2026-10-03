@@ -23,6 +23,7 @@ describe("parseMarkdown", () => {
       { kind: "link", text: "d", href: "https://e.test/x" },
     ]);
     expect(parseInline("[x](javascript:alert(1))").some((i) => i.kind === "link")).toBe(false);
+    expect(parseInline("[x](http://e.test)").some((i) => i.kind === "link")).toBe(false);
   });
 });
 

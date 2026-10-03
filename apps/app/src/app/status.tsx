@@ -92,7 +92,7 @@ export default function StatusPage() {
       </Head>
       <View style={styles.column}>
         <DisplayText variant="h1">Status</DisplayText>
-        <BodyText muted>Is the data fresh? This page checks again every minute.</BodyText>
+        <BodyText muted>Is the data fresh? This page updates every few minutes.</BodyText>
         <LastUpdated />
         {query.isError ? (
           <View role="alert" style={styles.gap}>
@@ -132,8 +132,9 @@ export default function StatusPage() {
           ))}
         </View>
         <BodyText variant="bodySm" muted>
-          Pull results and Update rankings should run about every hour, so Late means over 3 hours.
-          Find new events and Catch up history run daily, so Late means over 26 hours.
+          Pull results and Update rankings run every 2 hours (hourly Friday to Monday), so Late
+          means over 4 hours. Find new events and Catch up history run daily, so Late means over 26
+          hours.
         </BodyText>
       </View>
     </Page>

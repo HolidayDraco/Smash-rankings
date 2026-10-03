@@ -19,7 +19,7 @@ const LABELS: Record<string, string> = {
   backfill: "Catch up history",
   rate: "Update rankings",
 };
-const LATE_AFTER_HOURS: Record<string, number> = { discover: 26, sync: 3, backfill: 26, rate: 3 };
+const LATE_AFTER_HOURS: Record<string, number> = { discover: 26, sync: 4, backfill: 26, rate: 4 };
 
 async function expectNoSeriousViolations(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -80,7 +80,9 @@ test.describe("/status", () => {
       const expected = !job.lastRunAt
         ? "Not run yet"
         : !job.lastFinishedAt
-          ? "Running"
+          ? ageHours < (LATE_AFTER_HOURS[job.job] ?? 0)
+            ? "Running"
+            : "Failed"
           : job.ok === false
             ? "Failed"
             : ageHours < (LATE_AFTER_HOURS[job.job] ?? 0)
