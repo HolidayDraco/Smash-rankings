@@ -543,3 +543,25 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 3. Please read the start.gg email draft. Send it when you're ready to share the site.
 
 **Questions for Genghis:** None open. The P1-12 follow-ups are listed at the end of `docs/startgg-notes.md`.
+
+---
+
+## 2026-10-03 — live check is now one command
+
+**Date:** 2026-10-03
+
+**What changed:**
+
+- Added the first start.gg live check as a single command: `pnpm live:check`. It was built and tested with pretend start.gg answers only; it has never touched the real service (this workspace has no token or network access to start.gg).
+- It uses about 7 requests (cap 25, plus at most 2 retries), always through our rate-limited client, and never prints the token.
+- It answers most of the open questions in plain English: can start.gg filter tournaments by state itself (that could shrink the history fill from about 8 weeks to a few nights), how it spells "Texas" and the country, whether ids are numbers or text, how disqualifications look, whether player profile links are visible, and how many requests the daily discover really needs. It does not answer player location, real error shapes, how set ordering behaves during a live event, or the 7-day cap for events that never finish; those stay on the pending list in `docs/startgg-notes.md`.
+- `--out report.md` saves the report. `--record` saves scrubbed copies of the real answers (gamer tags replaced) for future tests.
+- Added a short "How to run the live check" section to `docs/startgg-notes.md` and the command to the list in `CLAUDE.md`.
+
+**What's next:**
+
+- Once start.gg network access and the token are added to Claude's environment, run `pnpm live:check -- --out live-check.md`, then fix anything the report contradicts and move the answered items out of "Pending live check".
+
+**Questions for Clay:** Same as above: tell me when setup items 1, 2 and 5 are done and I'll run it.
+
+**Questions for Genghis:** None open.

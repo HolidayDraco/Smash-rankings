@@ -21,3 +21,6 @@ playwright-report/
 
 # apps/api bundle (built by `pnpm --filter @sr/api build`)
 apps/api/api/index.js
+
+# Output of `pnpm live:check -- --out live-check.md` (review before sharing)
+live-check.md

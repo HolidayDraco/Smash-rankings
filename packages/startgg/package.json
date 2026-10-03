@@ -9,9 +9,10 @@
   "scripts": {
     "codegen": "graphql-codegen --config codegen.ts",
     "schema:pull": "tsx scripts/pull-schema.ts",
-    "fixtures:record": "tsx scripts/record-fixtures.ts",
+    "fixtures:record": "tsx scripts/live-check.ts --record",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "live:check": "tsx scripts/live-check.ts"
   },
   "dependencies": {
     "@graphql-typed-document-node/core": "3.2.0",
