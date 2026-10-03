@@ -74,8 +74,14 @@ describe("argument parsing and helpers", () => {
     const code = await run(["--dry-run"], twoPages(), { STARTGG_TOKEN: TOKEN }, out);
     expect(code).toBe(0);
     expect(out).toEqual([
-      "[dry run] discover: 4 events found, 2 qualify, 0 online stored, 2 skipped; 2 requests",
+      "[dry run] discover: 4 events found, 2 qualify, 0 online stored, 2 skipped (0 outside the launch region); 2 requests",
     ]);
+  });
+  it("counts events skipped for being outside the launch region on their own", async () => {
+    const out: string[] = [];
+    const page = [{ body: fixture("tournaments-edge") }];
+    expect(await run(["--dry-run"], page, { STARTGG_TOKEN: TOKEN }, out)).toBe(0);
+    expect(out[0]).toMatch(/ skipped \(1 outside the launch region\)/);
   });
   it("exits with a usage error when the token is missing", async () => {
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
@@ -113,7 +119,7 @@ describe.skipIf(!testDatabaseUrl)(
       await close?.();
     });
 
-    it("skips a 63-entrant event, keeps 64, and stores the online event as non-qualifying", async () => {
+    it("skips a 15-entrant event and an out-of-state one, keeps 16, and stores the online event as non-qualifying", async () => {
       expect(await run([], [{ body: fixture("tournaments-edge") }], env)).toBe(0);
       const rows = await eventRows();
       expect(rows.map((r) => [r.id, r.qualifies, r.isOnline, r.syncStatus])).toEqual([
@@ -121,6 +127,18 @@ describe.skipIf(!testDatabaseUrl)(
         [9103, false, true, "pending"],
       ]);
       expect((await db.select().from(tournaments)).map((t) => t.id)).toEqual([5101, 5102]);
+    });
+
+    it("stops a stored event qualifying when its tournament is out of the launch region", async () => {
+      await run([], [{ body: fixture("tournaments-edge") }], env);
+      const moved = edge();
+      (moved.data.tournaments.nodes[0] ?? {})["addrState"] = "CA";
+      expect(await run([], [{ body: moved }], env)).toBe(0);
+      const rows = await eventRows();
+      expect(rows.map((r) => [r.id, r.qualifies])).toEqual([
+        [9101, false],
+        [9103, false],
+      ]);
     });
 
     it("skips doubles and small events", async () => {
@@ -179,11 +197,11 @@ describe.skipIf(!testDatabaseUrl)(
     it("stops a stored event qualifying when it is later classified skip, without inserting skipped ones", async () => {
       await run([], [{ body: fixture("tournaments-edge") }], env);
       const shrunk = edge();
-      firstEvent(shrunk)["numEntrants"] = 63;
+      firstEvent(shrunk)["numEntrants"] = 15;
       expect(await run([], [{ body: shrunk }], env)).toBe(0);
       const rows = await eventRows();
       expect(rows.map((r) => [r.id, r.qualifies, r.numEntrants])).toEqual([
-        [9101, false, 63],
+        [9101, false, 15],
         [9103, false, 128],
       ]);
     });
@@ -199,9 +217,9 @@ describe.skipIf(!testDatabaseUrl)(
       }
       const rows = await eventRows();
       expect(rows.map((r) => [r.id, r.slug])).toEqual([
-        [9101, "tournament/fake-edge/event/exactly-64~stale-9101"],
+        [9101, "tournament/fake-edge/event/exactly-16~stale-9101"],
         [9103, "tournament/fake-online/event/online-singles"],
-        [9999, "tournament/fake-edge/event/exactly-64"],
+        [9999, "tournament/fake-edge/event/exactly-16"],
       ]);
       const slugs = (await db.select().from(tournaments)).map((t) => [t.id, t.slug]);
       expect(slugs).toContainEqual([5101, "tournament/fake-5101~stale-5101"]);

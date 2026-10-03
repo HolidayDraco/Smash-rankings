@@ -6,7 +6,7 @@ _Draft. This page explains the numbers in plain English. The technical decision 
 
 - **Sets, not games.** A set win counts as a win and a set loss counts as a loss. The score inside the set (3-0 or 3-2) doesn't change anything.
 - **Only real results.** Disqualifications and forfeits are skipped, because nobody actually played.
-- **Only qualifying events.** In-person Super Smash Bros. Ultimate singles events on start.gg with at least 64 entrants. Online events and small weeklies don't count.
+- **Only qualifying events.** In-person Super Smash Bros. Ultimate singles events on start.gg, **held in Texas**, with **at least 16 entrants**. Online events and events outside Texas don't count. We may add more states later.
 - **One person, one rating.** If someone has more than one start.gg account and we've linked them, all their sets count for one player.
 - **The last 12 months.** Ratings are worked out from scratch over the last 52 weeks every time they update. Older results drop off as time moves on.
 

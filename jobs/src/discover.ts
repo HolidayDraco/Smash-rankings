@@ -1,5 +1,11 @@
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
-import { classifyEvent, isOnlineEvent, ULTIMATE_VIDEOGAME_ID, type EventClass } from "@sr/core";
+import {
+  classifyEvent,
+  isInLaunchRegion,
+  isOnlineEvent,
+  ULTIMATE_VIDEOGAME_ID,
+  type EventClass,
+} from "@sr/core";
 import { events, tournaments, type Database } from "@sr/db";
 import type { EventNode, TournamentNode } from "@sr/startgg";
 import { isMain, runJob, type JobContext, type JobResult } from "./harness";
@@ -21,6 +27,8 @@ export function classify(event: EventNode, tournament: TournamentNode): EventCla
     teamRosterSize: event.teamRosterSize,
     isOnline: event.isOnline,
     tournamentIsOnline: tournament.isOnline,
+    tournamentCountryCode: tournament.countryCode,
+    tournamentAddrState: tournament.addrState,
   });
 }
 
@@ -53,7 +61,7 @@ async function freeSlugs(
 
 /**
  * Events we already store that now classify as "skip" (entrants dropped, became
- * doubles, ...) must stop qualifying. Only existing rows are touched; none are inserted.
+ * doubles, moved out of the launch region, ...) must stop qualifying. Only existing rows are touched; none are inserted.
  */
 async function demoteSkipped(db: Database, skipped: EventNode[]): Promise<number> {
   const existing = await db
@@ -168,7 +176,8 @@ export async function discover(ctx: JobContext): Promise<JobResult> {
   const { args, client, db, deadline, now, progress } = ctx;
   const from = args.from ?? new Date(now() - DEFAULT_DAYS_BACK * DAY_MS);
   const to = args.to ?? new Date(now() + DEFAULT_DAYS_AHEAD * DAY_MS);
-  const counts = { found: 0, qualify: 0, online: 0, skipped: 0 };
+  // outOfRegion is part of skipped, counted apart so a run that finds no Texas events is visible.
+  const counts = { found: 0, qualify: 0, online: 0, skipped: 0, outOfRegion: 0 };
   let partial = false;
 
   for await (const page of client.tournamentsPages({
@@ -179,12 +188,14 @@ export async function discover(ctx: JobContext): Promise<JobResult> {
     const skippedEvents: EventNode[] = [];
     const keep: { tournament: TournamentNode; event: EventNode; qualifies: boolean }[] = [];
     for (const tournament of page.items) {
+      const inRegion = isInLaunchRegion(tournament);
       for (const event of tournament.events ?? []) {
         if (!event) continue;
         counts.found++;
         const kind = classify(event, tournament);
         if (kind === "skip") {
           counts.skipped++;
+          if (!inRegion) counts.outOfRegion++;
           skippedEvents.push(event);
         } else {
           if (kind === "qualifies") counts.qualify++;
@@ -210,7 +221,8 @@ export async function discover(ctx: JobContext): Promise<JobResult> {
     partial,
     summary:
       `${counts.found} events found, ${counts.qualify} qualify, ${counts.online} online stored, ` +
-      `${counts.skipped} skipped${partial ? " (stopped early: time budget)" : ""}`,
+      `${counts.skipped} skipped (${counts.outOfRegion} outside the launch region)` +
+      `${partial ? " (stopped early: time budget)" : ""}`,
   };
 }
 

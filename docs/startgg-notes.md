@@ -55,10 +55,20 @@ At the defaults, a 2,000-entrant double-elimination event (about 4,000 sets) is 
 
 Signals still pending a live check, each in one function in `packages/core/src/qualifying.ts`: `isSinglesEvent` (Event.type 1) and `isOnlineEvent` (event flag, then tournament flag; unknown counts as in person).
 
+### Region rule (ADR-0003)
+
+- Only tournaments in a launch region are stored: `LAUNCH_REGIONS` in `packages/core/src/constants.ts` (US, state TX). `classifyEvent` is the single place that decides; events outside the region are "skip" (not stored; an already-stored one is demoted when discover next sees it). Online events have no state, so they skip too, unless their tournament is tagged with a Texas state, in which case they stay "stored-not-qualifying".
+- The field we read is `Tournament.addrState` (with `Tournament.countryCode`). The check is case-insensitive and accepts "TX" or "Texas"; a null country relies on the state alone.
+- **Request cost of discover is unchanged by the region rule.** It still pages every Ultimate tournament nationwide and filters locally.
+- ⚠ Unverified (P1-12 live check): whether `addrState` holds "TX" or "Texas" (or something else, such as a lowercase or padded value).
+- ⚠ Unverified (P1-12): the `countryCode` format. We expect "US". If it is something else (e.g. "USA"), every Texas event would be skipped, so discover's summary reports "N outside the launch region" separately: check it on the first live run.
+- **Changing `LAUNCH_REGIONS`:** sync, rate and the API trust `events.qualifies`. Discover only re-classifies events in the window it reads (14 days back to 30 ahead), so after adding or removing a state, run discover once over the last 12 months (`--from`) so every stored event is re-checked.
+- ⚠ Unverified (P1-12): whether `TournamentPageFilter` has server-side `addrState` / `countryCode` filters. Our trimmed schema does not include them. If they exist, using them would cut discover requests sharply; keep the local check as a backstop.
+
 ### Discover: reruns, stale flags, and slug clashes
 
 - Tournaments are paged by `startAt`, so pages can shift while the run is going (a tournament added mid-run). The daily rerun catches anything missed.
-- If a stored event now classifies as skip (fewer than 64 entrants, switched to doubles), its `qualifies` is set to false and `num_entrants` refreshed. Only existing rows are updated; skipped events are never inserted.
+- If a stored event now classifies as skip (fewer than 16 entrants, switched to doubles, tournament outside the launch region), its `qualifies` is set to false and `num_entrants` refreshed. Only existing rows are updated; skipped events are never inserted.
 - `tournaments.slug` and `events.slug` are unique, but a recreated tournament or event arrives with a new id and the old slug. Before upserting, the old row keeps its data and its slug is renamed to `<slug>~stale-<oldId>`. That cannot clash again, so the run neither fails nor loops, and nothing is deleted.
 
 ## Sync job (P1-2)
@@ -73,4 +83,4 @@ Signals still pending a live check, each in one function in `packages/core/src/q
 
 **Per page:** sets are fetched 40 per page (completed only). Players, sets, and the `events.sync_cursor` checkpoint (`{"page","perPage"}`) are saved in one transaction. Standings follow (100 per page); standings for a player we never saw in a set are skipped and counted. On the last sets page the cursor keeps pointing at that page, so a stop during standings redoes one page only.
 
-**Request estimate:** per event, `ceil(sets / 40) + ceil(entrants / 100)`. A 64-entrant event has about 120 sets, so about 3 + 1 = 4 requests; a 256-entrant event about 500 sets, so about 13 + 3 = 16. A run of the full cap of 25 events is therefore roughly 100 to 400 requests, about 2 to 7 minutes at the 60 requests per minute limit. The one re-check costs the same as a first sync, and each live event costs that again every run. Not measured live.
+**Request estimate:** per event, `ceil(sets / 40) + ceil(entrants / 100)`. A 64-entrant event has about 120 sets, so about 3 + 1 = 4 requests (a 16-entrant local is about 30 sets, so 1 + 1 = 2); a 256-entrant event about 500 sets, so about 13 + 3 = 16. A run of the full cap of 25 events is therefore roughly 100 to 400 requests, about 2 to 7 minutes at the 60 requests per minute limit. The one re-check costs the same as a first sync, and each live event costs that again every run. Not measured live.

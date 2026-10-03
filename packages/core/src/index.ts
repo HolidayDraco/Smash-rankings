@@ -3,4 +3,5 @@ export * from "./constants";
 export * from "./env";
 export * from "./qualifying";
 export * from "./rating-period";
+export * from "./region";
 export * from "./scrub";

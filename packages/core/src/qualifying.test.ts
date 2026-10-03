@@ -1,29 +1,51 @@
 import { describe, expect, it } from "vitest";
+import { isInLaunchRegion } from "./region";
 import { classifyEvent, isOnlineEvent, isSinglesEvent, type EventFacts } from "./qualifying";
 
 const base: EventFacts = {
   videogameId: 1386,
-  numEntrants: 64,
+  numEntrants: 16,
   type: 1,
   teamRosterSize: null,
   isOnline: false,
+  tournamentCountryCode: "US",
+  tournamentAddrState: "TX",
 };
 
 describe("classifyEvent", () => {
-  it("qualifies in-person Ultimate singles with exactly 64 entrants", () => {
+  it("qualifies in-person Texas Ultimate singles with exactly 16 entrants", () => {
     expect(classifyEvent(base)).toBe("qualifies");
   });
-  it("skips 63 entrants", () => {
-    expect(classifyEvent({ ...base, numEntrants: 63 })).toBe("skip");
+  it("skips 15 entrants", () => {
+    expect(classifyEvent({ ...base, numEntrants: 15 })).toBe("skip");
   });
   it("skips unknown entrant counts", () => {
     expect(classifyEvent({ ...base, numEntrants: null })).toBe("skip");
   });
-  it("stores (but does not qualify) online events with 64 or more entrants", () => {
+  it("stores (but does not qualify) online Texas-tagged events with 16 or more entrants", () => {
     expect(classifyEvent({ ...base, isOnline: true })).toBe("stored-not-qualifying");
   });
-  it("skips online events with fewer than 64 entrants", () => {
-    expect(classifyEvent({ ...base, isOnline: true, numEntrants: 63 })).toBe("skip");
+  it("skips online events with fewer than 16 entrants", () => {
+    expect(classifyEvent({ ...base, isOnline: true, numEntrants: 15 })).toBe("skip");
+  });
+  it("skips online events with no state", () => {
+    const online = { ...base, isOnline: true, tournamentAddrState: null };
+    expect(classifyEvent(online)).toBe("skip");
+  });
+  it("skips events outside the launch region, however large", () => {
+    expect(classifyEvent({ ...base, numEntrants: 500, tournamentAddrState: "CA" })).toBe("skip");
+    expect(classifyEvent({ ...base, tournamentCountryCode: "CA" })).toBe("skip");
+  });
+  it("skips events whose location is unknown", () => {
+    expect(classifyEvent({ ...base, tournamentCountryCode: null, tournamentAddrState: null })).toBe(
+      "skip",
+    );
+    const { tournamentCountryCode: _c, tournamentAddrState: _s, ...noLocation } = base;
+    expect(classifyEvent(noLocation)).toBe("skip");
+  });
+  it("accepts the full state name and a missing country", () => {
+    expect(classifyEvent({ ...base, tournamentAddrState: "Texas" })).toBe("qualifies");
+    expect(classifyEvent({ ...base, tournamentCountryCode: null })).toBe("qualifies");
   });
   it("skips doubles even when large", () => {
     const doubles = { ...base, numEntrants: 200, type: 5, teamRosterSize: { maxPlayers: 2 } };
@@ -32,6 +54,34 @@ describe("classifyEvent", () => {
   it("skips other games", () => {
     expect(classifyEvent({ ...base, videogameId: 1 })).toBe("skip");
     expect(classifyEvent({ ...base, videogameId: null })).toBe("skip");
+  });
+});
+
+describe("isInLaunchRegion", () => {
+  const where = (countryCode: string | null, addrState: string | null) =>
+    isInLaunchRegion({ countryCode, addrState });
+  it("matches the code and the full name, ignoring case and padding", () => {
+    for (const state of ["TX", "tx", "Texas", "TEXAS", " tx "]) {
+      expect(where("US", state)).toBe(true);
+    }
+  });
+  it("relies on the state alone when the country is null", () => {
+    expect(where(null, "TX")).toBe(true);
+    expect(where(null, "CA")).toBe(false);
+  });
+  it("is false for a non-US country, even with a Texas-looking state", () => {
+    expect(where("CA", "TX")).toBe(false);
+    expect(where("MX", "Texas")).toBe(false);
+  });
+  it("is false for other states and for no state", () => {
+    expect(where("US", "CA")).toBe(false);
+    expect(where("US", "Oklahoma")).toBe(false);
+    expect(where("US", null)).toBe(false);
+    expect(where(null, null)).toBe(false);
+  });
+  it("adding a state is a config change", () => {
+    const region = { countryCode: "US", states: ["TX", "OK"] };
+    expect(isInLaunchRegion({ countryCode: "US", addrState: "ok" }, region)).toBe(true);
   });
 });
 

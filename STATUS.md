@@ -441,3 +441,28 @@ Updated: `docs/blueprint.md` (decision 2 changed, decision 9 added, older notes 
 **Questions for Clay:** One yes/no, no rush: should out-of-state visitors who play enough Texas events appear on the leaderboard? The default is **yes**, so everyone who plays at Texas events is rated.
 
 **Questions for Genghis:** None. Your scope comment on #16 is now on `main`.
+
+---
+
+## 2026-10-03 — Code for the Texas scope (16+ entrants)
+
+**Date:** October 3, 2026
+
+**What changed:** The code now matches the scope Clay confirmed:
+
+- **Texas only.** A new setting, `LAUNCH_REGIONS`, lists the places we cover (United States, state TX). Adding a state later means adding it to that list (plus its full name), then re-checking the last 12 months of events. Events held anywhere else are skipped and not stored. If an already-stored event turns out to be outside Texas, it stops counting the next time we check it.
+- **16+ entrants.** The cutoff for in-person singles events went from 64 to 16. Online events still never count.
+- **Wording.** The methodology page (and `docs/METHODOLOGY.md`) now say "held in Texas" and "at least 16 entrants", and mention more states may come.
+- **Test data.** The made-up sample events and the seed data are now in Texas, and there is a made-up California event to prove it gets skipped.
+- `docs/startgg-notes.md` records the rule and what is still unchecked: whether start.gg writes the state as "TX" or "Texas", and whether start.gg can filter by state on its side (which would cut the number of requests).
+
+Discover still reads every Ultimate tournament nationwide and filters locally, so its request count is unchanged by this PR.
+
+**What's next:**
+
+1. Rebase PR #16 (scheduled jobs) on this and re-check the request budget for many more, smaller events.
+2. The live check (P1-12) to confirm the state format and the server-side filter.
+
+**Questions for Clay:** None.
+
+**Questions for Genghis:** None.

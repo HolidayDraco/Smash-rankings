@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  LAUNCH_REGIONS,
   LEADERBOARD_ELIGIBILITY,
   QUALIFYING_EVENT_RULES,
+  STATE_NAMES,
   ULTIMATE_VIDEOGAME_ID,
 } from "./constants";
 
@@ -10,12 +12,20 @@ describe("locked product constants", () => {
     expect(ULTIMATE_VIDEOGAME_ID).toBe(1386);
   });
 
-  it("matches blueprint decisions 2 and 3", () => {
+  it("matches blueprint decisions 2 and 3 as amended by ADR-0003", () => {
     expect(QUALIFYING_EVENT_RULES).toEqual({
-      minEntrants: 64,
+      minEntrants: 16,
       allowOnline: false,
       singlesOnly: true,
     });
+  });
+
+  it("launches in Texas only", () => {
+    expect(LAUNCH_REGIONS).toEqual({ countryCode: "US", states: ["TX"] });
+  });
+
+  it("has a full name for every launch state, so either spelling matches", () => {
+    for (const code of LAUNCH_REGIONS.states) expect(STATE_NAMES[code]).toBeTruthy();
   });
 
   it("matches the ADR-0002 eligibility defaults", () => {
