@@ -44,5 +44,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // UI code and browser-driven scripts run in a browser or React Native runtime.
+    files: ["apps/app/**", "packages/ui/**", "e2e/**"],
+    languageOptions: { globals: { ...globals.browser } },
+  },
   prettier,
 );

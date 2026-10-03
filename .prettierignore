@@ -7,3 +7,7 @@ coverage
 # drizzle-kit output, committed verbatim
 packages/db/migrations
 **/generated/**
+apps/app/dist
+.expo
+playwright-report
+test-results
