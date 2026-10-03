@@ -510,21 +510,27 @@ Discover still reads every Ultimate tournament nationwide and filters locally, s
   - **Sentry error alerts.**
   - **Texas only, 16+ entrants** (#20, #21).
 - **A start.gg courtesy email** is drafted in `docs/startgg-email-draft.md`, for you to send before sharing the site. Nothing has been sent.
+- **Fix found while writing this checklist:** the scheduled jobs now create the database tables themselves before running. Without this, the first run against a new Neon database would have failed.
 
 **What's next:** the first live run (P1-12). It needs your setup. Nothing costs money, since everything uses free plans. In order:
 
 1. ☐ **start.gg token:** start.gg → Settings → Developer Settings → create a token. Add it as the GitHub Actions secret `STARTGG_TOKEN` (repo → Settings → Secrets and variables → Actions).
 2. ☐ **Neon database (free):** create a project. Copy its connection string and add it as the GitHub secret `DATABASE_URL`.
 3. ☐ **Vercel, two projects from this repo (free Hobby plan):**
-   - **App:** Root Directory `apps/app`. Add the setting `EXPO_PUBLIC_API_URL` = the API project's address.
-   - **API:** Root Directory `apps/api`, Framework "Other". Add the settings `DATABASE_URL`, plus `ALLOWED_ORIGINS` = the app's address.
+   - **API:** Root Directory `apps/api`, Framework "Other". Add the settings `DATABASE_URL` (same Neon string) and `ALLOWED_ORIGINS` = the app's full address, starting with `https://`.
+   - **App:** Root Directory `apps/app`. Add the setting `EXPO_PUBLIC_API_URL` = the API's full address, starting with `https://`.
+   - These settings are read when the site is built, so after adding or changing one, press **Redeploy** on that project.
+   - Optional, so PR preview links can load data: `ALLOWED_ORIGIN_PATTERN` on the API project. Tell me the app project's name and I'll give you the exact value to paste.
 4. ☐ **Sentry (optional, free):** create a project. Add its DSN as:
    - the GitHub secret `SENTRY_DSN`
    - `SENTRY_DSN` on the Vercel API project
-   - `EXPO_PUBLIC_SENTRY_DSN` on the Vercel app project
-5. ☐ **Claude's cloud environment:** allow network access to `api.start.gg` so Claude can run the live check.
+   - `EXPO_PUBLIC_SENTRY_DSN` on the Vercel app project (then Redeploy)
+5. ☐ **Claude's cloud environment** (claude.ai → Claude Code → this environment's settings), so Claude can run the live check:
+   - allow network access to `api.start.gg`
+   - add the same start.gg token as the environment secret `STARTGG_TOKEN`
+   - Never paste the token or the database string into chat.
 
-Once 1 and 2 are done, the jobs start on their own schedule. The first history fill starts that night, or right away from the GitHub Actions tab → Ingest → "Run workflow". Then the live check confirms several things:
+Once 1 and 2 are done, the jobs start on their own schedule. Each run first creates or updates the database tables (safe to repeat), so there's nothing to set up inside Neon. The first history fill starts that night. To start it right away: GitHub → Actions tab → Ingest → "Run workflow", and choose **backfill** in the "Which job to run" list. Then the live check confirms several things:
 - how start.gg writes "Texas"
 - whether start.gg can filter tournaments by state on its side, which could cut the history fill from about 8 weeks to a few nights
 - the disqualification format

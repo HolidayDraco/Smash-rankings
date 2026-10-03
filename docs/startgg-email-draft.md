@@ -14,10 +14,10 @@ Before we share it publicly, I wanted to let you know how it uses the API and ma
 
 - **One API token**, used only by our scheduled data jobs. The website itself never calls start.gg.
 - **Polite request rate:** our client stays at or under 60 requests a minute, backs off when asked, and uses a small daily budget for finding new tournaments.
-- **Minimum data:** we only read what we display or need to rate players: tournaments and events, sets (winners and losers), standings, and each player's tag, sponsor prefix, and public profile link. No emails, no personal details.
+- **Minimum data:** we only read what we display or need to rate players: tournaments and events (name, dates, state and country, entrant count, online or not), sets (who played, who won, score, round, when), final placements, and each player's start.gg id, tag, sponsor prefix and profile link. No emails, no personal details.
 - **No re-distribution:** there's no export or bulk download. People see rankings and player pages, nothing more.
-- **Attribution:** every page shows "Data from start.gg" with a link back to start.gg, and player pages link to the player's start.gg profile.
-- **Scope:** in-person Ultimate singles events held in Texas with at least 16 entrants.
+- **Attribution:** every page shows "Data from start.gg" with a link back to start.gg, and player pages link to the player's start.gg profile when they have one.
+- **Scope:** we look through Ultimate tournament listings by date and keep only events held in Texas. Only in-person singles events with 16 or more entrants count toward the rankings.
 
 If you'd like anything done differently, for example a lower request rate, different wording or placement for the attribution, or something we shouldn't show, just let me know and we'll change it.
 

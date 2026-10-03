@@ -83,6 +83,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Apply database migrations (creates the tables on first run; safe to repeat)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm db:migrate
       - name: Sync (runs discover first if it has not succeeded in 24 h)
         env:
           STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
@@ -108,6 +112,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Apply database migrations (creates the tables on first run; safe to repeat)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm db:migrate
       - name: Backfill (75 minute budget, resumes next night)
         env:
           STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
@@ -139,6 +147,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Apply database migrations (creates the tables on first run; safe to repeat)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm db:migrate
       - name: Rate (also writes the top 20 and database size to the summary)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
