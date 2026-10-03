@@ -119,6 +119,7 @@ CREATE INDEX "events_sync_queue_idx" ON "events" USING btree ("qualifies","sync_
 CREATE INDEX "ingest_runs_job_started_at_idx" ON "ingest_runs" USING btree ("job","started_at");--> statement-breakpoint
 CREATE INDEX "leaderboard_rank_idx" ON "leaderboard" USING btree ("rank");--> statement-breakpoint
 CREATE INDEX "leaderboard_country_rank_idx" ON "leaderboard" USING btree ("country_code","rank");--> statement-breakpoint
+CREATE INDEX "players_merged_into_idx" ON "players" USING btree ("merged_into");--> statement-breakpoint
 CREATE INDEX "sets_winner_id_idx" ON "sets" USING btree ("winner_id");--> statement-breakpoint
 CREATE INDEX "sets_loser_id_idx" ON "sets" USING btree ("loser_id");--> statement-breakpoint
 CREATE INDEX "sets_event_id_idx" ON "sets" USING btree ("event_id");--> statement-breakpoint

@@ -33,6 +33,11 @@ const UNIQUE_VIOLATION = "23505";
 const FOREIGN_KEY_VIOLATION = "23503";
 const CHECK_VIOLATION = "23514";
 
+// CI must always run this suite; a silent skip would hide a broken database setup.
+if (process.env.CI && !testDatabaseUrl) {
+  throw new Error("TEST_DATABASE_URL must be set in CI");
+}
+
 describe.skipIf(!testDatabaseUrl)(
   "database schema (skipped: TEST_DATABASE_URL is not set; CI always sets it)",
   () => {
@@ -102,6 +107,19 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await db.select().from(events))[0]?.syncStatus).toBe("pending");
       expect(await db.select().from(sets).where(eq(sets.winnerId, 1))).toEqual([
         expect.objectContaining({ id: 100, isDq: false, completedAt }),
+      ]);
+      // A DQ set stores null games (start.gg's -1 never reaches the table).
+      await db.insert(sets).values({
+        id: 104,
+        eventId: 10,
+        winnerId: 2,
+        loserId: 1,
+        isDq: true,
+        winnerGames: null,
+        loserGames: null,
+      });
+      expect(await db.select().from(sets).where(eq(sets.isDq, true))).toEqual([
+        expect.objectContaining({ id: 104, winnerGames: null, loserGames: null }),
       ]);
       expect((await db.select().from(standings))[0]?.placement).toBe(1);
       expect((await db.select().from(ratingHistory))[0]?.volatility).toBe(0.05999);

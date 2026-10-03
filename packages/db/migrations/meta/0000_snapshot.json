@@ -1,5 +1,5 @@
 {
-  "id": "64ade598-6824-47d6-af2d-addbef7f804a",
+  "id": "99f31660-985b-4502-a114-77ac8a186810",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -468,7 +468,23 @@
           "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "players_merged_into_idx": {
+          "name": "players_merged_into_idx",
+          "columns": [
+            {
+              "expression": "merged_into",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "players_merged_into_players_id_fk": {
           "name": "players_merged_into_players_id_fk",

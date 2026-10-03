@@ -75,18 +75,22 @@ export const events = pgTable(
   ],
 );
 
-export const players = pgTable("players", {
-  id: startggId("id").primaryKey(),
-  gamerTag: text("gamer_tag").notNull(),
-  prefix: text("prefix"),
-  countryCode: text("country_code"),
-  region: text("region"),
-  userSlug: text("user_slug"),
-  /** Set when this player is a manual alias of another player. */
-  mergedInto: startggId("merged_into").references((): AnyPgColumn => players.id, {
-    onDelete: "set null",
-  }),
-});
+export const players = pgTable(
+  "players",
+  {
+    id: startggId("id").primaryKey(),
+    gamerTag: text("gamer_tag").notNull(),
+    prefix: text("prefix"),
+    countryCode: text("country_code"),
+    region: text("region"),
+    userSlug: text("user_slug"),
+    /** Set when this player is a manual alias of another player. */
+    mergedInto: startggId("merged_into").references((): AnyPgColumn => players.id, {
+      onDelete: "set null",
+    }),
+  },
+  (table) => [index("players_merged_into_idx").on(table.mergedInto)],
+);
 
 export const sets = pgTable(
   "sets",
@@ -101,6 +105,7 @@ export const sets = pgTable(
     loserId: startggId("loser_id")
       .notNull()
       .references(() => players.id),
+    /** DQ sets: is_dq = true and games stored as null (start.gg reports a DQ as -1). */
     winnerGames: integer("winner_games"),
     loserGames: integer("loser_games"),
     isDq: boolean("is_dq").notNull().default(false),
@@ -155,7 +160,8 @@ export const ratingHistory = pgTable(
 
 /**
  * Rebuilt by each rate run inside one transaction (delete + insert), which
- * Postgres makes atomic for readers.
+ * Postgres makes atomic for readers. Use DELETE, never TRUNCATE: TRUNCATE is
+ * not MVCC-safe and blocks readers.
  */
 export const leaderboard = pgTable(
   "leaderboard",
