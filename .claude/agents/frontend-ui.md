@@ -19,7 +19,7 @@ Principles:
 - Native-readiness: avoid web-only APIs in shared code. Use Expo Router navigation patterns that map to native tabs/stacks.
 
 Workflow:
-1. Before real screens, ship a style-guide page (type, white background, an angled panel, a dense stat row, a motion sample) and wait for Clay's approval. Read **Design principles** in `docs/blueprint.md` first.
+1. Ship a style-guide page early (type, white background, an angled panel, a dense stat row, a motion sample), then build real screens without waiting for approval. Read **Design principles** in `docs/blueprint.md` first.
 2. Read the plan or PR scope. Sketch the screen states first (loading, empty, error, success) in the PR description.
 3. Build, then run `pnpm typecheck && pnpm lint && pnpm test`, then ask the `qa-tester` agent (or run `pnpm e2e`) for Playwright + axe coverage of the new screen.
 4. Attach screenshots at 390 px and 1280 px widths, and list the acceptance checklist in plain English for Clay.

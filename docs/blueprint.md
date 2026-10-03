@@ -31,7 +31,7 @@ Set by Clay on Oct 3, 2026. This replaces the dark-theme default.
 - **Echo Ultimate's UI with original work.** Bold condensed italic-leaning sans for display type. Angled panels and diagonal cuts. Tight, dense stat layouts. Strong color accents. Snappy motion. Evoke the feel. Do not copy screens, icons, or layouts.
 - **Fonts (Google Fonts, SIL Open Font License only).** Display: [Barlow Condensed](https://fonts.google.com/specimen/Barlow+Condensed) ExtraBold or Black Italic. UI and body: [Barlow](https://fonts.google.com/specimen/Barlow). If the style guide needs a sportier display, try [Saira Condensed](https://fonts.google.com/specimen/Saira+Condensed) Bold or Black Italic. Never use Nintendo's fonts.
 - **No Nintendo assets.** No Nintendo fonts, logos, character art, or other Nintendo or Smash assets. Flags and original text only.
-- **Style guide before screens.** The frontend agent ships a style-guide page early (type, color, an angled panel, a dense stat row, a motion sample) and waits for Clay's approval before building real screens.
+- **Style guide before screens.** The frontend agent ships a style-guide page early (type, color, an angled panel, a dense stat row, a motion sample), then builds real screens without waiting for approval. The page is still a deliverable. It is not an approval stop. Decided October 3, 2026.
 
 ---
 
@@ -223,7 +223,7 @@ Phase 3 reuses `apps/app` and adds native value so the app clears Apple guidelin
 4. Add secrets: GitHub → Settings → Secrets → Actions (`STARTGG_TOKEN`, `DATABASE_URL`, `SENTRY_DSN`); Vercel env vars (`DATABASE_URL`, `SENTRY_DSN`); Claude cloud environment → **Custom** network access adding `api.start.gg`, plus the start.gg token as an **API credential** (Pro/Max) so Claude never sees it [C5].
 5. Turn on branch protection for `main`: require PR plus green CI.
 
-**Claude builds:** monorepo scaffold; `CLAUDE.md` + `.claude/agents/*`; CI (lint, typecheck, unit tests, build); Drizzle schema + first migration; start.gg client with codegen, rate limiter, and recorded fixtures; Glicko-2 package passing the Glickman example; Expo app shell deployed to Vercel (SSR spike), including a style-guide page for Clay's approval before any real screens (see [Design principles](#design-principles)); ADR-0001 (stack) and ADR-0002 (ranking).
+**Claude builds:** monorepo scaffold; `CLAUDE.md` + `.claude/agents/*`; CI (lint, typecheck, unit tests, build); Drizzle schema + first migration; start.gg client with codegen, rate limiter, and recorded fixtures; Glicko-2 package passing the Glickman example; Expo app shell deployed to Vercel (SSR spike), including a style-guide page built early, then real screens without waiting for approval (see [Design principles](#design-principles)); ADR-0001 (stack) and ADR-0002 (ranking).
 **Acceptance checklist (Clay):** ☐ Opening the PR preview link on your phone shows the app shell ☐ The style-guide page shows a white background, condensed italic display type, one angled panel, and one dense stat row ☐ CI shows green checks ☐ `docs/adr/` has 2 ADRs in plain English ☐ No secrets in the repo (Claude shows the output of a secret scan).
 
 ### Phase 1: MVP web (≈ 4–8 PRs)
@@ -231,7 +231,7 @@ Discover + sync + backfill (last 12 months first), rate job, leaderboard page (t
 **Acceptance checklist:** ☐ Leaderboard loads on phone in < 2 s ☐ The top 20 look plausible next to UltRank/community expectations (Clay eyeballs it, since it won't match exactly) ☐ Searching a known player works ☐ "Last updated" is under 3 h old ☐ The Methodology page explains the ranking in plain language ☐ The attribution is visible.
 
 ### Phase 2: Polish and features
-Rich player pages (rating chart, event history, best wins), **head-to-head** page, **regional filters** (country → state/region), tournament pages, upcoming majors list, weekend "live mode" banner, SEO metadata/OG images, visual polish against the approved style guide (light theme only), accessibility pass (axe clean, keyboard, screen reader labels), Vercel Web Analytics, backtest report (Glicko-2 vs Elo vs OpenSkill), local "favorites."
+Rich player pages (rating chart, event history, best wins), **head-to-head** page, **regional filters** (country → state/region), tournament pages, upcoming majors list, weekend "live mode" banner, SEO metadata/OG images, visual polish against the style guide (light theme only), accessibility pass (axe clean, keyboard, screen reader labels), Vercel Web Analytics, backtest report (Glicko-2 vs Elo vs OpenSkill), local "favorites."
 **Acceptance:** ☐ H2H for any two players shows the set record and list ☐ The region filter changes the leaderboard ☐ axe reports zero serious/critical issues ☐ Lighthouse mobile performance ≥ 90 (⚠ target, not a guarantee).
 
 ### Phase 3: Mobile app
@@ -284,7 +284,7 @@ EAS project, icons/splash, native tabs, follow + push notifications, offline cac
 ---
 
 ## 8. How Clay steers (without reading code)
-- **Every change is a PR** with: a plain-English summary, an "Acceptance checklist" with ☐ items, a **Vercel preview link**, screenshots (mobile width), and test evidence (CI green, test counts). Clay taps the link, checks the boxes, then comments "approved" or describes what to change. Claude merges only after Clay approves (or Clay taps Merge).
+- **Every change is a PR** with: a plain-English summary, an "Acceptance checklist" with ☐ items, a **Vercel preview link**, screenshots (mobile width), and test evidence (CI green, test counts). Clay can open the preview and comment. **Once tests and review pass, Claude merges the PR.** No approval stop. That includes the style guide page. Decided October 3, 2026.
 - **Auto-fix** on PRs lets Claude fix failing CI or respond to Clay's review comments automatically [C3].
 - **Milestone check-ins:** at the end of each phase, and at the end of every work session, Claude updates `STATUS.md` (repo root) with what shipped, what's next, and open questions, and includes the same summary in the PR.
 - **Change direction anytime:** start a new cloud session from the phone with "Read docs/blueprint.md and STATUS.md. I want to change X." The architect agent updates the plan and ADRs first, then building resumes.

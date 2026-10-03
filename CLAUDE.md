@@ -5,7 +5,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 
 ## Who you're working for
 - The owner, Clay, is **not an engineer**. Write PR descriptions, ADRs, and status notes in plain English. Explain any jargon you can't avoid.
-- Clay steers through PRs: a preview link, screenshots, and an acceptance checklist. Never merge without his approval unless he says so in the session.
+- Clay steers through PRs: a preview link, screenshots, and an acceptance checklist. Once tests and review pass, merge the PR. Do not wait for his approval. This covers every PR, including the style guide page. Decided October 3, 2026.
 - The eight choices at the top of `docs/blueprint.md` are locked, including the Oct 3, 2026 light-theme change to decision 8. See **Decisions locked** and **Design principles**. Don't re-ask them. For any new product-facing choice, ask, or use a stated default and say so in the PR.
 
 ## Session start, status, and PR comments
@@ -54,7 +54,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 - Keep the ranking engine pure and deterministic. The same input gives the same output, with no `Date.now()` inside the math.
 - DB changes go through Drizzle migrations only. Never edit an applied migration. Migrations must be additive or include a data-safe plan in the PR.
 - Every job is idempotent and resumable (checkpoint cursors in `events.sync_cursor`) and logs one `ingest_runs` row.
-- UI: white light theme per **Design principles** in `docs/blueprint.md`. Accessible by default (labels, roles, contrast ≥ 4.5:1, keyboard on web). No Nintendo fonts, logos, or character art. Mobile-first layouts. The frontend agent ships a style-guide page for Clay's approval before real screens.
+- UI: white light theme per **Design principles** in `docs/blueprint.md`. Accessible by default (labels, roles, contrast ≥ 4.5:1, keyboard on web). No Nintendo fonts, logos, or character art. Mobile-first layouts. The frontend agent ships a style-guide page early, then builds real screens without waiting for approval.
 - Use path aliases from `packages/config`. No deep relative imports across packages.
 - Name things for what they are: `conservativeScore`, not `cs`.
 
@@ -70,6 +70,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 - Plan first for anything touching more than ~3 files: write the plan in the PR description, or in `docs/plans/` for big items.
 - PR description template: **What & why (plain English)** · **Phone-friendly checklist of what to look at in the preview** · **Preview link** · **Screenshots (mobile width)** · **Acceptance checklist (☐)** · **Test evidence** (commands + results) · **Risks / follow-ups**.
 - Before marking ready: run the `code-reviewer` subagent on the diff and address its critical findings.
+- After the code-reviewer verdict is Ready and CI is green, merge the PR into `main`. Do not wait for Clay's approval. This applies to every PR, including the style guide page.
 
 ## Definition of done (every PR)
 1. `pnpm lint && pnpm typecheck && pnpm test` pass locally and in CI. `pnpm e2e` passes for UI changes.
@@ -77,6 +78,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 3. There are tests for new behavior, no secrets in the diff, and attribution is present where start.gg data appears.
 4. Docs are updated: `STATUS.md` (Date, What changed, What's next, Questions for Clay, Questions for Genghis), plus an ADR if a stack or architecture decision changed, plus METHODOLOGY.md if ranking changed.
 5. The PR description is complete and the acceptance checklist is written for a non-engineer.
+6. Once the checks above pass and the code-reviewer says Ready, merge. Do not wait for approval.
 
 ## Subagents (`.claude/agents/`)
 Use them: `architect` (plans/ADRs), `startgg-ingestion`, `ranking-engine`, `frontend-ui`, `qa-tester`, `code-reviewer`. Delegate verbose work (test runs, schema exploration) to keep the main context clean.
