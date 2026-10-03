@@ -76,3 +76,32 @@ This follows the auto-merge rule from PR #2: Claude merges its own PRs once chec
 3. **Vercel:** connect the repo so PRs get preview links.
 
 **Questions for Genghis:** None.
+
+---
+
+## 2026-10-03 — Phase 0 and Phase 1 plans, ADR-0001, ADR-0002
+
+**Date:** October 3, 2026
+
+**What changed:** The architect wrote the build plans and the first two decision records ("ADRs": short notes on why we chose something):
+
+- `docs/plans/phase-0.md`: the setup PRs, in order, each with a phone-friendly checklist, plus Clay's one-time setup steps.
+- `docs/plans/phase-1.md`: the MVP PRs, from the data jobs through the leaderboard, player, methodology, and status pages, plus Sentry error alerts.
+- `docs/adr/0001-stack.md`: the technology choices. Expo SDK 58 is still a pre-release, so the website starts as pre-built pages that load live numbers from our API. Server rendering is revisited once SDK 58 is stable.
+- `docs/adr/0002-ranking-method.md`: how players are rated. Glicko-2 on sets, not games. DQs are excluded. One rating period per week. The leaderboard is sorted by a "conservative score" (rating minus twice the uncertainty), and there are eligibility rules.
+
+**What's next:** The scaffold merged as [PR #3](https://github.com/HolidayDraco/Smash-rankings/pull/3). Next are the ranking engine, database schema, start.gg client, and app shell with the style guide. All four are being built in parallel.
+
+**Questions for Clay** (each has a default Claude will use unless you say otherwise):
+
+1. Working title in the header? Default: **"Bracket Index"**.
+2. Footer disclaimer? Default: **"Unofficial fan project. Not affiliated with Nintendo or start.gg."**
+3. What number does the leaderboard show as "Score"? Default: the rounded conservative score, with rating ± uncertainty on the player page.
+4. Do unranked players get a page? Default: yes, labeled "Not yet ranked" with what they still need.
+5. Show sponsor prefixes (like "TSM | Tweek")? Default: yes, small and grey.
+6. Is the `/status` page public? Default: yes, showing only times and ok/failed.
+7. When should start.gg be told about the app? Default: Claude drafts the email at the end of Phase 1, and you send it before sharing the site publicly.
+
+**Review fixes (code-reviewer):** The worked-example test tolerance now matches the paper's real precision (see ADR-0002 item 9). The data-job schedule no longer lets a long backfill starve the 2-hourly sync or silently drop the daily discover: backfill is capped at ~75 minutes a night, and discover runs inside sync. Weekend hourly sync no longer double-fires on even hours. The player URL is `/player/1234-tagname` (a valid route). API caching is longer (15 min), so the free Neon database sleeps more. Extra history beyond 12 months is display-only unless Clay decides otherwise. The leaderboard API returns only the top 100, with no paging, so it can't be used to bulk-copy data. Clay's branch-protection step now says to set required approvals to 0, or Claude couldn't self-merge.
+
+**Questions for Genghis:** None open. Genghis confirmed on PR #4 that re-rating the current, unfinished week on every run is right for the "live" feel. Genghis also said not to wait on Clay for the seven defaults above, so Claude uses them unless Clay says otherwise.
