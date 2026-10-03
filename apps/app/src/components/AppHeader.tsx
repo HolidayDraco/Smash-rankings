@@ -1,29 +1,10 @@
-import { Link, usePathname } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
-import { BodyText, DisplayText, colors, minTouchTarget, spacing, useFocusRing } from "@sr/ui";
-
-function NavLink({ href, label }: { href: "/" | "/style-guide"; label: string }) {
-  const ring = useFocusRing();
-  const active = usePathname() === href;
-  return (
-    <Link href={href} asChild>
-      <Pressable
-        role="link"
-        aria-label={label}
-        aria-current={active ? "page" : undefined}
-        {...ring.handlers}
-        // Flattened: Link asChild merges styles as objects, so an array would be mangled.
-        style={StyleSheet.flatten([styles.link, ring.style, active && styles.linkActive])}
-      >
-        <BodyText variant="label" color={colors.ink}>
-          {label}
-        </BodyText>
-      </Pressable>
-    </Link>
-  );
-}
+import { StyleSheet, View } from "react-native";
+import { DisplayText, colors, minTouchTarget, spacing } from "@sr/ui";
+import { PrimaryNav, useNavVariant } from "./PrimaryNav";
 
 export function AppHeader() {
+  // On phones the tabs move to the bottom bar (rendered by the root layout), so the header drops them.
+  const showTabs = useNavVariant() === "top";
   return (
     <View role="banner" style={styles.bar}>
       <View style={styles.brand}>
@@ -32,10 +13,7 @@ export function AppHeader() {
           Bracket Index
         </DisplayText>
       </View>
-      <View role="navigation" aria-label="Primary" style={styles.nav}>
-        <NavLink href="/" label="Home" />
-        <NavLink href="/style-guide" label="Style guide" />
-      </View>
+      {showTabs ? <PrimaryNav variant="top" /> : null}
     </View>
   );
 }
@@ -58,14 +36,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     transform: [{ skewX: "-12deg" }],
   },
-  nav: { flexDirection: "row", gap: spacing.xs },
-  link: {
-    minHeight: minTouchTarget,
-    minWidth: minTouchTarget,
-    justifyContent: "center",
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 3,
-    borderBottomColor: "transparent",
-  },
-  linkActive: { borderBottomColor: colors.accent },
 });

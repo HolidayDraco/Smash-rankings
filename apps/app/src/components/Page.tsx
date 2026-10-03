@@ -13,7 +13,6 @@ export function Page({ children }: { children: ReactNode }) {
       <View style={styles.footer}>
         <View role="navigation" aria-label="Footer" style={styles.links}>
           <ActionLink label="How rankings work" href="/methodology" />
-          <ActionLink label="Status" href="/status" />
         </View>
         <Attribution />
       </View>

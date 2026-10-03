@@ -152,19 +152,26 @@ test.describe("/status", () => {
   });
 });
 
-test("every route has the attribution and both footer links", async ({ page, request }) => {
+test("every route has the attribution and the footer link", async ({ page, request }) => {
   const leaderboard = (await (await request.get(`${API}/v1/leaderboard`)).json()) as {
     entries: { playerId: string }[];
   };
   const playerId = leaderboard.entries[0]?.playerId;
-  for (const path of ["/", "/style-guide", "/methodology", "/status", `/player/${playerId}-x`]) {
+  for (const path of [
+    "/",
+    "/texas",
+    "/style-guide",
+    "/methodology",
+    "/status",
+    `/player/${playerId}-x`,
+  ]) {
     await page.goto(path);
     const footer = page.getByRole("navigation", { name: "Footer" });
     await expect(footer.getByRole("link", { name: "How rankings work" })).toHaveAttribute(
       "href",
       "/methodology",
     );
-    await expect(footer.getByRole("link", { name: "Status" })).toHaveAttribute("href", "/status");
+    await expect(footer.getByRole("link", { name: "Status" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: /Data from start\.gg/ })).toBeVisible();
   }
 });

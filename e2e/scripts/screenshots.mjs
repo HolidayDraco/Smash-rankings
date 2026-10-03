@@ -1,5 +1,5 @@
 // Saves PR screenshots at 390 and 1280 px wide: `node screenshots.mjs` (P1-8 leaderboard scenes)
-// `node screenshots.mjs p1-9` (player page scenes), or `p1-10` (methodology and status).
+// `node screenshots.mjs p1-9` (player page scenes), or `p1-10` (methodology and status), or `p2-1` (two-tab shell: / and /texas).
 // Needs the API on API_PORT (default 8787) against a seeded database, and `pnpm e2e`'s web build in apps/app/dist.
 import { chromium } from "@playwright/test";
 import { spawn } from "node:child_process";
@@ -69,7 +69,22 @@ const infoScenes = {
     await page.getByRole("list", { name: "Job status" }).waitFor();
   },
 };
-const sceneSets = { "p1-8": scenes, "p1-9": playerScenes, "p1-10": infoScenes };
+const shellScenes = {
+  async dashboard(page) {
+    await page.goto(`http://localhost:${port}/`);
+    await page.getByRole("list", { name: /leaderboard/ }).waitFor();
+  },
+  async texas(page) {
+    await page.goto(`http://localhost:${port}/texas`);
+    await page.getByRole("heading", { level: 1, name: "Texas" }).waitFor();
+  },
+};
+const sceneSets = {
+  "p1-8": scenes,
+  "p1-9": playerScenes,
+  "p1-10": infoScenes,
+  "p2-1": shellScenes,
+};
 
 try {
   for (const [name, scene] of Object.entries(sceneSets[set] ?? scenes)) {
