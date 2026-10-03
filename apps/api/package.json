@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/app.ts"
+    ".": "./src/app.ts",
+    "./client": "./src/client.ts"
   },
   "scripts": {
     "build": "esbuild src/vercel.ts --bundle --platform=node --format=esm --target=node22 --outfile=api/index.js",

@@ -278,3 +278,23 @@ Each set is tagged with its week number (week 2960 is the week of Oct 3, 2026), 
 **Questions for Clay:** None.
 
 **Questions for Genghis:** None open. Genghis decided that an event that keeps failing stays uncapped for now. After the live check (P1-12), if such events show up, the sync job will stop after 3 consecutive errors and "park" the event until someone re-runs it by hand with `--event`. Genghis also caught that per-event error messages weren't scrubbed of secrets, and that's fixed in this PR.
+
+---
+
+## 2026-10-03 — Phase 1: API leaderboard, player, and search
+
+**Date:** October 3, 2026
+
+**What changed:** The API can now answer the three questions the first screens need:
+
+- **`/v1/leaderboard`:** the top ranked players (at most 100) with tag, country, score, rating ± uncertainty, 7-day change, and last active date. There's no way to page past the top 100, so nobody can use it to copy start.gg's data in bulk (start.gg's terms).
+- **`/v1/players/<id>`:** one player: rank (or *why* they aren't ranked yet: "needs 1 more set", "uncertainty still too high"), rating, win–loss record for the last 12 months (DQs excluded), their last 10 results, and a link to their start.gg profile. If two accounts were merged into one player, the old address forwards to the main one.
+- **`/v1/search?q=`:** finds players by tag, at least 2 characters, ranked players first. Searches like "  ACE " and "ace" are treated as the same, so they share the same cached answer.
+
+Every answer is checked against a strict format, carries "Data from start.gg", and is cached for 15 minutes. A typed "client" lets the website call these with spell-checked route and field names.
+
+**What's next:** The leaderboard page and player page, built on these endpoints.
+
+**Questions for Clay:** None.
+
+**Questions for Genghis:** (1) This PR is ~660 lines (~350 code, ~220 tests, ~90 response formats), over the ~400 target you asked for. The tests weren't cut to fit. (2) Results from a merged player's *old* account aren't added to their record yet. That's a follow-up once alias merges are actually in use. OK?
