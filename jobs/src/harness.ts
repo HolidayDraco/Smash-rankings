@@ -83,6 +83,8 @@ export interface JobContext {
   db: Database | null;
   deadline: Deadline;
   now: () => number;
+  /** Running totals, so a failed run still records how far it got. */
+  progress: { eventsTouched: number };
 }
 
 export interface JobResult {
@@ -134,6 +136,7 @@ export async function runJob(
     token: env.STARTGG_TOKEN,
   });
   let runId: number | null = null;
+  const progress = { eventsTouched: 0 };
   try {
     if (database) {
       const [row] = await database.db
@@ -148,6 +151,7 @@ export async function runJob(
       db: database?.db ?? null,
       deadline: createDeadline(args.timeBudgetMinutes, now),
       now,
+      progress,
     };
     const result = await body(ctx);
     out(
@@ -165,7 +169,7 @@ export async function runJob(
     await finishRun(database?.db, runId, {
       status: "error",
       requestsUsed: client.requestsUsed,
-      eventsTouched: 0,
+      eventsTouched: progress.eventsTouched,
       error: message,
     }).catch(() => undefined);
     return EXIT_JOB_FAILED;

@@ -54,3 +54,9 @@ At the defaults, a 2,000-entrant double-elimination event (about 4,000 sets) is 
 - The job writes each page as it goes and is safe to rerun, so a time-budget stop (reported as status `partial`) loses nothing.
 
 Signals still pending a live check, each in one function in `packages/core/src/qualifying.ts`: `isSinglesEvent` (Event.type 1) and `isOnlineEvent` (event flag, then tournament flag; unknown counts as in person).
+
+### Discover: reruns, stale flags, and slug clashes
+
+- Tournaments are paged by `startAt`, so pages can shift while the run is going (a tournament added mid-run). The daily rerun catches anything missed.
+- If a stored event now classifies as skip (fewer than 64 entrants, switched to doubles), its `qualifies` is set to false and `num_entrants` refreshed. Only existing rows are updated; skipped events are never inserted.
+- `tournaments.slug` and `events.slug` are unique, but a recreated tournament or event arrives with a new id and the old slug. Before upserting, the old row keeps its data and its slug is renamed to `<slug>~stale-<oldId>`. That cannot clash again, so the run neither fails nor loops, and nothing is deleted.

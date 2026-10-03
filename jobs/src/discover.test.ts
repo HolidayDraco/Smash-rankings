@@ -169,6 +169,56 @@ describe.skipIf(!testDatabaseUrl)(
       expect(runs[0]?.finishedAt).toBeInstanceOf(Date);
     });
 
+    const edge = () =>
+      structuredClone(fixture("tournaments-edge")) as {
+        data: { tournaments: { nodes: Record<string, unknown>[] } };
+      };
+    const firstEvent = (data: ReturnType<typeof edge>) =>
+      (data.data.tournaments.nodes[0]?.["events"] as Record<string, unknown>[])[0] ?? {};
+
+    it("stops a stored event qualifying when it is later classified skip, without inserting skipped ones", async () => {
+      await run([], [{ body: fixture("tournaments-edge") }], env);
+      const shrunk = edge();
+      firstEvent(shrunk)["numEntrants"] = 63;
+      expect(await run([], [{ body: shrunk }], env)).toBe(0);
+      const rows = await eventRows();
+      expect(rows.map((r) => [r.id, r.qualifies, r.numEntrants])).toEqual([
+        [9101, false, 63],
+        [9103, false, 128],
+      ]);
+    });
+
+    it("renames a stale slug holder when a recreated tournament and event reuse a slug", async () => {
+      await run([], [{ body: fixture("tournaments-edge") }], env);
+      const recreated = edge();
+      const tournament = recreated.data.tournaments.nodes[0] ?? {};
+      tournament["id"] = 5999;
+      firstEvent(recreated)["id"] = 9999;
+      for (let i = 0; i < 2; i++) {
+        expect(await run([], [{ body: recreated }], env)).toBe(0); // second run is a no-op
+      }
+      const rows = await eventRows();
+      expect(rows.map((r) => [r.id, r.slug])).toEqual([
+        [9101, "tournament/fake-edge/event/exactly-64~stale-9101"],
+        [9103, "tournament/fake-online/event/online-singles"],
+        [9999, "tournament/fake-edge/event/exactly-64"],
+      ]);
+      const slugs = (await db.select().from(tournaments)).map((t) => [t.id, t.slug]);
+      expect(slugs).toContainEqual([5101, "tournament/fake-5101~stale-5101"]);
+      expect(slugs).toContainEqual([5999, "tournament/fake-5101"]);
+      const runs = await db.select().from(ingestRuns);
+      expect(runs.every((r) => r.status === "success")).toBe(true);
+    });
+
+    it("treats an event with both online flags unknown as in person", async () => {
+      const unknown = edge();
+      firstEvent(unknown)["isOnline"] = null;
+      (unknown.data.tournaments.nodes[0] ?? {})["isOnline"] = null;
+      await run([], [{ body: unknown }], env);
+      const row = (await eventRows()).find((r) => r.id === 9101);
+      expect(row).toMatchObject({ qualifies: true, isOnline: false });
+    });
+
     it("records an auth failure as an error, exits non-zero, and leaks no token", async () => {
       const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
       const code = await run([], [{ status: 401, body: { message: `bad ${TOKEN}` } }], env);
