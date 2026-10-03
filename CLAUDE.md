@@ -6,7 +6,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 ## Who you're working for
 - The owner, Clay, is **not an engineer**. Write PR descriptions, ADRs, and status notes in plain English. Explain any jargon you can't avoid.
 - Clay steers through PRs: a preview link, screenshots, and an acceptance checklist. Never merge without his approval unless he says so in the session.
-- The eight choices in `docs/blueprint.md` §7 are locked. See **Decisions locked (Oct 3, 2026, by Clay)** at the top of that file. Don't re-ask them. For any new product-facing choice (scope, naming, what counts as a tournament, visual style), ask, or use a stated default and say so in the PR.
+- The eight choices at the top of `docs/blueprint.md` are locked, including the Oct 3, 2026 light-theme change to decision 8. See **Decisions locked** and **Design principles**. Don't re-ask them. For any new product-facing choice, ask, or use a stated default and say so in the PR.
 
 ## Session start, status, and PR comments
 - At the start of every session, read `STATUS.md` before planning or editing. It is the running log of what shipped, what's next, and open questions.
@@ -54,7 +54,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 - Keep the ranking engine pure and deterministic. The same input gives the same output, with no `Date.now()` inside the math.
 - DB changes go through Drizzle migrations only. Never edit an applied migration. Migrations must be additive or include a data-safe plan in the PR.
 - Every job is idempotent and resumable (checkpoint cursors in `events.sync_cursor`) and logs one `ingest_runs` row.
-- UI: accessible by default (labels, roles, contrast ≥ 4.5:1, keyboard on web). No Nintendo logos or character art. Mobile-first layouts.
+- UI: white light theme per **Design principles** in `docs/blueprint.md`. Accessible by default (labels, roles, contrast ≥ 4.5:1, keyboard on web). No Nintendo fonts, logos, or character art. Mobile-first layouts. The frontend agent ships a style-guide page for Clay's approval before real screens.
 - Use path aliases from `packages/config`. No deep relative imports across packages.
 - Name things for what they are: `conservativeScore`, not `cs`.
 

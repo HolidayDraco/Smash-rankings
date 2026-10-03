@@ -9,7 +9,7 @@
 
 ## Decisions locked (Oct 3, 2026, by Clay)
 
-Clay accepted all 8 recommended defaults in [§7 Decisions for Clay](#7-decisions-for-clay-plain-language-each-with-a-recommended-default) as-is. Treat these as decided. Don't re-ask them unless Clay opens one back up.
+Clay accepted recommended defaults 1–7 in [§7 Decisions for Clay](#7-decisions-for-clay-plain-language-each-with-a-recommended-default) as-is. On Oct 3, 2026 he replaced default 8 (dark theme) with a white, light theme. See [Design principles](#design-principles). Treat these as decided. Don't re-ask them unless Clay opens one back up.
 
 1. **Public or private GitHub repo?** Public. Unlimited free automation minutes. The code is readable; secrets stay out of the repo.
 2. **Which tournaments count?** (a) Any singles event with **≥ 64 entrants**. Weeklies and smaller events do not count.
@@ -18,7 +18,20 @@ Clay accepted all 8 recommended defaults in [§7 Decisions for Clay](#7-decision
 5. **How far back?** **12 months** live at launch, with history backfilled to **24 months** later.
 6. **How "live"?** Refresh every 2 hours, and hourly on tournament weekends (Friday–Monday). Stay at $0. Faster refresh is possible later but uses more of the start.gg request budget.
 7. **Database: Neon or Supabase?** **Neon** Postgres (Free). It has more free storage and does not pause when idle.
-8. **Name and look:** A neutral, non-Nintendo name (for example "Bracket Index"), a dark esports theme, and flags plus text instead of character art. Clay can pick the final name anytime before Phase 3.
+8. **Name and look:** A neutral, non-Nintendo name (for example "Bracket Index"). Clay can pick the final name anytime before Phase 3. **Look (changed Oct 3, 2026):** white background, light theme, premium and specific. Not a dark theme. Rules are in [Design principles](#design-principles).
+
+---
+
+## Design principles
+
+Set by Clay on Oct 3, 2026. This replaces the dark-theme default.
+
+- **White and light.** White background. No dark theme.
+- **Premium, not generic.** Polished and specific. It must not look like a cheap, vibe-coded app: no default component-library styling, no generic gradients.
+- **Echo Ultimate's UI with original work.** Bold condensed italic-leaning sans for display type. Angled panels and diagonal cuts. Tight, dense stat layouts. Strong color accents. Snappy motion. Evoke the feel. Do not copy screens, icons, or layouts.
+- **Fonts (Google Fonts, SIL Open Font License only).** Display: [Barlow Condensed](https://fonts.google.com/specimen/Barlow+Condensed) ExtraBold or Black Italic. UI and body: [Barlow](https://fonts.google.com/specimen/Barlow). If the style guide needs a sportier display, try [Saira Condensed](https://fonts.google.com/specimen/Saira+Condensed) Bold or Black Italic. Never use Nintendo's fonts.
+- **No Nintendo assets.** No Nintendo fonts, logos, character art, or other Nintendo or Smash assets. Flags and original text only.
+- **Style guide before screens.** The frontend agent ships a style-guide page early (type, color, an angled panel, a dense stat row, a motion sample) and waits for Clay's approval before building real screens.
 
 ---
 
@@ -210,15 +223,15 @@ Phase 3 reuses `apps/app` and adds native value so the app clears Apple guidelin
 4. Add secrets: GitHub → Settings → Secrets → Actions (`STARTGG_TOKEN`, `DATABASE_URL`, `SENTRY_DSN`); Vercel env vars (`DATABASE_URL`, `SENTRY_DSN`); Claude cloud environment → **Custom** network access adding `api.start.gg`, plus the start.gg token as an **API credential** (Pro/Max) so Claude never sees it [C5].
 5. Turn on branch protection for `main`: require PR plus green CI.
 
-**Claude builds:** monorepo scaffold; `CLAUDE.md` + `.claude/agents/*`; CI (lint, typecheck, unit tests, build); Drizzle schema + first migration; start.gg client with codegen, rate limiter, and recorded fixtures; Glicko-2 package passing the Glickman example; Expo app "hello" page deployed to Vercel (SSR spike); ADR-0001 (stack) and ADR-0002 (ranking).
-**Acceptance checklist (Clay):** ☐ Opening the PR preview link on your phone shows the app shell ☐ CI shows green checks ☐ `docs/adr/` has 2 ADRs in plain English ☐ No secrets in the repo (Claude shows the output of a secret scan).
+**Claude builds:** monorepo scaffold; `CLAUDE.md` + `.claude/agents/*`; CI (lint, typecheck, unit tests, build); Drizzle schema + first migration; start.gg client with codegen, rate limiter, and recorded fixtures; Glicko-2 package passing the Glickman example; Expo app shell deployed to Vercel (SSR spike), including a style-guide page for Clay's approval before any real screens (see [Design principles](#design-principles)); ADR-0001 (stack) and ADR-0002 (ranking).
+**Acceptance checklist (Clay):** ☐ Opening the PR preview link on your phone shows the app shell ☐ The style-guide page shows a white background, condensed italic display type, one angled panel, and one dense stat row ☐ CI shows green checks ☐ `docs/adr/` has 2 ADRs in plain English ☐ No secrets in the repo (Claude shows the output of a secret scan).
 
 ### Phase 1: MVP web (≈ 4–8 PRs)
 Discover + sync + backfill (last 12 months first), rate job, leaderboard page (top 100, search, last-updated badge), basic player page (rating, rank, recent results), Methodology page, "Data from start.gg" attribution in the footer, Sentry wired, health page (`/status`: last run times).
 **Acceptance checklist:** ☐ Leaderboard loads on phone in < 2 s ☐ The top 20 look plausible next to UltRank/community expectations (Clay eyeballs it, since it won't match exactly) ☐ Searching a known player works ☐ "Last updated" is under 3 h old ☐ The Methodology page explains the ranking in plain language ☐ The attribution is visible.
 
 ### Phase 2: Polish and features
-Rich player pages (rating chart, event history, best wins), **head-to-head** page, **regional filters** (country → state/region), tournament pages, upcoming majors list, weekend "live mode" banner, SEO metadata/OG images, dark/light theme, accessibility pass (axe clean, keyboard, screen reader labels), Vercel Web Analytics, backtest report (Glicko-2 vs Elo vs OpenSkill), local "favorites."
+Rich player pages (rating chart, event history, best wins), **head-to-head** page, **regional filters** (country → state/region), tournament pages, upcoming majors list, weekend "live mode" banner, SEO metadata/OG images, visual polish against the approved style guide (light theme only), accessibility pass (axe clean, keyboard, screen reader labels), Vercel Web Analytics, backtest report (Glicko-2 vs Elo vs OpenSkill), local "favorites."
 **Acceptance:** ☐ H2H for any two players shows the set record and list ☐ The region filter changes the leaderboard ☐ axe reports zero serious/critical issues ☐ Lighthouse mobile performance ≥ 90 (⚠ target, not a guarantee).
 
 ### Phase 3: Mobile app
@@ -266,7 +279,7 @@ EAS project, icons/splash, native tabs, follow + push notifications, offline cac
 5. **How far back?** Rate the last **12 months** at launch and backfill to 24 months later. **Default: 12 months live, 24 months history.**
 6. **How "live"?** Refresh every 2 h, hourly on tournament weekends (Fri–Mon). **Default: as stated, $0.** (Faster is possible but uses more of the start.gg budget.)
 7. **Database: Neon or Supabase?** Neon has twice the free storage and never pauses [N1]. Supabase has a friendlier dashboard and built-in logins but pauses after a week idle [S1]. **Default: Neon.**
-8. **Name and look:** a neutral, non-Nintendo name (e.g., "Bracket Index"), dark esports theme, flags and text instead of character art. **Default: as stated.** Clay can pick the name anytime before Phase 3.
+8. **Name and look:** a neutral, non-Nintendo name (e.g., "Bracket Index"), flags and text instead of character art. Clay can pick the name anytime before Phase 3. **Original look default:** dark esports theme. **Superseded Oct 3, 2026** by the white light theme in [Design principles](#design-principles). That change wins.
 
 ---
 
