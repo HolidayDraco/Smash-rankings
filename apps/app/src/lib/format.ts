@@ -56,7 +56,7 @@ export function describeNotRanked(reason: {
   ].filter(Boolean);
   const parts = [
     needs.length > 0 ? `Needs ${needs.join(" and ")}.` : null,
-    reason.uncertaintyTooHigh ? "Rating still uncertain; plays more to settle." : null,
+    reason.uncertaintyTooHigh ? "Needs more sets for the rating to settle." : null,
   ].filter(Boolean);
   return parts.join(" ") || "Waiting for the next ranking update.";
 }

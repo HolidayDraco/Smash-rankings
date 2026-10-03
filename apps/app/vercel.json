@@ -6,8 +6,8 @@
   "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/player/:path*",
-      "destination": "/player/[idSlug].html"
+      "source": "/player/:idSlug",
+      "destination": "/player/[idSlug]"
     }
   ]
 }

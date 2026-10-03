@@ -60,7 +60,7 @@ describe("player page helpers", () => {
       "Needs 1 more rated set and 2 more events.",
     );
     expect(describeNotRanked({ setsNeeded: 0, eventsNeeded: 0, uncertaintyTooHigh: true })).toBe(
-      "Rating still uncertain; plays more to settle.",
+      "Needs more sets for the rating to settle.",
     );
   });
 });

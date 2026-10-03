@@ -34,8 +34,8 @@ createServer(async (req, res) => {
     return;
   }
   let safe = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  // Mirrors vercel.json: any /player/... URL is served by the dynamic route's HTML.
-  if (safe.startsWith("/player/")) safe = "/player/[idSlug]";
+  // Mirrors vercel.json: a single /player/<segment> URL is served by the dynamic route's HTML.
+  if (/^\/player\/[^/]+$/.test(safe)) safe = "/player/[idSlug]";
   const candidates = [join(root, safe), join(root, `${safe}.html`), join(root, safe, "index.html")];
   let file = null;
   for (const c of candidates) {
