@@ -1,4 +1,4 @@
-import { EPOCH_MONDAY_MS, periodIndexFor, WEEK_MS } from "@sr/core";
+import { EPOCH_MONDAY_MS, LEADERBOARD_ELIGIBILITY, periodIndexFor, WEEK_MS } from "@sr/core";
 
 const DAY_MS = 86_400_000;
 
@@ -47,4 +47,19 @@ export function isoWeekToPeriodIndex(isoWeek: string): number {
     throw new RangeError(`isoWeekToPeriodIndex: no such week "${isoWeek}"`);
   }
   return period;
+}
+
+/**
+ * The periods a run rates: the `trailingWeeks` weeks ending at `asOfPeriod`,
+ * inclusive (ADR-0002: 52 weeks, everyone starts fresh at `fromPeriod`).
+ */
+export function ratingWindow(
+  asOfPeriod: number,
+  trailingWeeks: number = LEADERBOARD_ELIGIBILITY.trailingWeeks,
+): { fromPeriod: number; toPeriod: number } {
+  if (!Number.isSafeInteger(asOfPeriod) || !Number.isSafeInteger(trailingWeeks)) {
+    throw new RangeError("ratingWindow: asOfPeriod and trailingWeeks must be integers");
+  }
+  if (trailingWeeks < 1) throw new RangeError("ratingWindow: trailingWeeks must be at least 1");
+  return { fromPeriod: asOfPeriod - trailingWeeks + 1, toPeriod: asOfPeriod };
 }

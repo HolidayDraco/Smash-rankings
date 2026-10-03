@@ -63,6 +63,13 @@ describe("rankLeaderboard", () => {
     expect(rankLeaderboard([...entries].reverse()).map((e) => e.playerId)).toEqual(forward);
   });
 
+  it("breaks ties by the lower start.gg id as a number, not as text", () => {
+    const tied = (playerId: string) => ({ playerId, rating: 1600, ratingDeviation: 50 });
+    const ranked = rankLeaderboard(["100", "99", "1000", "9", "abc"].map(tied));
+    // Text order would be "100", "1000", "9", "99"; digit-only ids come before other ids.
+    expect(ranked.map((e) => e.playerId)).toEqual(["9", "99", "100", "1000", "abc"]);
+  });
+
   it("rejects duplicate player ids", () => {
     const entry = { playerId: "x", rating: 1500, ratingDeviation: 50 };
     expect(() => rankLeaderboard([entry, entry])).toThrow(/duplicate/);
@@ -99,6 +106,21 @@ describe("eligibilityStats", () => {
     });
     expect(stats.get("p")).toEqual({ ratedSets: 4, qualifyingEvents: 3, lastActivePeriod: 49 });
     expect(stats.has("q")).toBe(false);
+  });
+
+  it("rejects a trailing window shorter than one week", () => {
+    expect(() => eligibilityStats({ sets: [], asOfPeriod: 100, trailingWeeks: 0 })).toThrow(
+      RangeError,
+    );
+  });
+
+  it("counts an event attended only through DQs (from standings) toward the event total", () => {
+    const stats = eligibilityStats({
+      sets: [...wins("p", 10, 2), { ...wins("p", 1, 1)[0]!, eventId: "dq-only", isDq: true }],
+      standingsEvents: [{ playerId: "p", eventId: "dq-only", period: 100 }],
+      asOfPeriod: 100,
+    });
+    expect(stats.get("p")).toMatchObject({ ratedSets: 10, qualifyingEvents: 3 });
   });
 
   it("merges aliases before counting", () => {

@@ -26,10 +26,11 @@ export function resolveAlias(id: PlayerId, aliases: AliasMap | undefined): Playe
 
 /**
  * The sets that count: aliases resolved to the main player, DQs dropped, and
- * self-sets (same player on both sides after merging) dropped.
+ * self-sets (same player on both sides after merging) dropped. Extra fields on
+ * the input (e.g. a completion time) are kept, so callers apply the same rules.
  */
-export function countedSets(sets: readonly PeriodSet[], aliases?: AliasMap): PeriodSet[] {
-  const counted: PeriodSet[] = [];
+export function countedSets<T extends PeriodSet>(sets: readonly T[], aliases?: AliasMap): T[] {
+  const counted: T[] = [];
   for (const set of sets) {
     if (set.isDq === true) continue;
     if (!Number.isSafeInteger(set.period)) {
@@ -38,7 +39,7 @@ export function countedSets(sets: readonly PeriodSet[], aliases?: AliasMap): Per
     const winnerId = resolveAlias(set.winnerId, aliases);
     const loserId = resolveAlias(set.loserId, aliases);
     if (winnerId === loserId) continue;
-    counted.push({ winnerId, loserId, period: set.period, eventId: set.eventId });
+    counted.push({ ...set, winnerId, loserId });
   }
   return counted;
 }
@@ -50,6 +51,13 @@ export interface RateHistoryInput {
   toPeriod: number;
   aliases?: AliasMap;
   config?: Glicko2Config;
+  /**
+   * "every-week" (default): a row per player per period from their first set on.
+   * "active-weeks": only rows with setsPlayed > 0, plus every player's row for
+   * `toPeriod`. Idle weeks can be rebuilt from these (RD growth only), so this
+   * is what the rate job stores.
+   */
+  historyRows?: "every-week" | "active-weeks";
 }
 
 /** One `rating_history` row: a player's rating at the end of a period. */
@@ -62,7 +70,7 @@ export interface HistoryRow extends PlayerRating {
 export interface RateHistoryResult {
   /** Ratings after `toPeriod`, keyed in ascending player-id order. */
   ratings: Map<PlayerId, PlayerRating>;
-  /** Sorted by period, then player id. One row per player per period from their first set on. */
+  /** Sorted by period, then player id. Which rows: see `RateHistoryInput.historyRows`. */
   history: HistoryRow[];
 }
 
@@ -73,6 +81,7 @@ export interface RateHistoryResult {
  */
 export function rateHistory(input: RateHistoryInput): RateHistoryResult {
   const { fromPeriod, toPeriod, aliases, config = DEFAULT_GLICKO2_CONFIG } = input;
+  const activeOnly = input.historyRows === "active-weeks";
   if (!Number.isSafeInteger(fromPeriod) || !Number.isSafeInteger(toPeriod)) {
     throw new RangeError("rateHistory: fromPeriod and toPeriod must be integers");
   }
@@ -99,13 +108,15 @@ export function rateHistory(input: RateHistoryInput): RateHistoryResult {
     // newcomers, in ascending id order, so history rows come out sorted.
     ratings = ratePeriod(ratings, periodSets, config);
     for (const [playerId, rating] of ratings) {
-      history.push({ playerId, period, ...rating, setsPlayed: setsPlayed.get(playerId) ?? 0 });
+      const played = setsPlayed.get(playerId) ?? 0;
+      if (activeOnly && played === 0 && period !== toPeriod) continue;
+      history.push({ playerId, period, ...rating, setsPlayed: played });
     }
   }
   return { ratings, history };
 }
 
-/** Everyone's rating at the end of `period`, from `rateHistory`'s history rows. */
+/** Everyone's rating at the end of `period`, from `rateHistory`'s history rows (with "active-weeks", only `toPeriod` is complete). */
 export function ratingsAt(
   history: readonly HistoryRow[],
   period: number,

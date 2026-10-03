@@ -172,12 +172,18 @@ importers:
       '@sr/db':
         specifier: workspace:*
         version: link:../packages/db
+      '@sr/ranking':
+        specifier: workspace:*
+        version: link:../packages/ranking
       '@sr/startgg':
         specifier: workspace:*
         version: link:../packages/startgg
       drizzle-orm:
         specifier: 0.45.3
         version: 0.45.3(postgres@3.4.9)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
     devDependencies:
       '@sr/config':
         specifier: workspace:*

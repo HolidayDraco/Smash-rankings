@@ -20,6 +20,7 @@
     "e2e": "pnpm --filter @sr/app build:web && pnpm --filter @sr/e2e e2e",
     "job:discover": "pnpm --filter @sr/jobs discover",
     "job:sync": "pnpm --filter @sr/jobs sync",
+    "job:rate": "pnpm --filter @sr/jobs rate",
     "db:seed": "pnpm --filter @sr/db db:seed"
   },
   "devDependencies": {

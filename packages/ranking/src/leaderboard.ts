@@ -1,4 +1,5 @@
 import { LEADERBOARD_ELIGIBILITY } from "@sr/core";
+import { comparePlayerIds } from "./glicko2";
 import type { PlayerId, PlayerRating } from "./glicko2";
 import { countedSets, resolveAlias } from "./history";
 import type { AliasMap, PeriodSet } from "./history";
@@ -46,7 +47,8 @@ export type RankedEntry<T extends LeaderboardInput> = T & {
 };
 
 /**
- * Sort by conservative score (desc), then rating (desc), then player id (asc),
+ * Sort by conservative score (desc), then rating (desc), then player id (asc,
+ * numeric for start.gg ids; see `comparePlayerIds`),
  * and assign ranks 1..n. The id tie-breaker makes the order total, so every
  * entry gets a distinct rank. Duplicate player ids are rejected.
  */
@@ -64,7 +66,7 @@ export function rankLeaderboard<T extends LeaderboardInput>(
       (a, b) =>
         b.conservativeScore - a.conservativeScore ||
         b.rating - a.rating ||
-        (a.playerId < b.playerId ? -1 : a.playerId > b.playerId ? 1 : 0),
+        comparePlayerIds(a.playerId, b.playerId),
     )
     .map((entry, index) => ({ ...entry, rank: index + 1 }));
 }
@@ -103,6 +105,7 @@ export function eligibilityStats(input: EligibilityStatsInput): Map<PlayerId, Pl
   if (!Number.isSafeInteger(asOfPeriod) || !Number.isSafeInteger(trailingWeeks)) {
     throw new RangeError("eligibilityStats: asOfPeriod and trailingWeeks must be integers");
   }
+  if (trailingWeeks < 1) throw new RangeError("eligibilityStats: trailingWeeks must be at least 1");
   const firstPeriod = asOfPeriod - trailingWeeks + 1;
   const sets = new Map<PlayerId, number>();
   const events = new Map<PlayerId, Set<string>>();
@@ -128,7 +131,7 @@ export function eligibilityStats(input: EligibilityStatsInput): Map<PlayerId, Pl
     }
   }
 
-  const ids = [...new Set([...lastActive.keys(), ...events.keys()])].sort();
+  const ids = [...new Set([...lastActive.keys(), ...events.keys()])].sort(comparePlayerIds);
   return new Map(
     ids.map((id) => [
       id,

@@ -169,7 +169,29 @@ export function updatePlayer(
   };
 }
 
-const compareIds = (a: PlayerId, b: PlayerId): number => (a < b ? -1 : a > b ? 1 : 0);
+const DIGITS_ONLY = /^\d+$/;
+const compareText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+/**
+ * Total, stable order for player ids. start.gg ids are digit strings, which
+ * compare as numbers (shorter first, then text, so "9" < "10"; ADR-0002 says
+ * "lower start.gg player id"). Digit-only ids sort before any other id, and
+ * other ids compare as plain text.
+ */
+export function comparePlayerIds(a: PlayerId, b: PlayerId): number {
+  const aNumeric = DIGITS_ONLY.test(a);
+  const bNumeric = DIGITS_ONLY.test(b);
+  if (aNumeric !== bNumeric) return aNumeric ? -1 : 1;
+  if (aNumeric) {
+    // Compare by magnitude without parsing (ids may exceed 2^53); ignore leading zeros.
+    const x = a.replace(/^0+(?=\d)/, "");
+    const y = b.replace(/^0+(?=\d)/, "");
+    if (x.length !== y.length) return x.length - y.length;
+    return compareText(x, y) || compareText(a, b);
+  }
+  return compareText(a, b);
+}
+const compareIds = comparePlayerIds;
 
 /**
  * Rate one period (one ISO week). Returns a new rating for every player in

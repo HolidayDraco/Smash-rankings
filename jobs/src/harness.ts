@@ -20,6 +20,8 @@ export interface JobArgs {
   to?: Date;
   /** Sync only this start.gg event id (manual use). Ignores start_at and the done status. */
   event?: number;
+  /** The rate job's "as of" date (default: now). */
+  asOf?: Date;
 }
 
 export class UsageError extends Error {
@@ -46,6 +48,7 @@ export function parseJobArgs(argv: string[]): JobArgs {
         from: { type: "string" },
         to: { type: "string" },
         event: { type: "string" },
+        "as-of": { type: "string" },
       },
     }));
   } catch (error) {
@@ -60,7 +63,11 @@ export function parseJobArgs(argv: string[]): JobArgs {
   if (event !== undefined && !(Number.isInteger(event) && event > 0)) {
     throw new UsageError("--event must be a start.gg event id (a positive whole number)");
   }
-  return { dryRun: values["dry-run"], timeBudgetMinutes, from, to, event };
+  const asOf = parseDate("--as-of", values["as-of"]);
+  // --as-of is a manual diagnostic only: it always runs as a dry run, so it can
+  // never rewrite the live leaderboard or the 7-day snapshot to a past week.
+  const dryRun = values["dry-run"] || asOf !== undefined;
+  return { dryRun, timeBudgetMinutes, from, to, event, asOf };
 }
 
 export interface Deadline {
@@ -83,9 +90,8 @@ export function redactError(error: unknown, secrets: readonly string[]): string 
   return text.slice(0, 500);
 }
 
-export interface JobContext {
+interface BaseContext {
   args: JobArgs;
-  client: StartggClient;
   /** Null in a dry run (the job must not need the database to preview). */
   db: Database | null;
   /** Read-only access (SELECTs only, by type): the real database in a run, or in a dry run when DATABASE_URL happens to be set. */
@@ -96,6 +102,18 @@ export interface JobContext {
   progress: { eventsTouched: number };
   /** Error text with the token and database URL scrubbed. Use this for any log line. */
   redact: (error: unknown) => string;
+  /** Environment (tests pass their own) and the stdout writer. */
+  env: Record<string, string | undefined>;
+  out: (line: string) => void;
+}
+
+export interface JobContext extends BaseContext {
+  client: StartggClient;
+}
+
+/** Context for jobs that only use the database (rate): no start.gg client or token. */
+export interface DbJobContext extends BaseContext {
+  readDb: Pick<Database, "select">;
 }
 
 export interface JobResult {
@@ -115,24 +133,59 @@ export interface RunJobDeps {
 }
 
 /**
- * Shared job wrapper. Dry run needs only STARTGG_TOKEN and writes nothing (no
- * ingest_runs row either); a real run also needs DATABASE_URL. Returns the exit code.
+ * Shared job wrapper for start.gg jobs. Dry run needs only STARTGG_TOKEN and
+ * writes nothing (no ingest_runs row either); a real run also needs
+ * DATABASE_URL. Returns the exit code.
  */
-export async function runJob(
+export function runJob(
   job: JobName,
   argv: string[],
   body: (ctx: JobContext) => Promise<JobResult>,
   deps: RunJobDeps = {},
 ): Promise<number> {
+  return execute(job, argv, deps, true, (base, client) => {
+    if (!client) throw new Error(`${job}: start.gg client missing`);
+    return body({ ...base, client });
+  });
+}
+
+/**
+ * Wrapper for jobs that never call start.gg (rate). Needs only DATABASE_URL,
+ * also in a dry run (which reads but never writes, and logs no ingest_runs row).
+ */
+export function runDbJob(
+  job: JobName,
+  argv: string[],
+  body: (ctx: DbJobContext) => Promise<JobResult>,
+  deps: Omit<RunJobDeps, "clientOptions"> = {},
+): Promise<number> {
+  return execute(job, argv, deps, false, ({ readDb, ...base }) => {
+    if (!readDb) throw new Error(`${job}: database missing`);
+    return body({ ...base, readDb });
+  });
+}
+
+async function execute(
+  job: JobName,
+  argv: string[],
+  deps: RunJobDeps,
+  needsStartgg: boolean,
+  body: (ctx: BaseContext, client: StartggClient | null) => Promise<JobResult>,
+): Promise<number> {
   const out = deps.out ?? ((line: string) => process.stdout.write(`${line}\n`));
   const now = deps.now ?? Date.now;
   let args: JobArgs;
-  let env: { STARTGG_TOKEN: string; DATABASE_URL?: string };
+  let env: { STARTGG_TOKEN?: string; DATABASE_URL?: string };
   try {
     args = parseJobArgs(argv);
-    env = args.dryRun
-      ? { ...loadEnv(["STARTGG_TOKEN"], deps.env), ...loadOptionalEnv(["DATABASE_URL"], deps.env) }
-      : loadEnv(["STARTGG_TOKEN", "DATABASE_URL"], deps.env);
+    if (needsStartgg && args.asOf) throw new UsageError("--as-of is only for the rate job");
+    if (!needsStartgg) env = loadEnv(["DATABASE_URL"], deps.env);
+    else if (args.dryRun) {
+      env = {
+        ...loadEnv(["STARTGG_TOKEN"], deps.env),
+        ...loadOptionalEnv(["DATABASE_URL"], deps.env),
+      };
+    } else env = loadEnv(["STARTGG_TOKEN", "DATABASE_URL"], deps.env);
   } catch (error) {
     if (error instanceof UsageError || error instanceof MissingEnvError) {
       process.stderr.write(`${job}: ${error.message}\n`);
@@ -140,13 +193,13 @@ export async function runJob(
     }
     throw error;
   }
-  const secrets = [env.STARTGG_TOKEN, env.DATABASE_URL ?? ""];
+  const secrets = [env.STARTGG_TOKEN ?? "", env.DATABASE_URL ?? ""];
   // A dry run never requires the database, but uses it (read-only) when one is configured.
   const database = env.DATABASE_URL ? createDb(env.DATABASE_URL, { maxConnections: 2 }) : null;
-  const client = createStartggClient({
-    ...deps.clientOptions,
-    token: env.STARTGG_TOKEN,
-  });
+  const client = env.STARTGG_TOKEN
+    ? createStartggClient({ ...deps.clientOptions, token: env.STARTGG_TOKEN })
+    : null;
+  const requestsUsed = () => client?.requestsUsed ?? 0;
   let runId: number | null = null;
   const progress = { eventsTouched: 0 };
   try {
@@ -157,23 +210,23 @@ export async function runJob(
         .returning({ id: ingestRuns.id });
       runId = row?.id ?? null;
     }
-    const ctx: JobContext = {
+    const ctx: BaseContext = {
       args,
-      client,
       db: args.dryRun ? null : (database?.db ?? null),
       readDb: database?.db ?? null,
       deadline: createDeadline(args.timeBudgetMinutes, now),
       now,
       progress,
       redact: (error) => redactError(error, secrets),
+      env: deps.env ?? process.env,
+      out,
     };
-    const result = await body(ctx);
-    out(
-      `${args.dryRun ? "[dry run] " : ""}${job}: ${result.summary}; ${client.requestsUsed} requests`,
-    );
+    const result = await body(ctx, client);
+    const requests = client ? `; ${requestsUsed()} requests` : "";
+    out(`${args.dryRun ? "[dry run] " : ""}${job}: ${result.summary}${requests}`);
     await finishRun(database?.db, runId, {
       status: result.partial ? "partial" : "success",
-      requestsUsed: client.requestsUsed,
+      requestsUsed: requestsUsed(),
       eventsTouched: result.eventsTouched,
     });
     return EXIT_OK;
@@ -183,7 +236,7 @@ export async function runJob(
     const usage = error instanceof UsageError;
     await finishRun(database?.db, runId, {
       status: "error",
-      requestsUsed: client.requestsUsed,
+      requestsUsed: requestsUsed(),
       eventsTouched: progress.eventsTouched,
       error: message,
     }).catch(() => undefined);
