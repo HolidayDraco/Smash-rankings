@@ -1,72 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
-import { Linking, Platform, Pressable, StyleSheet, View, type PressableProps } from "react-native";
+import { StyleSheet, View } from "react-native";
 import type { PlayerResponse } from "@sr/core";
-import {
-  AngledPanel,
-  BodyText,
-  DisplayText,
-  colors,
-  minTouchTarget,
-  spacing,
-  useFocusRing,
-} from "@sr/ui";
+import { AngledPanel, BodyText, DisplayText, colors, minTouchTarget, spacing } from "@sr/ui";
+import { ActionLink } from "../../components/ActionLink";
 import { LastUpdated } from "../../components/LastUpdated";
 import { Page } from "../../components/Page";
 import { SkeletonRow } from "../../components/PlayerRow";
 import { usePlayer } from "../../lib/api";
 import { describeNotRanked, formatDate, formatPlacement, parsePlayerId } from "../../lib/format";
-
-/** Text button/link with a 44 px target and visible focus. `external` opens in a new tab or the browser. */
-function ActionLink({
-  label,
-  text,
-  href,
-  external,
-  onPress,
-  solid,
-}: {
-  label: string;
-  /** Visible text when it differs from the accessible label (e.g. an arrow that screen readers skip). */
-  text?: string;
-  href?: string;
-  external?: boolean;
-  onPress?: PressableProps["onPress"];
-  solid?: boolean;
-}) {
-  const ring = useFocusRing();
-  const webProps =
-    Platform.OS === "web" && href
-      ? ({
-          href,
-          hrefAttrs: external ? { target: "_blank", rel: "noopener noreferrer" } : undefined,
-        } as object)
-      : {};
-  const press =
-    external && Platform.OS !== "web" && href ? () => void Linking.openURL(href) : onPress;
-  const node = (
-    <Pressable
-      role={onPress && !href ? "button" : "link"}
-      aria-label={external && Platform.OS === "web" ? `${label} (opens in a new tab)` : label}
-      onPress={press}
-      {...ring.handlers}
-      {...webProps}
-      style={StyleSheet.flatten([styles.action, solid && styles.solid, ring.style])}
-    >
-      <BodyText variant="label" color={solid ? colors.white : colors.accent}>
-        {text ?? label}
-      </BodyText>
-    </Pressable>
-  );
-  return href && !external ? (
-    <Link href={href as "/"} asChild>
-      {node}
-    </Link>
-  ) : (
-    node
-  );
-}
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -219,8 +162,6 @@ export default function PlayerPage() {
 
 const styles = StyleSheet.create({
   pad: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingVertical: spacing.sm },
-  action: { minHeight: minTouchTarget, justifyContent: "center", alignSelf: "flex-start" },
-  solid: { backgroundColor: colors.ink, paddingHorizontal: spacing.xl },
   stats: { flexDirection: "row", gap: spacing.xl, flexWrap: "wrap" },
   stat: { minWidth: 88 },
   result: {

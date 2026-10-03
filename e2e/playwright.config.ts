@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { defineConfig } from "@playwright/test";
 
 const PORT = Number(process.env.E2E_PORT ?? 4173);
+const API_PORT = Number(process.env.API_PORT ?? 8787);
 
 /**
  * Locally the browser is pre-installed under PLAYWRIGHT_BROWSERS_PATH. We always launch the newest
@@ -48,10 +49,10 @@ export default defineConfig({
     {
       // The API needs DATABASE_URL (a migrated, seeded throwaway database) in the environment.
       command: "pnpm --filter @sr/api exec tsx src/dev.ts",
-      url: "http://localhost:8787/",
+      url: `http://localhost:${API_PORT}/`,
       reuseExistingServer: !process.env.CI,
       // The browser calls the API from the static server's origin, so CORS must allow it.
-      env: { ALLOWED_ORIGINS: `http://localhost:${PORT}` },
+      env: { ALLOWED_ORIGINS: `http://localhost:${PORT}`, API_PORT: String(API_PORT) },
     },
   ],
 });
