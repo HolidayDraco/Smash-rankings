@@ -40,7 +40,7 @@ The blueprint planned for this: "fall back to `web.output: \"static\"` with clie
 - **Good:** simple and cheap. Pages are files on a CDN, and the only server code is the small cached API. It works on Vercel Hobby at $0. It needs no unreleased software.
 - **Trade-off (SEO):** the first page load doesn't contain player names or numbers, so search engines and link previews see less. Per-route titles still work. This matters most for player pages and is addressed when server rendering is revisited (Phase 2's SEO work is the natural point).
 - **Trade-off (UX):** every data screen needs loading, empty, and error states. Skeleton rows keep it feeling fast.
-- **Ops:** dynamic routes such as `/player/[id]-[slug]` need rewrites in `apps/app/vercel.json`. The API needs CORS for the app's domain(s). Clay must create two Vercel projects (see `docs/plans/phase-0.md`).
+- **Ops:** dynamic routes such as `/player/[idSlug]` (e.g. `/player/1234-tagname`) need rewrites in `apps/app/vercel.json`. The API needs CORS for the app's domain(s). Clay must create two Vercel projects (see `docs/plans/phase-0.md`).
 - **Until Vercel is connected,** PR evidence is CI results plus Playwright screenshots at 390 px and 1280 px.
 
 ## Sources

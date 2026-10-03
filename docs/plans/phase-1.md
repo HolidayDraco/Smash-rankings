@@ -10,7 +10,7 @@
 - **Evidence:** a CI link and test counts on every PR. UI PRs also include screenshots at 390 px and 1280 px under `docs/screenshots/<branch>/`, until Vercel is connected and previews take over.
 - **Data during development:** start.gg is mocked with fixtures, and the database is a throwaway Postgres. UI and API tests use a **synthetic seed** (`pnpm db:seed`) with made-up player names, so no real personal data sits in the repo.
 - **Live data** begins only after Clay's setup steps (`docs/plans/phase-0.md`). Code PRs do not wait for it. Scheduled jobs skip with a clear "not configured yet" notice while secrets are missing, so CI doesn't go red every day.
-- **Always:** ≤ 60 start.gg requests/min through `packages/startgg`, and all ingestion workflows share one `concurrency` group so the token is never used twice at once. Minimum data. **No bulk export:** list endpoints cap at 100 rows. "Data from start.gg" appears on every data screen. $0 on free tiers.
+- **Always:** ≤ 60 start.gg requests/min through `packages/startgg`, and all ingestion runs share one `concurrency` group so the token is never used twice at once. Minimum data. **No bulk export:** the leaderboard endpoint returns the top 100 eligible players only (no paging past that), and other lists cap at 20–100 rows. "Data from start.gg" appears on every data screen. $0 on free tiers.
 
 ## Order and dependencies
 
@@ -30,7 +30,7 @@ Backend first: P1-1 → P1-2 → P1-3. P1-4 can run in parallel with P1-1 throug
 
 ### P1-2 · Sync job: sets, standings, players
 - **Branch:** `feat/job-sync` · **Builder:** startgg-ingestion
-- **Scope:** `jobs/sync.ts`: pages through each qualifying event's sets and standings, maps entrants to start.gg player ids, and upserts the minimal `players` fields (tag, prefix, location if verified). It marks DQs (`is_dq`), assigns `rating_period` with a shared ISO-week helper in `packages/core`, checkpoints `events.sync_cursor` after each page, stops cleanly before the time budget, and re-syncs completed events once about 48 hours later.
+- **Scope:** `jobs/sync.ts`: pages through each qualifying event's sets and standings, maps entrants to start.gg player ids, and upserts the minimal `players` fields (tag, prefix, `user_slug` for the start.gg profile link, location if verified). It marks DQs (`is_dq`), assigns `rating_period` with a shared ISO-week helper in `packages/core`, checkpoints `events.sync_cursor` after each page, stops cleanly before the time budget, and re-syncs completed events once about 48 hours later.
 - **Tests:** pages through to the end, resumes from a saved cursor, stores a DQ set as `is_dq = true`, retries after a mid-run rate-limit error, shrinks pages after a complexity error, saves a partial cursor when the time budget runs out, and creates no duplicates on rerun. Entrants without a start.gg player account are skipped and counted.
 - **Risks:** DQ encoding is unverified. It sits in one tested function and is fixed in P1-12 if needed.
 - ☐ The PR shows a test named for DQ handling, passing
@@ -40,9 +40,9 @@ Backend first: P1-1 → P1-2 → P1-3. P1-4 can run in parallel with P1-1 throug
 
 ### P1-3 · Backfill (12 months) and the ingest workflow
 - **Branch:** `feat/ingest-workflows` · **Builder:** startgg-ingestion
-- **Scope:** `jobs/backfill.ts` (walks back month by month, `--months` default 12, checkpoint stored in `meta`). Also `.github/workflows/ingest.yml`: discover daily at `17 9 * * *`; sync at `23 */2 * * *` plus `23 * * * 5,6,0,1`; backfill nightly at `41 7 * * *` plus `workflow_dispatch` with a `months` input. It uses one shared `concurrency` group, `timeout-minutes`, secrets from Actions only, and skips when secrets are missing. Each run logs the DB size, with a warning at 70% of 1 GB. actionlint runs in CI.
+- **Scope:** `jobs/backfill.ts` (walks back month by month, `--months` default 12, checkpoint stored in `meta`, **capped at ~75 minutes per run** and resumed the next night). Also `.github/workflows/ingest.yml`: sync at `23 */2 * * *` (even hours) plus `23 1-23/2 * * 5,6,0,1` (odd hours Fri–Mon, so weekends are hourly with no double runs); backfill nightly at `41 7 * * *` plus `workflow_dispatch` with a `months` input. **Discover has no separate trigger:** each sync run first runs discover if it hasn't succeeded in the last 24 hours. A separate queued discover would be cancelled whenever a newer run queues behind a long one (GitHub keeps only one pending run per `concurrency` group). Rate runs as a `needs:` job in the same workflow run after sync or backfill succeeds. It uses one shared `concurrency` group (`cancel-in-progress: false`), `timeout-minutes`, secrets from Actions only, and skips when secrets are missing. Each run logs the DB size and Neon compute-hours used, with a warning at 70% of either free limit (1 GB, 100 CU-hours/month). actionlint runs in CI.
 - **Tests:** backfill resumes from its checkpoint. A dry run reports the request count. actionlint passes.
-- **Risks:** a 12-month backfill takes hours, so it spreads over several nightly runs (≤ 5 h each, under the 6 h job limit [GH3]). An auth failure fails the run loudly.
+- **Risks:** a 12-month backfill takes hours, so it spreads over several nightly runs of ~75 minutes each. That keeps the shared queue free so the 2-hourly sync is never blocked for long and "Last updated" stays under 3 hours. An auth failure fails the run loudly.
 - ☐ The PR explains the schedule in plain words ("every 2 hours, hourly Fri–Mon")
 - ☐ The PR shows the estimated requests and hours for the 12-month backfill
 - ☐ The PR confirms jobs never overlap (one shared queue)
@@ -50,7 +50,7 @@ Backend first: P1-1 → P1-2 → P1-3. P1-4 can run in parallel with P1-1 throug
 
 ### P1-4 · Rating history, eligibility, and leaderboard builder (pure)
 - **Branch:** `feat/ranking-eligibility` · **Builder:** ranking-engine
-- **Scope:** `packages/ranking`: `rateHistory(sets, fromPeriod, toPeriod)` walks weekly periods (sets only, DQs dropped, merged aliases resolved to the main player). `isEligible` (≥ 10 sets, ≥ 3 qualifying events, trailing 12 months from a passed-in "as of" date, RD ≤ 110). `buildLeaderboard` sorts by `conservativeScore` descending, with ties broken by rating and then player id. `rankDelta7d`. Thresholds live in `packages/core`.
+- **Scope:** `packages/ranking` (P0-3 already shipped `ratePeriod`, `isEligible`, `rankLeaderboard`, and the ISO-week helper): `rateHistory(sets, fromPeriod, toPeriod)` walks weekly periods (sets only, DQs dropped, merged aliases resolved to the main player), the trailing-12-month set and event counts for eligibility from a passed-in "as of" date, and `rankDelta7d`. Thresholds live in `packages/core`.
 - **Tests:** a 9-set player is not eligible. A player with 2 events is not eligible. An RD of 111 is not eligible. Ties sort the same way every time. Inactive weeks inflate RD. The same input always gives the same output.
 - ☐ The PR explains "conservative score = rating minus two times uncertainty" in one sentence
 - ☐ The PR shows the eligibility tests passing
@@ -59,8 +59,8 @@ Backend first: P1-1 → P1-2 → P1-3. P1-4 can run in parallel with P1-1 throug
 
 ### P1-5 · Rate job and METHODOLOGY.md
 - **Branch:** `feat/job-rate` · **Builder:** ranking-engine
-- **Scope:** `jobs/rate.ts` does a full recompute over the 12-month window. That's simple and deterministic; incremental recompute comes later only if runtime needs it. The current week is rated with the sets so far and redone each run. The job writes `rating_history`, fills `leaderboard_staging`, swaps it in one transaction, bumps `meta.data_version` and `last_rated_at`, writes the top 20 to the GitHub job summary, and logs `ingest_runs`. `ingest.yml` triggers rate after a successful sync or backfill (`workflow_run`). Also includes the first draft of `docs/METHODOLOGY.md` (fan-friendly).
-- **Tests (synthetic seed):** a rerun gives an identical leaderboard. A reader during the swap sees the old or new table, never empty. `data_version` goes up. Runtime is reported.
+- **Scope:** `jobs/rate.ts` does a full recompute over the 12-month window. That's simple and deterministic; incremental recompute comes later only if runtime needs it. The current week is rated with the sets so far and redone each run. The job writes `rating_history`, rebuilds `leaderboard` with delete + insert inside one transaction (readers see the old or new list, never a half-built one; this keeps the foreign keys that a table swap would drop), bumps `meta.data_version` and `last_rated_at`, writes the top 20 to the GitHub job summary, and logs `ingest_runs`. `ingest.yml` runs rate as a `needs:` job after a successful sync or backfill. Also includes the first draft of `docs/METHODOLOGY.md` (fan-friendly).
+- **Tests (synthetic seed):** a rerun gives an identical leaderboard. A reader during the rebuild sees the old or new list, never empty. `data_version` goes up. Runtime is reported.
 - ☐ METHODOLOGY.md reads in plain language: what counts, how scores work, and their limits
 - ☐ The PR shows a sample top-20 table from the synthetic data
 - ☐ The PR states the job's runtime
@@ -68,7 +68,7 @@ Backend first: P1-1 → P1-2 → P1-3. P1-4 can run in parallel with P1-1 throug
 
 ### P1-6 · API skeleton: meta and status
 - **Branch:** `feat/api-skeleton` · **Builder:** lead session, with qa-tester for tests
-- **Scope:** `apps/api` (Hono on Vercel Functions, env checked at startup), response schemas in `packages/core`, a cache middleware (`public, s-maxage=300, stale-while-revalidate=86400`), CORS for the app's domains, and `attribution: "Data from start.gg"` on every response. Routes: `GET /v1/meta` (data_version, last_rated_at) and `GET /v1/status` (latest run per job: time and ok/failed, with no error text). Also `packages/db` `seed` script (synthetic).
+- **Scope:** `apps/api` (Hono on Vercel Functions, env checked at startup), response schemas in `packages/core`, a cache middleware (`public, s-maxage=900, stale-while-revalidate=86400`; data changes at most hourly, and longer CDN caching keeps the Neon database asleep more, inside the free 100 compute-hours a month), CORS for the app's domains, and `attribution: "Data from start.gg"` on every response. Routes: `GET /v1/meta` (data_version, last_rated_at) and `GET /v1/status` (latest run per job: time and ok/failed, with no error text). Also `packages/db` `seed` script (synthetic).
 - **Tests:** `app.request()` runs against a throwaway Postgres. Every response passes its Zod schema and has the cache header and attribution. A missing env var fails with a clear message.
 - ☐ The PR shows a sample `/v1/meta` response with "Data from start.gg"
 - ☐ The PR shows responses are cached (header listed)
@@ -77,8 +77,8 @@ Backend first: P1-1 → P1-2 → P1-3. P1-4 can run in parallel with P1-1 throug
 
 ### P1-7 · API: leaderboard, player, search
 - **Branch:** `feat/api-read-endpoints` · **Builder:** lead session, with qa-tester for tests
-- **Scope:** `GET /v1/leaderboard?limit=&cursor=` (limit capped at 100), `GET /v1/players/:id` (rank or "not yet ranked", rating, RD, 12-month set record, last 10 results; merged aliases redirect to the main player), `GET /v1/search?q=` (≥ 2 characters, tag match with escaped wildcards, 20 results). Exports the typed Hono RPC client for the app.
-- **Tests:** pagination, the limit cap, search escaping `%` and `_`, an unknown player returns 404, and the merged-alias redirect.
+- **Scope:** `GET /v1/leaderboard?limit=` (top eligible players only, limit capped at 100, no cursor in the MVP), `GET /v1/players/:id` (rank or "not yet ranked", rating, RD, 12-month set record, last 10 results; merged aliases redirect to the main player), `GET /v1/search?q=` (≥ 2 characters, trimmed and lower-cased so equal searches share a cache entry, tag match with escaped wildcards, 20 results). Exports the typed Hono RPC client for the app.
+- **Tests:** the limit cap, search escaping `%` and `_`, an unknown player returns 404, and the merged-alias redirect.
 - **Risks:** too-generous limits could look like a bulk export. Caps are enforced and tested.
 - ☐ The PR shows that asking for 1,000 rows returns at most 100
 - ☐ The PR shows a sample search result for a seeded name
@@ -89,7 +89,7 @@ Backend first: P1-1 → P1-2 → P1-3. P1-4 can run in parallel with P1-1 throug
 - **Branch:** `feat/leaderboard-page` · **Builder:** frontend-ui, with qa-tester for e2e
 - **Scope:** the home route. Top 100 as dense `StatRow`s (rank, tag, score, 7-day change). A debounced search box. A "Last updated X min ago" badge from `/v1/meta`. Skeleton, empty, and error states. TanStack Query. The `Attribution` footer, with a link to start.gg, starts here because this is the first screen with start.gg data. In e2e, the API runs locally against the seeded CI Postgres.
 - **Tests:** 100 rows render, search finds a seeded player, the badge and attribution are visible, axe is clean, and the page is checked at both viewports. Time-to-first-row is recorded in CI for information. The real "< 2 s" check happens on the Vercel preview.
-- ☐ The phone screenshot shows a readable top-100 list in the approved style
+- ☐ The phone screenshot shows a readable top-100 list in the style-guide look
 - ☐ Typing a name in search shows matches (screenshot)
 - ☐ The "Last updated" badge is visible at the top
 - ☐ "Data from start.gg" is visible at the bottom
@@ -97,7 +97,7 @@ Backend first: P1-1 → P1-2 → P1-3. P1-4 can run in parallel with P1-1 throug
 
 ### P1-9 · Player page
 - **Branch:** `feat/player-page` · **Builder:** frontend-ui, with qa-tester for e2e
-- **Scope:** `/player/[id]-[slug]` (with a `vercel.json` rewrite for static hosting). Shows the tag, rank or "Not yet ranked (needs N more sets / events)", the score, rating ± uncertainty, the 12-month win–loss record, recent results (event, date, placing, entrants), a link to the player's start.gg profile, and the attribution.
+- **Scope:** `/player/[idSlug]`, a single route segment like `/player/1234-tagname` that the page parses into the id (Expo Router only treats a whole segment as dynamic, so `[id]-[slug]` wouldn't work). A `vercel.json` rewrite serves it from static hosting. Shows the tag, rank or "Not yet ranked (needs N more sets / events)", the score, rating ± uncertainty, the 12-month win–loss record, recent results (event, date, placing, entrants), a link to the player's start.gg profile, and the attribution.
 - **Tests:** ranked and unranked players, a not-found player, opening from a leaderboard row, axe, and both viewports.
 - ☐ Tapping a leaderboard name opens that player (screenshots)
 - ☐ An unranked player clearly says why they aren't ranked yet

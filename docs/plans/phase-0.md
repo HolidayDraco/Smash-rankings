@@ -23,7 +23,7 @@ P0-1 → P0-2 → then P0-3, P0-4, P0-5, and P0-7 can run in parallel. P0-6 foll
 ### P0-1 · Phase 0 and Phase 1 plans plus ADR-0001 and ADR-0002
 - **Branch:** `docs/phase-0-1-plans` · **Builder:** architect
 - **Scope:** `docs/plans/phase-0.md`, `docs/plans/phase-1.md`, `docs/adr/0001-stack.md`, `docs/adr/0002-ranking-method.md`, `STATUS.md`.
-- **Tests:** none (docs only). CI is not set up yet.
+- **Tests:** none (docs only). CI (from P0-2) runs the secret scan.
 - **Risks:** none.
 - ☐ Both plan files open on your phone and read in plain English
 - ☐ ADR-0001 explains why the website starts as "static pages + live data" and when that gets revisited
@@ -32,7 +32,7 @@ P0-1 → P0-2 → then P0-3, P0-4, P0-5, and P0-7 can run in parallel. P0-6 foll
 
 ### P0-2 · Monorepo scaffold and CI
 - **Branch:** `chore/monorepo-scaffold` · **Builder:** lead session, with qa-tester for the CI workflow
-- **Scope:** root `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `.nvmrc` (current Node LTS), `.gitignore`, `.env.example` (blank values); `packages/config` (strict tsconfig base, ESLint flat config, Prettier, path aliases); `packages/core` (`ULTIMATE_VIDEOGAME_ID = 1386`, Zod env schemas for `STARTGG_TOKEN` / `DATABASE_URL` / `SENTRY_DSN`, so each app checks only the variables it needs); Vitest workspace; `.github/workflows/ci.yml` (install → lint → typecheck → test → build, pnpm cache, `concurrency`, `timeout-minutes`); a gitleaks secret-scan job (the gitleaks CLI directly, which avoids the action's license question); `.github/workflows/keepalive.yml` (monthly).
+- **Scope:** root `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `.nvmrc` (current Node LTS), `.gitignore`, `.env.example` (blank values); `packages/config` (strict tsconfig base, ESLint flat config, Prettier, path aliases); `packages/core` (`ULTIMATE_VIDEOGAME_ID = 1386`, Zod env schemas for `STARTGG_TOKEN` / `DATABASE_URL` / `SENTRY_DSN`, so each app checks only the variables it needs); Vitest workspace; `.github/workflows/ci.yml` (install → lint → typecheck → test → build, pnpm cache, `concurrency`, `timeout-minutes`); a gitleaks secret-scan job (the official action; no license needed on a personal-account repo); `.github/workflows/keepalive.yml` (monthly).
 - **Tests:** env validation fails fast with a clear message naming the missing variable, and the message never contains a value. The constant equals 1386. CI runs on the PR itself.
 - **Risks:** Keepalive: GitHub disables scheduled workflows after 60 days without repository activity [GH2]. The plan is a monthly job that calls GitHub's "enable workflow" API for `ingest.yml`. ⚠ Not yet verified that this resets the timer. If it doesn't, fall back to Dependabot activity. Logged in `STATUS.md` to check by day 50.
 - ☐ The PR shows green checks for lint, typecheck, test, build, and secret scan
@@ -43,7 +43,7 @@ P0-1 → P0-2 → then P0-3, P0-4, P0-5, and P0-7 can run in parallel. P0-6 foll
 ### P0-3 · Glicko-2 ranking engine
 - **Branch:** `feat/ranking-glicko2` · **Builder:** ranking-engine
 - **Scope:** `packages/ranking` only. Pure functions: scale conversion, the single-period update, the Illinois volatility solve (ε = 1e-6), the inactivity step, and `ratePeriod(players, sets)`. Settings come from `packages/core` (r 1500, RD 350, σ 0.06, τ 0.5). No DB, network, or clock.
-- **Tests:** Glickman worked example (r′ 1464.06, RD′ 151.52, σ′ 0.05999, to 2 decimals). Property tests: a win never lowers a rating, RD shrinks after play, RD grows when inactive. Determinism: shuffled input gives identical output.
+- **Tests:** Glickman worked example: the paper's printed r′ 1464.06, RD′ 151.52, σ′ 0.05999 within the paper's precision (0.01; σ 0.00001), plus the full-precision values 1464.0507 / 151.5165 / 0.059996 asserted tightly (ADR-0002 item 9). Property tests: a win never lowers a rating, RD shrinks after play, RD grows when inactive. Determinism: shuffled input gives identical output.
 - **Risks:** floating-point drift. Mitigated by tolerance-based asserts and a fixed processing order.
 - ☐ The PR shows the "Glickman worked example" test passing, with the three numbers
 - ☐ CI is green
@@ -108,9 +108,9 @@ P0-1 → P0-2 → then P0-3, P0-4, P0-5, and P0-7 can run in parallel. P0-6 foll
 1. **Vercel (Hobby):** import the repo twice: project "app" with root `apps/app`, and project "api" with root `apps/api`. Leave preview deployments on.
 2. **Neon (Free):** create a project and copy its connection string into GitHub → Settings → Secrets → Actions as `DATABASE_URL`, and into the Vercel "api" project's environment variables. Never paste it into chat or a PR.
 3. **start.gg:** create a token named "smash-rankings prod" and save it as the GitHub secret `STARTGG_TOKEN`. Set a calendar reminder 11 months out, because tokens expire after 1 year [SG1].
-4. **Sentry (Developer, free):** create a project and save its DSN as `SENTRY_DSN` in GitHub secrets and in both Vercel projects. This is needed by P1-11.
+4. **Sentry (Developer, free):** create a project and save its DSN as `SENTRY_DSN` in GitHub secrets and in both Vercel projects. This is needed by P1-11. The website's copy (`EXPO_PUBLIC_SENTRY_DSN`) ends up in the public page code. That's normal for Sentry: a DSN only lets apps *send* errors, so it isn't a leaked secret.
 5. **Claude cloud environment:** set network access to Custom and add `api.start.gg`. Store the token as an API credential. This allows the live checks in P1-12.
-6. **Branch protection on `main`:** require a PR and green CI. Claude still self-merges under the merge policy.
+6. **Branch protection on `main`:** require a PR and green CI, and set **required approvals to 0**. GitHub turns on "1 approval" by default when you tick "require a pull request", and Claude can't approve its own PR, so a 1 would block self-merging.
 
 ## Phase 0 acceptance (Clay)
 ☐ Screenshots (later, the preview link) show the app shell on a phone · ☐ The style guide shows a white background, condensed italic type, an angled panel, and a dense stat row · ☐ CI is green on every Phase 0 PR · ☐ `docs/adr/` has 2 plain-English ADRs · ☐ The secret scan is green
