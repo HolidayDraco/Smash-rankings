@@ -74,8 +74,14 @@ describe("argument parsing and helpers", () => {
     const code = await run(["--dry-run"], twoPages(), { STARTGG_TOKEN: TOKEN }, out);
     expect(code).toBe(0);
     expect(out).toEqual([
-      "[dry run] discover: 4 events found, 2 qualify, 0 online stored, 2 skipped; 2 requests",
+      "[dry run] discover: 4 events found, 2 qualify, 0 online stored, 2 skipped (0 outside the launch region); 2 requests",
     ]);
+  });
+  it("counts events skipped for being outside the launch region on their own", async () => {
+    const out: string[] = [];
+    const page = [{ body: fixture("tournaments-edge") }];
+    expect(await run(["--dry-run"], page, { STARTGG_TOKEN: TOKEN }, out)).toBe(0);
+    expect(out[0]).toMatch(/ skipped \(1 outside the launch region\)/);
   });
   it("exits with a usage error when the token is missing", async () => {
     const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);

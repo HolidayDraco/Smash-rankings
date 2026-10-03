@@ -450,7 +450,7 @@ Updated: `docs/blueprint.md` (decision 2 changed, decision 9 added, older notes 
 
 **What changed:** The code now matches the scope Clay confirmed:
 
-- **Texas only.** A new setting, `LAUNCH_REGIONS`, lists the places we cover (United States, state TX). Adding a state later is a one-line change to that list. Events held anywhere else are skipped and not stored, and any already-stored event that turns out to be outside Texas stops counting.
+- **Texas only.** A new setting, `LAUNCH_REGIONS`, lists the places we cover (United States, state TX). Adding a state later means adding it to that list (plus its full name), then re-checking the last 12 months of events. Events held anywhere else are skipped and not stored. If an already-stored event turns out to be outside Texas, it stops counting the next time we check it.
 - **16+ entrants.** The cutoff for in-person singles events went from 64 to 16. Online events still never count.
 - **Wording.** The methodology page (and `docs/METHODOLOGY.md`) now say "held in Texas" and "at least 16 entrants", and mention more states may come.
 - **Test data.** The made-up sample events and the seed data are now in Texas, and there is a made-up California event to prove it gets skipped.

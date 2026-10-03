@@ -57,10 +57,12 @@ Signals still pending a live check, each in one function in `packages/core/src/q
 
 ### Region rule (ADR-0003)
 
-- Only tournaments in a launch region are stored: `LAUNCH_REGIONS` in `packages/core/src/constants.ts` (US, state TX). `classifyEvent` is the single place that decides; events outside the region are "skip" (not stored, and demoted if already stored). Online events have no state, so they skip too, unless their tournament is tagged with a Texas state, in which case they stay "stored-not-qualifying".
+- Only tournaments in a launch region are stored: `LAUNCH_REGIONS` in `packages/core/src/constants.ts` (US, state TX). `classifyEvent` is the single place that decides; events outside the region are "skip" (not stored; an already-stored one is demoted when discover next sees it). Online events have no state, so they skip too, unless their tournament is tagged with a Texas state, in which case they stay "stored-not-qualifying".
 - The field we read is `Tournament.addrState` (with `Tournament.countryCode`). The check is case-insensitive and accepts "TX" or "Texas"; a null country relies on the state alone.
 - **Request cost of discover is unchanged by the region rule.** It still pages every Ultimate tournament nationwide and filters locally.
 - ⚠ Unverified (P1-12 live check): whether `addrState` holds "TX" or "Texas" (or something else, such as a lowercase or padded value).
+- ⚠ Unverified (P1-12): the `countryCode` format. We expect "US". If it is something else (e.g. "USA"), every Texas event would be skipped, so discover's summary reports "N outside the launch region" separately: check it on the first live run.
+- **Changing `LAUNCH_REGIONS`:** sync, rate and the API trust `events.qualifies`. Discover only re-classifies events in the window it reads (14 days back to 30 ahead), so after adding or removing a state, run discover once over the last 12 months (`--from`) so every stored event is re-checked.
 - ⚠ Unverified (P1-12): whether `TournamentPageFilter` has server-side `addrState` / `countryCode` filters. Our trimmed schema does not include them. If they exist, using them would cut discover requests sharply; keep the local check as a backstop.
 
 ### Discover: reruns, stale flags, and slug clashes

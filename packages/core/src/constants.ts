@@ -13,8 +13,9 @@ export const QUALIFYING_EVENT_RULES = {
 } as const;
 
 /**
- * Where we ingest and rate events (ADR-0003). Launch is Texas only. To add a state,
- * add its two-letter code to `states` (then run a backfill); no other code changes.
+ * Where we ingest and rate events (ADR-0003). Launch is Texas only. To add a state, add its
+ * two-letter code to `states` and its full name to `STATE_NAMES` (a test checks both), then
+ * re-run discover over the last 12 months (see docs/startgg-notes.md). No other code changes.
  * `countryCode` is the start.gg `Tournament.countryCode` every listed state belongs to.
  */
 export const LAUNCH_REGIONS = {

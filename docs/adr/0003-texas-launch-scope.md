@@ -10,7 +10,7 @@ The original plan ranked every in-person Smash Ultimate singles event on start.g
 
 ## Decision
 
-1. **Region:** only tournaments held in **Texas** are ingested and rated. The region is a setting, `LAUNCH_REGIONS = ["TX"]` in `packages/core`, not logic spread through the code. Adding a state later is planned to be a one-line change, plus a backfill run.
+1. **Region:** only tournaments held in **Texas** are ingested and rated. The region is a setting, `LAUNCH_REGIONS = { countryCode: "US", states: ["TX"] }` in `packages/core`, not logic spread through the code. Adding a state later means adding it to that list (and its full name to `STATE_NAMES`), then re-checking the last 12 months of events.
 2. **Entrant cutoff:** in-person **singles** events with **16 or more entrants** qualify (was 64). Online events are still never rated (decision 3 unchanged).
 3. **Who appears:** everyone who plays sets at qualifying Texas events is rated. The leaderboard uses the same eligibility rules as before (≥ 10 rated sets, ≥ 3 qualifying events, RD ≤ 110, last 52 weeks). In practice that means Texas regulars. A visitor from another state who attends enough Texas events would appear too. *Stated default; Clay can ask for a "Texas residents only" rule later.*
 4. **Unchanged:** Glicko-2 settings, weekly periods, the conservative score, and the 12-month window. Our Glicko-2 ranking stays the main ranking.
