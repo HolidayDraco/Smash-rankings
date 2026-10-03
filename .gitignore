@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+*.tsbuildinfo
+.DS_Store
+
+# Secrets: never commit env files (except the blank example)
+.env
+.env.*
+!.env.example
+
+# Expo / web build output
+.expo/
+web-build/
+apps/app/dist/
+
+# Playwright
+test-results/
+playwright-report/
