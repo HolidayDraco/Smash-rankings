@@ -33,7 +33,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <Head>
         <meta name="theme-color" content={colors.white} />
-        <meta property="og:site_name" content="Smash Rankings" />
+        <meta property="og:site_name" content="Bracket Index" />
         <meta property="og:type" content="website" />
       </Head>
       <StatusBar style="dark" />

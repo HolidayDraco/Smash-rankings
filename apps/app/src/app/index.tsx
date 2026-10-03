@@ -12,7 +12,7 @@ import {
 } from "@sr/ui";
 import { Page } from "../components/Page";
 
-const TITLE = "Smash Rankings";
+const TITLE = "Bracket Index";
 const DESCRIPTION =
   "Live Super Smash Bros. Ultimate player rankings computed from start.gg results. Unofficial fan project.";
 
@@ -32,7 +32,7 @@ export default function Home() {
             Super Smash Bros. Ultimate
           </BodyText>
           <DisplayText variant="display" level={1} color={colors.white}>
-            Smash Rankings
+            Bracket Index
           </DisplayText>
           <BodyText color={colors.white}>
             Player rankings from real set results. Coming soon.

@@ -17,8 +17,8 @@ import {
 import { Page } from "../components/Page";
 import { Section } from "../components/Section";
 
-const TITLE = "Style guide | Smash Rankings";
-const DESCRIPTION = "Type, color, angled panels, dense stats, and motion for Smash Rankings.";
+const TITLE = "Style guide | Bracket Index";
+const DESCRIPTION = "Type, color, angled panels, dense stats, and motion for Bracket Index.";
 
 // Obviously fake sample players.
 const SAMPLE_ROWS = [

@@ -2,8 +2,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 const routes = [
-  { path: "/", title: "Smash Rankings", heading: "Smash Rankings" },
-  { path: "/style-guide", title: "Style guide | Smash Rankings", heading: "Style guide" },
+  { path: "/", title: "Bracket Index", heading: "Bracket Index" },
+  { path: "/style-guide", title: "Style guide | Bracket Index", heading: "Style guide" },
 ] as const;
 
 async function expectNoSeriousViolations(page: Page) {

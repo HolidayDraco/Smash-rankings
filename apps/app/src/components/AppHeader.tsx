@@ -27,7 +27,7 @@ export function AppHeader() {
       <View style={styles.brand}>
         <View aria-hidden style={styles.mark} />
         <DisplayText variant="h3" level={null} color={colors.ink}>
-          Smash Rankings
+          Bracket Index
         </DisplayText>
       </View>
       <View role="navigation" aria-label="Primary" style={styles.nav}>
