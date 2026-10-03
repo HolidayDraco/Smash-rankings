@@ -8,6 +8,7 @@
     },
     "typecheck": {},
     "test": {
+      "dependsOn": ["^test"],
       "env": ["CI", "TEST_DATABASE_URL"]
     },
     "dev": {

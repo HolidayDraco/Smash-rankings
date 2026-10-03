@@ -1,4 +1,4 @@
-import type { EventNode, SetNode } from "./schemas";
+import type { SetNode } from "./schemas";
 
 /** What sync needs to upsert a players row before the set that references it. */
 export interface NormalizedPlayer {
@@ -90,8 +90,5 @@ function singlesPlayer(entrant: RawEntrant): NormalizedPlayer | null {
   };
 }
 
-/** start.gg event type 1 = singles, 5 = teams (pending live check). */
-export function isSinglesEvent(event: Pick<EventNode, "type" | "teamRosterSize">): boolean {
-  if (event.type !== null) return event.type === 1;
-  return event.teamRosterSize === null || event.teamRosterSize.maxPlayers === 1;
-}
+// The singles signal lives in @sr/core with the other qualifying rules.
+export { isSinglesEvent } from "@sr/core";
