@@ -281,9 +281,9 @@ describe.skipIf(!testDatabaseUrl)(
         expect(
           body.recentResults.map((result) => [result.tournamentName, result.entrants]),
         ).toEqual([
-          ["Sample Regional", 128],
-          ["Sample Invitational", 96],
-          ["Sample Showdown", 64],
+          ["Sample Regional", 96],
+          ["Sample Invitational", 64],
+          ["Sample Showdown", 32],
         ]);
       });
 

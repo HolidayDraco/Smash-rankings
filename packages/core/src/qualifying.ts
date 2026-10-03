@@ -1,3 +1,4 @@
+import { isInLaunchRegion } from "./region";
 import { QUALIFYING_EVENT_RULES, ULTIMATE_VIDEOGAME_ID } from "./constants";
 
 /** The start.gg event facts the rules need. Structural, so core does not depend on the client. */
@@ -10,6 +11,9 @@ export interface EventFacts {
   isOnline: boolean | null;
   /** Fallback when the event itself does not say. */
   tournamentIsOnline?: boolean | null;
+  /** Where the tournament was held (`Tournament.countryCode` / `addrState`); null when unknown. */
+  tournamentCountryCode?: string | null;
+  tournamentAddrState?: string | null;
 }
 
 export type EventClass = "qualifies" | "stored-not-qualifying" | "skip";
@@ -30,15 +34,21 @@ export function isOnlineEvent(event: Pick<EventFacts, "isOnline" | "tournamentIs
 
 /**
  * Which events we keep (blueprint decisions 2 and 3):
- * - Ultimate singles, at least 64 entrants, in person: "qualifies".
- * - Same but online: stored for reference, never rated.
- * - Anything smaller, doubles, or another game: "skip" (not stored: minimum data).
+ * - Ultimate singles, at least 16 entrants, held in a launch region (Texas), in person: "qualifies".
+ * - Same but online: stored for reference, never rated. Online events have no state, so only
+ *   those whose tournament is still tagged with a launch-region state get this class.
+ * - Outside the launch region, smaller, doubles, or another game: "skip" (not stored: minimum data).
  */
 export function classifyEvent(
   event: EventFacts,
   rules: typeof QUALIFYING_EVENT_RULES = QUALIFYING_EVENT_RULES,
 ): EventClass {
   if (event.videogameId !== ULTIMATE_VIDEOGAME_ID) return "skip";
+  const inRegion = isInLaunchRegion({
+    countryCode: event.tournamentCountryCode ?? null,
+    addrState: event.tournamentAddrState ?? null,
+  });
+  if (!inRegion) return "skip";
   if (event.numEntrants === null || event.numEntrants < rules.minEntrants) return "skip";
   if (rules.singlesOnly && !isSinglesEvent(event)) return "skip";
   if (isOnlineEvent(event) && !rules.allowOnline) return "stored-not-qualifying";

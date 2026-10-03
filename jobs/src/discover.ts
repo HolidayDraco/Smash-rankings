@@ -21,6 +21,8 @@ export function classify(event: EventNode, tournament: TournamentNode): EventCla
     teamRosterSize: event.teamRosterSize,
     isOnline: event.isOnline,
     tournamentIsOnline: tournament.isOnline,
+    tournamentCountryCode: tournament.countryCode,
+    tournamentAddrState: tournament.addrState,
   });
 }
 
@@ -53,7 +55,7 @@ async function freeSlugs(
 
 /**
  * Events we already store that now classify as "skip" (entrants dropped, became
- * doubles, ...) must stop qualifying. Only existing rows are touched; none are inserted.
+ * doubles, moved out of the launch region, ...) must stop qualifying. Only existing rows are touched; none are inserted.
  */
 async function demoteSkipped(db: Database, skipped: EventNode[]): Promise<number> {
   const existing = await db

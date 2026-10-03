@@ -4,7 +4,7 @@ All files here are **synthetic**: they are shaped like real start.gg responses b
 ids and gamer tags. Each has a `_note` key. Tests use them and never call the live API.
 
 - `tournaments-page-*.json`: two pages, with a doubles event (type 5) to filter out
-- `tournaments-edge.json`: one page with 64 vs 63 entrant events and an online 128-entrant event (discover job tests)
+- `tournaments-edge.json`: one page with 16 vs 15 entrant events, an out-of-state (CA) event, and an online 128-entrant event (discover job tests)
 - `sets-page-*.json`: two pages, including a DQ set (7002, displayScore "DQ", score -1; encoding is a guess until verified live)
 - `standings-page-1.json`: final placements
 - `sets-noplayer.json`, `standings-noplayer.json`: event 9002 with an entrant that has no start.gg player (sync job tests)

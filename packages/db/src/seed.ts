@@ -100,7 +100,9 @@ export async function seedSynthetic(
     slug: `tournament/synthetic-${index + 1}`,
     name,
     startAt: new Date(now.getTime() - (3 - index) * 3 * WEEK_MS),
-    numAttendees: 64 + index * 32,
+    countryCode: "US",
+    region: "TX",
+    numAttendees: 32 + index * 32,
   }));
   const eventRows = tournamentRows.map((tournament, index) => ({
     id: id(index + 1),

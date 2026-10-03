@@ -113,7 +113,7 @@ describe.skipIf(!testDatabaseUrl)(
       await close?.();
     });
 
-    it("skips a 63-entrant event, keeps 64, and stores the online event as non-qualifying", async () => {
+    it("skips a 15-entrant event and an out-of-state one, keeps 16, and stores the online event as non-qualifying", async () => {
       expect(await run([], [{ body: fixture("tournaments-edge") }], env)).toBe(0);
       const rows = await eventRows();
       expect(rows.map((r) => [r.id, r.qualifies, r.isOnline, r.syncStatus])).toEqual([
@@ -121,6 +121,18 @@ describe.skipIf(!testDatabaseUrl)(
         [9103, false, true, "pending"],
       ]);
       expect((await db.select().from(tournaments)).map((t) => t.id)).toEqual([5101, 5102]);
+    });
+
+    it("stops a stored event qualifying when its tournament is out of the launch region", async () => {
+      await run([], [{ body: fixture("tournaments-edge") }], env);
+      const moved = edge();
+      (moved.data.tournaments.nodes[0] ?? {})["addrState"] = "CA";
+      expect(await run([], [{ body: moved }], env)).toBe(0);
+      const rows = await eventRows();
+      expect(rows.map((r) => [r.id, r.qualifies])).toEqual([
+        [9101, false],
+        [9103, false],
+      ]);
     });
 
     it("skips doubles and small events", async () => {
@@ -179,11 +191,11 @@ describe.skipIf(!testDatabaseUrl)(
     it("stops a stored event qualifying when it is later classified skip, without inserting skipped ones", async () => {
       await run([], [{ body: fixture("tournaments-edge") }], env);
       const shrunk = edge();
-      firstEvent(shrunk)["numEntrants"] = 63;
+      firstEvent(shrunk)["numEntrants"] = 15;
       expect(await run([], [{ body: shrunk }], env)).toBe(0);
       const rows = await eventRows();
       expect(rows.map((r) => [r.id, r.qualifies, r.numEntrants])).toEqual([
-        [9101, false, 63],
+        [9101, false, 15],
         [9103, false, 128],
       ]);
     });
@@ -199,9 +211,9 @@ describe.skipIf(!testDatabaseUrl)(
       }
       const rows = await eventRows();
       expect(rows.map((r) => [r.id, r.slug])).toEqual([
-        [9101, "tournament/fake-edge/event/exactly-64~stale-9101"],
+        [9101, "tournament/fake-edge/event/exactly-16~stale-9101"],
         [9103, "tournament/fake-online/event/online-singles"],
-        [9999, "tournament/fake-edge/event/exactly-64"],
+        [9999, "tournament/fake-edge/event/exactly-16"],
       ]);
       const slugs = (await db.select().from(tournaments)).map((t) => [t.id, t.slug]);
       expect(slugs).toContainEqual([5101, "tournament/fake-5101~stale-5101"]);
