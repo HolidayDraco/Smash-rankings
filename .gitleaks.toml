@@ -1,0 +1,4 @@
+# Uses gitleaks' default rules. Add allowlist entries here only for proven
+# false positives, each with a comment explaining why.
+[extend]
+useDefault = true

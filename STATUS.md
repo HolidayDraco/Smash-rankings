@@ -51,3 +51,28 @@ Each entry includes:
 **Questions for Clay:** None.
 
 **Questions for Genghis:** None.
+
+---
+
+## 2026-10-03 — Phase 0: monorepo scaffold
+
+**Date:** October 3, 2026
+
+**What changed:** Set up the project's skeleton (the "monorepo": one repository that will hold the app, the API, the data jobs, and shared code). Added:
+
+- Shared settings for TypeScript (strict mode), ESLint (catches bugs), and Prettier (consistent formatting) in `packages/config`.
+- `packages/core` with the locked product rules as constants (Ultimate's id 1386, 64+ entrants, in-person only, leaderboard eligibility) and a check that stops a program immediately, with a clear message, if a secret like the start.gg token is missing. The message names the missing setting and never prints its value.
+- Automatic checks on every pull request (GitHub Actions "CI"): formatting, lint, type check, unit tests, and a secret scan (gitleaks). A build step gets added in the first PR that has something to build (the app shell).
+- A monthly "keepalive" job so GitHub doesn't switch off our scheduled data jobs after 60 quiet days.
+
+This follows the auto-merge rule from PR #2: Claude merges its own PRs once checks and review pass.
+
+**What's next:** Plans (`docs/plans/`), ADR-0001 and ADR-0002, then the ranking engine, database schema, start.gg client, and app shell with the style-guide page.
+
+**Questions for Clay:** Until these are set up, Claude builds and tests against saved sample data and a throwaway local database:
+
+1. **start.gg token:** create one and save it as the GitHub Actions secret `STARTGG_TOKEN`. Also add `api.start.gg` to this Claude cloud environment's network allowlist (it's blocked right now).
+2. **Neon:** create a free project and save its connection string as the GitHub Actions secret `DATABASE_URL`.
+3. **Vercel:** connect the repo so PRs get preview links.
+
+**Questions for Genghis:** None.

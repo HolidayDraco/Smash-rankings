@@ -27,7 +27,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 ## Commands (keep these working; update this list if scripts change)
 - `pnpm install`: install everything
 - `pnpm dev`: run app + api locally
-- `pnpm lint` / `pnpm format`: ESLint / Prettier
+- `pnpm lint` / `pnpm format` / `pnpm format:check`: ESLint / Prettier
 - `pnpm typecheck`: `tsc --noEmit` across the workspace
 - `pnpm test`: Vitest unit tests (all packages)
 - `pnpm test --filter @sr/ranking`: one package

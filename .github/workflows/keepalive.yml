@@ -1,0 +1,27 @@
+# GitHub disables scheduled workflows in public repos after 60 days without
+# repository activity. This re-enables every workflow monthly through the API,
+# so it needs no commits. Workflows someone disabled on purpose stay disabled. Runs on the 3rd at 05:37 UTC (off the top of the hour).
+name: Keepalive
+
+on:
+  schedule:
+    - cron: "37 5 3 * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Re-enable workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          for id in $(gh api --paginate "repos/$REPO/actions/workflows" \
+            --jq '.workflows[] | select(.state != "disabled_manually") | .id'); do
+            gh api -X PUT "repos/$REPO/actions/workflows/$id/enable"
+          done

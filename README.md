@@ -9,4 +9,4 @@ The first version is a website. The same project is meant to become an iPhone an
 - [Full plan](docs/blueprint.md) — what we're building and why
 - [Status](STATUS.md) — what has been done and what's next
 
-Planning documents are loaded. Setup (Phase 0) has not started.
+Setup (Phase 0) is in progress. See [Status](STATUS.md).
