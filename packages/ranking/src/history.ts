@@ -26,10 +26,11 @@ export function resolveAlias(id: PlayerId, aliases: AliasMap | undefined): Playe
 
 /**
  * The sets that count: aliases resolved to the main player, DQs dropped, and
- * self-sets (same player on both sides after merging) dropped.
+ * self-sets (same player on both sides after merging) dropped. Extra fields on
+ * the input (e.g. a completion time) are kept, so callers apply the same rules.
  */
-export function countedSets(sets: readonly PeriodSet[], aliases?: AliasMap): PeriodSet[] {
-  const counted: PeriodSet[] = [];
+export function countedSets<T extends PeriodSet>(sets: readonly T[], aliases?: AliasMap): T[] {
+  const counted: T[] = [];
   for (const set of sets) {
     if (set.isDq === true) continue;
     if (!Number.isSafeInteger(set.period)) {
@@ -38,7 +39,7 @@ export function countedSets(sets: readonly PeriodSet[], aliases?: AliasMap): Per
     const winnerId = resolveAlias(set.winnerId, aliases);
     const loserId = resolveAlias(set.loserId, aliases);
     if (winnerId === loserId) continue;
-    counted.push({ winnerId, loserId, period: set.period, eventId: set.eventId });
+    counted.push({ ...set, winnerId, loserId });
   }
   return counted;
 }

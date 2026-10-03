@@ -311,8 +311,11 @@ Every answer is checked against a strict format, carries "Data from start.gg", a
 - Builds the leaderboard (players with 10+ sets, 3+ events, and low enough uncertainty), with each player's **last active** date taken from their actual last set.
 - Works out the **7-day rank change** by comparing against a snapshot of last week's final ranks, taken when the week rolls over. If there was no run last week, everyone shows "new" rather than a misleading number.
 - Saves everything in one step, so visitors see either the old leaderboard or the new one, never a half-built one. It then bumps the "last updated" time.
-- Keeps the database small. Week-by-week history is stored only for weeks a player actually played (plus the current week): about **25–40 MB** at 50,000 players, instead of about 300 MB for every week.
-- Prints the top 20 into the GitHub Actions run page, so each run can be eyeballed.
+- Keeps the database small. Week-by-week history is stored only for weeks a player actually played (plus the current week), instead of every week (about 300 MB at 50,000 players). How big it gets depends on how often people play. At 50,000 players it's about **25–40 MB** if most players go to a few events a year (the usual pattern), and up to about **130 MB** if everyone played evenly all year. Two caveats:
+  - The first run each week rewrites most history rows (everyone's ratings shift slightly as the 12-month window moves). Until the database's routine cleanup reclaims the old copies, the table can briefly take about **twice** its normal space.
+  - These are estimates. Each run's summary prints the real number of history rows, so we'll check the actual size after the 12-month backfill.
+- Prints the top 20 into the GitHub Actions run page (with the "Data from start.gg" credit), so each run can be eyeballed.
+- Never trips over itself: if two runs overlap, the second waits for the first to finish saving, so last week's ranks can't be saved under the wrong week.
 
 Ranking tweaks: equal scores now break ties by the *numerically* lower start.gg id (ADR-0002), and some safety checks were added. METHODOLOGY.md now says: "7-day change is compared with the ranks at the end of last week", and "an event where every one of your sets was a DQ still counts toward the 3 events" (Genghis's ruling).
 

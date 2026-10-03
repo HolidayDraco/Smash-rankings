@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ratePeriod } from "./glicko2";
-import { rateHistory, ratingsAt, resolveAlias } from "./history";
+import { countedSets, rateHistory, ratingsAt, resolveAlias } from "./history";
 import type { PeriodSet } from "./history";
 import { buildLeaderboard, eligibilityStats } from "./leaderboard";
 
@@ -146,6 +146,17 @@ describe("rateHistory", () => {
     expect(slim.ratings).toEqual(full.ratings);
     expect(ratingsAt(slim.history, 14)).toEqual(ratingsAt(full.history, 14));
     for (const row of slim.history) expect(full.history).toContainEqual(row);
+  });
+
+  it("countedSets keeps extra fields so callers share the same counting rules", () => {
+    const sets = [
+      { ...set("alt", "b", 1), completedAt: 5 },
+      { ...set("a", "b", 1, { isDq: true }), completedAt: 6 },
+      { ...set("alt", "main", 1), completedAt: 7 },
+    ];
+    expect(countedSets(sets, new Map([["alt", "main"]]))).toEqual([
+      { ...set("main", "b", 1), completedAt: 5 },
+    ]);
   });
 
   it("rejects bad period ranges", () => {

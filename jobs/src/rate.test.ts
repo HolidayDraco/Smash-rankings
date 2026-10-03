@@ -18,7 +18,8 @@ import {
 } from "@sr/db";
 import { runMigrations } from "@sr/db/migrate";
 import { periodIndexFor, periodStart } from "@sr/ranking";
-import { parseJobArgs, runDbJob } from "./harness";
+import { discover } from "./discover";
+import { parseJobArgs, runDbJob, runJob } from "./harness";
 import { rateJob, type RateHooks } from "./rate";
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
@@ -57,6 +58,18 @@ describe("rate job flags and env", () => {
   it("needs DATABASE_URL but never STARTGG_TOKEN", async () => {
     const code = await runDbJob("rate", [], rateJob(), { env: { STARTGG_TOKEN: "x" } });
     expect(code).toBe(2);
+  });
+  it("rejects --as-of on start.gg jobs with a usage error", async () => {
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      const code = await runJob("discover", ["--as-of", "2026-09-01"], discover, {
+        env: { STARTGG_TOKEN: "x" },
+      });
+      expect(code).toBe(2);
+      expect(String(stderr.mock.calls[0]?.[0])).toContain("--as-of is only for the rate job");
+    } finally {
+      stderr.mockRestore();
+    }
   });
 });
 
@@ -333,6 +346,76 @@ describe.skipIf(!testDatabaseUrl)(
       expect(await board()).not.toEqual(before);
     });
 
+    /** Week-P ranks, then player 8 beats everyone in week P + 1. */
+    async function rolloverSetup() {
+      await run();
+      const lastWeek = new Map((await board()).map((r) => [String(r.playerId), r.rank]));
+      await addEvent(500, P + 1);
+      await addSets(
+        CORE.slice(0, 7).map((loser) => ({ winner: 8, loser, event: 500, period: P + 1 })),
+      );
+      return lastWeek;
+    }
+    async function expectConsistentSnapshot(lastWeek: Map<string, number | null>) {
+      const snapshot = JSON.parse((await metaValue("previous_ranks"))!) as {
+        period: number;
+        ranks: Record<string, number>;
+      };
+      expect(snapshot).toEqual({ period: P, ranks: Object.fromEntries(lastWeek) });
+      expect(await metaValue("ranks_period")).toBe(String(P + 1));
+      for (const row of await board()) {
+        expect(row.rankDelta7d).toBe(lastWeek.get(String(row.playerId))! - row.rank!);
+      }
+    }
+
+    it("serialises overlapping runs: the second waits for the lock, and the snapshot stays week P", async () => {
+      const lastWeek = await rolloverSetup();
+      let second: Promise<string> | undefined;
+      let sawWaiter = false;
+      await run([], NOW + WEEK_MS, {
+        beforeCommit: async () => {
+          // Start a second run while the first still holds the lock, and wait until it blocks.
+          second = run([], NOW + WEEK_MS + 60_000);
+          for (let i = 0; i < 400 && !sawWaiter; i += 1) {
+            const [row] = await db.execute(
+              sql`select count(*)::int as n from pg_locks where locktype = 'advisory' and not granted`,
+            );
+            sawWaiter = Number(row?.n) > 0;
+            if (!sawWaiter) await new Promise((resolve) => setTimeout(resolve, 25));
+          }
+        },
+      });
+      await second;
+      expect(sawWaiter).toBe(true);
+      await expectConsistentSnapshot(lastWeek);
+      expect(await metaValue("data_version")).toBe("3");
+    });
+
+    it("two concurrent runs (Promise.all) after a rollover leave a consistent snapshot", async () => {
+      const lastWeek = await rolloverSetup();
+      await Promise.all([run([], NOW + WEEK_MS), run([], NOW + WEEK_MS + 1000)]);
+      await expectConsistentSnapshot(lastWeek);
+      expect(await metaValue("data_version")).toBe("3");
+    });
+
+    it("treats a corrupt previous_ranks as no snapshot, with one warning", async () => {
+      await run();
+      await db.insert(meta).values({ key: "previous_ranks", value: '{"period":"x"}' });
+      await db
+        .update(meta)
+        .set({ value: String(P) })
+        .where(eq(meta.key, "ranks_period"));
+      const out = await run();
+      expect(out.match(/previous_ranks is unreadable/g)).toHaveLength(1);
+      expect((await board()).every((r) => r.rankDelta7d === null)).toBe(true);
+    });
+
+    it("escapes pipes, backticks, and newlines in gamer tags in the top-20 table", async () => {
+      await db.update(players).set({ gamerTag: "a|b`c\nd" }).where(eq(players.id, 1));
+      const out = await run();
+      expect(out).toContain("| 1 | a\\|b\\`c d |");
+    });
+
     it("takes rank_delta_7d from last week's final ranks after a week rollover", async () => {
       await run();
       const lastWeek = new Map((await board()).map((r) => [r.playerId, r.rank]));
@@ -408,7 +491,9 @@ describe.skipIf(!testDatabaseUrl)(
       try {
         const file = join(dir, "summary.md");
         await run([], NOW, {}, { GITHUB_STEP_SUMMARY: file });
-        expect(readFileSync(file, "utf8")).toMatch(/### Top 20[\s\S]*\| 1 \| P1 \|/);
+        const summary = readFileSync(file, "utf8");
+        expect(summary).toMatch(/### Top 20[\s\S]*\| 1 \| P1 \|/);
+        expect(summary).toContain("_Data from start.gg_");
       } finally {
         rmSync(dir, { recursive: true, force: true });
       }

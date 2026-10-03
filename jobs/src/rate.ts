@@ -2,22 +2,28 @@ import { appendFileSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 import { and, between, eq, gte, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { LEADERBOARD_ELIGIBILITY } from "@sr/core";
+import { ATTRIBUTION, LEADERBOARD_ELIGIBILITY } from "@sr/core";
 import { events, leaderboard, meta, players, sets, standings, type Database } from "@sr/db";
 import {
   buildLeaderboard,
+  countedSets,
   eligibilityStats,
   periodIndexFor,
   periodIndexToIsoWeek,
   periodStart,
   rateHistory,
   ratingWindow,
-  resolveAlias,
   type LeaderboardRow,
   type PeriodSet,
   type StandingsEvent,
 } from "@sr/ranking";
 import { isMain, runDbJob, type DbJobContext, type JobResult } from "./harness";
+
+/**
+ * Advisory-lock key (any constant bigint) that serialises rate writes. Two overlapping runs
+ * would otherwise both read ranks_period and could save the wrong week's ranks as the snapshot.
+ */
+const RATE_LOCK_KEY = 7_265_101;
 
 /** Rows per INSERT … jsonb_to_recordset statement, to keep each parameter a few MB at most. */
 const CHUNK_ROWS = 10_000;
@@ -62,12 +68,29 @@ async function insertJson<T>(tx: Tx, rows: readonly T[], statement: (json: strin
   }
 }
 
-/** Week-over-week snapshot logic for decision 3 (see METHODOLOGY "Rank change over 7 days"). */
-async function previousRanksFor(db: ReadDb, asOfPeriod: number) {
+/** A corrupt snapshot means "no snapshot" (deltas show as new), not a failed run every time. */
+function parsePreviousRanks(raw: string | undefined, log: (line: string) => void) {
+  if (raw === undefined) return null;
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    json = undefined;
+  }
+  const parsed = previousRanksSchema.safeParse(json);
+  if (parsed.success) return parsed.data;
+  log("warning: meta.previous_ranks is unreadable, so it is ignored (7-day changes show as new)");
+  return null;
+}
+
+/**
+ * Week-over-week snapshot logic for decision 3 (see METHODOLOGY "Rank change over 7 days").
+ * A real run calls this inside the write transaction, after taking RATE_LOCK_KEY.
+ */
+async function previousRanksFor(db: ReadDb, asOfPeriod: number, log: (line: string) => void) {
   const stored = await readMeta(db);
   const ranksPeriod = stored.has("ranks_period") ? Number(stored.get("ranks_period")) : null;
-  const raw = stored.get("previous_ranks");
-  let snapshot: PreviousRanks | null = raw ? previousRanksSchema.parse(JSON.parse(raw)) : null;
+  let snapshot = parsePreviousRanks(stored.get("previous_ranks"), log);
   let newSnapshot: PreviousRanks | null = null;
   if (ranksPeriod !== null && asOfPeriod > ranksPeriod) {
     // First run of a new week: the current leaderboard holds last week's final ranks.
@@ -82,11 +105,12 @@ async function previousRanksFor(db: ReadDb, asOfPeriod: number) {
   // Only a snapshot from exactly one week earlier counts as "7 days ago".
   const usable = snapshot && snapshot.period === asOfPeriod - 1 ? snapshot : null;
   const previousRanks = usable ? new Map(Object.entries(usable.ranks)) : undefined;
-  return { previousRanks, newSnapshot };
+  return { ranksPeriod, previousRanks, newSnapshot };
 }
 
 const fmt = (value: number) => String(Math.round(value));
-const cell = (text: string) => text.replace(/\|/g, "\\|");
+/** Make a gamer tag safe inside a markdown table cell: one line, no table or code breaks. */
+const cell = (text: string) => text.replace(/[\r\n]+/g, " ").replace(/([\\|`])/g, "\\$1");
 
 async function top20Table(db: ReadDb, rows: readonly LeaderboardRow[]): Promise<string> {
   const top = rows.filter((row) => row.rank !== null).slice(0, 20);
@@ -163,9 +187,8 @@ export function rateJob(hooks: RateHooks = {}) {
     // 2. Compute with the pure engine.
     let missingPeriod = 0;
     let dqs = 0;
-    const periodSets: PeriodSet[] = [];
+    const periodSets: (PeriodSet & { completedAt: Date | null })[] = [];
     const eventPeriod = new Map<string, number>();
-    const lastActiveAt = new Map<string, Date>();
     for (const row of setRows) {
       if (row.period === null) {
         missingPeriod += 1;
@@ -179,18 +202,17 @@ export function rateJob(hooks: RateHooks = {}) {
         eventId,
         period: row.period,
         isDq: row.isDq,
+        completedAt: row.completedAt,
       });
-      if (row.isDq) {
-        dqs += 1;
-        continue;
-      }
-      // last_active_at: latest rated (non-DQ, non-self) set per main player.
-      const winner = resolveAlias(String(row.winnerId), aliases);
-      const loser = resolveAlias(String(row.loserId), aliases);
-      if (!row.completedAt || winner === loser) continue;
-      for (const id of [winner, loser]) {
+      if (row.isDq) dqs += 1;
+    }
+    // last_active_at: latest rated set per main player, by the engine's own counting rules.
+    const lastActiveAt = new Map<string, Date>();
+    for (const set of countedSets(periodSets, aliases)) {
+      if (!set.completedAt) continue;
+      for (const id of [set.winnerId, set.loserId]) {
         const previous = lastActiveAt.get(id);
-        if (!previous || row.completedAt > previous) lastActiveAt.set(id, row.completedAt);
+        if (!previous || set.completedAt > previous) lastActiveAt.set(id, set.completedAt);
       }
     }
     const standingsEvents: StandingsEvent[] = [];
@@ -216,16 +238,29 @@ export function rateJob(hooks: RateHooks = {}) {
       trailingWeeks,
       aliases,
     });
-    const { previousRanks, newSnapshot } = await previousRanksFor(readDb, asOfPeriod);
-    const rows = buildLeaderboard({ ratings, stats, previousRanks });
-    const ranked = rows.filter((row) => row.rank !== null).length;
+    const log = (line: string) => out(`rate: ${line}`);
+    const leaderboardFrom = (previousRanks: ReadonlyMap<string, number> | undefined) =>
+      buildLeaderboard({ ratings, stats, previousRanks });
     const ratedEvents = new Set(periodSets.filter((set) => !set.isDq).map((set) => set.eventId));
 
     // 3. Write everything in one transaction: readers see the old or the new data, never a mix.
     let dataVersion = "unchanged (dry run)";
     let historyNote = `${history.length} history rows (not written)`;
-    if (db) {
-      await db.transaction(async (tx) => {
+    let rows: LeaderboardRow[];
+    if (!db) {
+      rows = leaderboardFrom((await previousRanksFor(readDb, asOfPeriod, log)).previousRanks);
+    } else {
+      rows = await db.transaction(async (tx) => {
+        // One rate write at a time. The snapshot is read only after the lock, so it always
+        // matches the ranks_period it was taken from.
+        await tx.execute(sql`select pg_advisory_xact_lock(${RATE_LOCK_KEY}::bigint)`);
+        const snapshot = await previousRanksFor(tx, asOfPeriod, log);
+        const built = leaderboardFrom(snapshot.previousRanks);
+        if (snapshot.ranksPeriod !== null && snapshot.ranksPeriod > asOfPeriod) {
+          // A run for a later week already committed; don't overwrite it with older data.
+          dataVersion = "unchanged (a later week is already saved)";
+          return built;
+        }
         await tx.execute(
           sql`create temp table rating_history_new (like rating_history including indexes) on commit drop`,
         );
@@ -244,6 +279,7 @@ export function rateJob(hooks: RateHooks = {}) {
             select * from jsonb_to_recordset(${json}::jsonb) as r(player_id bigint, period integer,
               rating double precision, rd double precision, volatility double precision, sets_played integer)`,
         );
+        await tx.execute(sql`analyze rating_history_new`);
         // Upsert, skipping rows whose values did not change, then drop every row that is no
         // longer produced: idle weeks, weeks before the window, merged aliases.
         const upserted = await tx.execute(sql`
@@ -262,7 +298,7 @@ export function rateJob(hooks: RateHooks = {}) {
         await tx.delete(leaderboard);
         await insertJson(
           tx,
-          rows.map((row) => ({
+          built.map((row) => ({
             player_id: Number(row.playerId),
             rank: row.rank,
             conservative_score: row.conservativeScore,
@@ -286,7 +322,9 @@ export function rateJob(hooks: RateHooks = {}) {
             join players p on p.id = r.player_id`,
         );
 
-        if (newSnapshot) await upsertMeta(tx, "previous_ranks", JSON.stringify(newSnapshot));
+        if (snapshot.newSnapshot) {
+          await upsertMeta(tx, "previous_ranks", JSON.stringify(snapshot.newSnapshot));
+        }
         await upsertMeta(tx, "ranks_period", String(asOfPeriod));
         await upsertMeta(tx, "last_rated_at", new Date(ctx.now()).toISOString());
         const [version] = await upsertMeta(
@@ -297,14 +335,18 @@ export function rateJob(hooks: RateHooks = {}) {
         );
         dataVersion = version?.value ?? "?";
         await hooks.beforeCommit?.();
+        return built;
       });
     }
+    const ranked = rows.filter((row) => row.rank !== null).length;
 
     const table = await top20Table(readDb, rows);
     const week = periodIndexToIsoWeek(asOfPeriod);
-    out(`Top 20, week ${week}:\n${table}`);
+    out(`Top 20, week ${week}:\n${table}\n${ATTRIBUTION}`);
     const summaryFile = ctx.env.GITHUB_STEP_SUMMARY;
-    if (summaryFile) appendFileSync(summaryFile, `### Top 20 (week ${week})\n\n${table}\n\n`);
+    if (summaryFile) {
+      appendFileSync(summaryFile, `### Top 20 (week ${week})\n\n${table}\n\n_${ATTRIBUTION}_\n\n`);
+    }
 
     ctx.progress.eventsTouched = ratedEvents.size;
     const seconds = ((performance.now() - started) / 1000).toFixed(2);

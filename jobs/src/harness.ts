@@ -178,6 +178,7 @@ async function execute(
   let env: { STARTGG_TOKEN?: string; DATABASE_URL?: string };
   try {
     args = parseJobArgs(argv);
+    if (needsStartgg && args.asOf) throw new UsageError("--as-of is only for the rate job");
     if (!needsStartgg) env = loadEnv(["DATABASE_URL"], deps.env);
     else if (args.dryRun) {
       env = {
