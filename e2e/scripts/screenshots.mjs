@@ -1,6 +1,6 @@
 // Saves PR screenshots at 390 and 1280 px wide: `node screenshots.mjs` (P1-8 leaderboard scenes)
-// or `node screenshots.mjs p1-9` (player page scenes).
-// Needs the API on :8787 against a seeded database, and `pnpm e2e`'s web build in apps/app/dist.
+// `node screenshots.mjs p1-9` (player page scenes), or `p1-10` (methodology and status).
+// Needs the API on API_PORT (default 8787) against a seeded database, and `pnpm e2e`'s web build in apps/app/dist.
 import { chromium } from "@playwright/test";
 import { spawn } from "node:child_process";
 import { mkdirSync } from "node:fs";
@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 const set = process.argv[2] ?? "p1-8";
 const out = fileURLToPath(new URL(`../../docs/screenshots/${set}/`, import.meta.url));
 mkdirSync(out, { recursive: true });
-const port = "4173";
+const port = process.env.E2E_PORT ?? "4173";
 const server = spawn("node", [fileURLToPath(new URL("./serve.mjs", import.meta.url))], {
   env: { ...process.env, E2E_PORT: port },
   stdio: "ignore",
@@ -34,7 +34,7 @@ const scenes = {
   },
 };
 
-const api = process.env.E2E_API_URL ?? "http://localhost:8787";
+const api = process.env.E2E_API_URL ?? `http://localhost:${process.env.API_PORT ?? 8787}`;
 const firstId = async (url, pick) => pick(await (await fetch(url)).json());
 const playerScenes = {
   async ranked(page) {
@@ -59,8 +59,20 @@ const playerScenes = {
   },
 };
 
+const infoScenes = {
+  async methodology(page) {
+    await page.goto(`http://localhost:${port}/methodology`);
+    await page.getByRole("link", { name: /UltRank/ }).waitFor();
+  },
+  async status(page) {
+    await page.goto(`http://localhost:${port}/status`);
+    await page.getByRole("list", { name: "Job status" }).waitFor();
+  },
+};
+const sceneSets = { "p1-8": scenes, "p1-9": playerScenes, "p1-10": infoScenes };
+
 try {
-  for (const [name, scene] of Object.entries(set === "p1-9" ? playerScenes : scenes)) {
+  for (const [name, scene] of Object.entries(sceneSets[set] ?? scenes)) {
     for (const [width, height] of [
       [390, 1100],
       [1280, 900],

@@ -6,6 +6,7 @@ import {
   playerResponseSchema,
   searchResponseSchema,
   SEARCH_MAX_QUERY_LENGTH,
+  statusResponseSchema,
   SEARCH_MIN_QUERY_LENGTH,
 } from "@sr/core";
 import { z } from "zod";
@@ -69,6 +70,16 @@ export const useMeta = () =>
     queryKey: ["meta"],
     refetchInterval: 60_000,
     queryFn: async () => metaResponseSchema.parse(await readJson(await api().v1.meta.$get())),
+  });
+
+/** Job health changes minute to minute, so this one refetches every 60 s while the page is open. */
+export const useStatus = () =>
+  useQuery({
+    ...queryDefaults,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    queryKey: ["status"],
+    queryFn: async () => statusResponseSchema.parse(await readJson(await api().v1.status.$get())),
   });
 
 /** `query` is already trimmed and lower-cased, so equal searches share one cache entry. */

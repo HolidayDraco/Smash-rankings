@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-const API = process.env.E2E_API_URL ?? "http://localhost:8787";
+const API = process.env.E2E_API_URL ?? `http://localhost:${process.env.API_PORT ?? 8787}`;
 
 interface Hit {
   playerId: string;
