@@ -209,3 +209,26 @@ METHODOLOGY.md gained a short "rank change over 7 days" section.
 **Questions for Clay:** None.
 
 **Questions for Genghis:** A player who entered an event but whose only sets there were DQs still gets credit for *attending* that event (it counts toward "3+ events"). The DQ sets themselves never count toward ratings or the "10+ sets" rule. OK?
+
+---
+
+## 2026-10-03 — Phase 1: which events count, and the discover job
+
+**Date:** October 3, 2026
+
+**What changed:**
+
+- **"Which events count" rules in code** (decisions 2 and 3):
+  - *Counts:* an Ultimate singles event with 64+ entrants, held in person.
+  - *Saved but never counted:* an online event with 64+ entrants.
+  - *Not saved at all:* anything else, such as 63 or fewer entrants, doubles, or other games. Not saving these is start.gg's "minimum data" rule.
+- **The `discover` job** (`pnpm job:discover`) looks through start.gg for Ultimate tournaments from the last 14 days and the next 30, applies the rules, and saves qualifying events to the database. Running it twice never makes duplicates, and it never undoes progress the sync job has already made. Each run writes one line to the job log (how many start.gg requests it used, and whether it worked). `--dry-run` shows what it *would* save without touching the database.
+- **A shared "job harness"** that every data job uses: time limits, the job log, clean error codes, and error messages scrubbed of the token and database address.
+
+Sample dry run (from the made-up test data): `discover: 4 events found, 2 qualify, 0 online stored, 2 skipped; 2 requests`.
+
+**What's next:** The sync job (sets, placements, players), the backfill, and the scheduled workflow.
+
+**Questions for Clay:** None.
+
+**Questions for Genghis:** start.gg can't filter tournaments by size, so discover pages through *every* Ultimate tournament in the 44-day window, at 20 per request. The daily target of ≤ 50 requests holds only up to ~1,000 tournaments in that window. If the live check (P1-12) shows more, the plan is to scan the full window weekly and only the last 3 days daily. That stays far under the 60/minute limit either way. OK?
