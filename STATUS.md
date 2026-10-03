@@ -431,7 +431,7 @@ Details are in `docs/monitoring.md`.
 - **16+ entrants.** In-person singles events with 16 or more entrants count, so Texas locals do too. Before this, the cutoff was 64.
 - **Next phase, not now:** a federation-rankings tab, user logins, and admin users.
 
-Updated: `docs/blueprint.md` (decision 2 changed, decision 9 added), `CLAUDE.md`, `docs/mission.md`, and a new decision record, `docs/adr/0003-texas-launch-scope.md`. No code changes in this PR.
+Updated: `docs/blueprint.md` (decision 2 changed, decision 9 added, older notes marked superseded), `CLAUDE.md`, `docs/mission.md`, `docs/plans/phase-1.md`, the ingestion agent's instructions (`.claude/agents/startgg-ingestion.md`), a note in `docs/adr/0002-ranking-method.md`, and a new decision record, `docs/adr/0003-texas-launch-scope.md`. No code changes in this PR.
 
 **What's next:**
 
