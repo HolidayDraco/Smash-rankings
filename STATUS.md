@@ -348,6 +348,6 @@ Automatic browser tests now run against a real temporary database filled with th
 
 **What's next:** Player page, then the methodology and status pages, then Sentry error alerts.
 
-**Questions for Clay:** Look at the phone screenshot in the PR. Does it look like the leaderboard you pictured? Any feedback becomes a follow-up PR.
+**Questions for Clay:** Look at the phone screenshot in the PR. Does it look like the leaderboard you pictured? Any feedback becomes a follow-up PR. Before the Vercel preview can show real data, one setup step in Vercel: on the **app** project, add a setting named `EXPO_PUBLIC_API_URL` set to the API's public address (not a secret). On the **API** project, add `ALLOWED_ORIGINS` (the app's address) and, for preview links, `ALLOWED_ORIGIN_PATTERN`, so the API lets the app's pages talk to it.
 
 **Questions for Genghis:** This PR is about 675 hand-written lines (two row/list components are most of it), over the ~400 target. OK, or split?

@@ -1,4 +1,6 @@
+import { useRef } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { SEARCH_MAX_QUERY_LENGTH } from "@sr/core";
 import {
   BodyText,
   colors,
@@ -18,9 +20,12 @@ export function SearchBox({
 }) {
   const input = useFocusRing();
   const clear = useFocusRing();
+  const inputRef = useRef<TextInput>(null);
   return (
     <View style={styles.wrap}>
       <TextInput
+        ref={inputRef}
+        maxLength={SEARCH_MAX_QUERY_LENGTH}
         aria-label="Search players"
         role="searchbox"
         placeholder="Search players"
@@ -40,7 +45,10 @@ export function SearchBox({
         <Pressable
           role="button"
           aria-label="Clear search"
-          onPress={() => onChange("")}
+          onPress={() => {
+            onChange("");
+            inputRef.current?.focus();
+          }}
           {...clear.handlers}
           style={[styles.clear, clear.style]}
         >

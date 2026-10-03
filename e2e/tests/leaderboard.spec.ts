@@ -17,6 +17,8 @@ async function expectNoSeriousViolations(page: Page) {
   );
 }
 
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const board = (page: Page) => page.getByRole("list", { name: /top 100 leaderboard/ });
 
 test("shows the seeded ranked players in rank order, each linking to a player page", async ({
@@ -34,7 +36,7 @@ test("shows the seeded ranked players in rank order, each linking to a player pa
     const link = links.nth(index);
     await expect(link).toHaveAttribute(
       "aria-label",
-      new RegExp(`^Rank ${entry.rank}, ${entry.gamerTag},`),
+      new RegExp(`^Rank ${entry.rank}, (?:.* )?${escapeRegExp(entry.gamerTag)},`),
     );
     await expect(link).toHaveAttribute("href", new RegExp(`^/player/${entry.playerId}-sample-`));
   }
@@ -55,6 +57,7 @@ test("search finds a player, replaces the leaderboard, and Escape clears it", as
   await box.fill("sample_d");
   const results = page.getByRole("list", { name: /search results/ });
   await expect(results.getByRole("link", { name: /Sample_Dash/ })).toBeVisible();
+  await expect(page.getByTestId("search-status")).toHaveText(/^\d+ players? found$/);
   await expect(results.getByRole("link", { name: /Sample_Dash/ })).toHaveAttribute(
     "href",
     /^\/player\/\d+-sample-dash$/,
@@ -69,7 +72,21 @@ test("search finds a player, replaces the leaderboard, and Escape clears it", as
 test("search shows an empty message when nothing matches", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("searchbox", { name: "Search players" }).fill("zzzzqq");
-  await expect(page.getByText("No players match that search.")).toBeVisible();
+  await expect(page.getByTestId("search-status")).toHaveText("No players match that search.");
+  await expect(page.getByText("No players match that search.")).toHaveCount(2);
+});
+
+test("announces the 2-letter hint, and Clear returns focus to the search box", async ({ page }) => {
+  await page.goto("/");
+  const box = page.getByRole("searchbox", { name: "Search players" });
+  await box.fill("s");
+  await expect(page.getByTestId("search-status")).toHaveText(/at least 2 letters/);
+  await expect(page.getByTestId("search-status")).toHaveAttribute("aria-live", "polite");
+  await box.fill("sample");
+  await page.getByRole("button", { name: "Clear search" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(box).toHaveValue("");
+  await expect(box).toBeFocused();
 });
 
 test("shows grey skeleton rows while loading", async ({ page }) => {

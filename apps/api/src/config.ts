@@ -2,7 +2,7 @@ import { loadEnv } from "@sr/core";
 import { z } from "zod";
 
 /** Expo's web dev servers (`pnpm dev`), allowed only outside production. */
-const DEV_ORIGINS = ["http://localhost:8081", "http://localhost:8082"];
+const DEV_ORIGINS = ["http://localhost:8081", "http://localhost:8082", "http://localhost:4173"];
 
 /** Comma-separated origins, each normalized to scheme://host[:port]. */
 const allowedOriginsSchema = z

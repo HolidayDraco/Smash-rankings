@@ -145,7 +145,9 @@ export function PlayerRowHeader() {
 export function SkeletonRow() {
   return (
     <View aria-hidden testID="skeleton-row" style={styles.row}>
-      <View style={[styles.bar, { width: 24 }]} />
+      <View style={{ width: COLS.rank }}>
+        <View style={[styles.bar, { width: 24 }]} />
+      </View>
       <View style={[styles.tagCol, { gap: spacing.xs }]}>
         <View style={[styles.bar, { width: "55%" }]} />
         <View style={[styles.bar, { width: 28, height: 8 }]} />

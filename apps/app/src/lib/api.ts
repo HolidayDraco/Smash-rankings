@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createApiClient } from "@sr/api/client";
 import {
   leaderboardResponseSchema,
   metaResponseSchema,
   searchResponseSchema,
+  SEARCH_MAX_QUERY_LENGTH,
   SEARCH_MIN_QUERY_LENGTH,
 } from "@sr/core";
 import { z } from "zod";
@@ -27,16 +28,29 @@ export function getApiUrl(): string {
 let client: ReturnType<typeof createApiClient> | undefined;
 const api = () => (client ??= createApiClient(getApiUrl()));
 
+/** A non-2xx answer from the API. 4xx means the request itself was rejected, so retrying is pointless. */
+export class ApiError extends Error {
+  constructor(readonly status: number) {
+    super(`API responded with ${status}`);
+    this.name = "ApiError";
+  }
+}
+
 async function readJson(response: {
   ok: boolean;
   status: number;
   json(): Promise<unknown>;
 }): Promise<unknown> {
-  if (!response.ok) throw new Error(`API responded with ${response.status}`);
+  if (!response.ok) throw new ApiError(response.status);
   return response.json();
 }
 
-const queryDefaults = { staleTime: STALE_TIME_MS, retry: 1, retryDelay: 400 } as const;
+const queryDefaults = {
+  staleTime: STALE_TIME_MS,
+  retry: (failures: number, error: Error) =>
+    failures < 1 && !(error instanceof ApiError && error.status < 500),
+  retryDelay: 400,
+} as const;
 
 export const useLeaderboard = () =>
   useQuery({
@@ -52,6 +66,7 @@ export const useMeta = () =>
   useQuery({
     ...queryDefaults,
     queryKey: ["meta"],
+    refetchInterval: 60_000,
     queryFn: async () => metaResponseSchema.parse(await readJson(await api().v1.meta.$get())),
   });
 
@@ -60,7 +75,9 @@ export const useSearch = (query: string) =>
   useQuery({
     ...queryDefaults,
     queryKey: ["search", query],
-    enabled: query.length >= SEARCH_MIN_QUERY_LENGTH,
+    enabled: query.length >= SEARCH_MIN_QUERY_LENGTH && query.length <= SEARCH_MAX_QUERY_LENGTH,
+    // Keep the old results on screen while the next search loads (no skeleton flicker).
+    placeholderData: keepPreviousData,
     queryFn: async () =>
       searchResponseSchema.parse(
         await readJson(await api().v1.search.$get({ query: { q: query } })),

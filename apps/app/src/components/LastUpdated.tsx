@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { BodyText, colors, spacing } from "@sr/ui";
 import { useMeta } from "../lib/api";
@@ -6,6 +7,12 @@ import { relativeTime } from "../lib/format";
 /** "Last updated 12 min ago" from /v1/meta; the exact time is in the accessible label. */
 export function LastUpdated() {
   const { data } = useMeta();
+  const [, tick] = useState(0);
+  // Re-render once a minute so "5 min ago" does not go stale.
+  useEffect(() => {
+    const timer = setInterval(() => tick((n) => n + 1), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   if (!data?.lastRatedAt) return null;
   const exact = new Date(data.lastRatedAt).toLocaleString();
   return (

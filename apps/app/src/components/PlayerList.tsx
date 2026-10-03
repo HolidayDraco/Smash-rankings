@@ -17,6 +17,8 @@ export interface PlayerListProps {
   rows: readonly PlayerRowProps[];
   emptyText: string;
   onRetry: () => void;
+  /** Overrides the default "check your connection" message. */
+  errorText?: string;
   /** Show the Rk / Player / Score column heads (leaderboard only). */
   showHeader?: boolean;
 }
@@ -29,6 +31,7 @@ export function PlayerList({
   emptyText,
   onRetry,
   showHeader,
+  errorText,
 }: PlayerListProps) {
   const ring = useFocusRing();
   const reduced = useReducedMotion();
@@ -60,7 +63,7 @@ export function PlayerList({
     return (
       <View role="alert" style={styles.message}>
         <BodyText variant="bodySm">
-          We could not load {label}. Check your connection and try again.
+          {errorText ?? `We could not load ${label}. Check your connection and try again.`}
         </BodyText>
         <Pressable
           role="button"

@@ -7,21 +7,40 @@ import { LastUpdated } from "../components/LastUpdated";
 import { Page } from "../components/Page";
 import { PlayerList } from "../components/PlayerList";
 import { SearchBox } from "../components/SearchBox";
-import { useLeaderboard, useSearch } from "../lib/api";
+import { ApiError, useLeaderboard, useSearch } from "../lib/api";
 import { useDebouncedValue } from "../lib/useDebouncedValue";
 
 const TITLE = "Smash Ultimate Rankings | Bracket Index";
 const DESCRIPTION =
   "Live Super Smash Bros. Ultimate player rankings computed from start.gg results. Unofficial fan project.";
 
+/** Control characters (from pasted text) are dropped; the rest is trimmed and lower-cased. */
+// eslint-disable-next-line no-control-regex -- stripping control characters is the point
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/g;
+const normalizeQuery = (raw: string) => raw.replace(CONTROL_CHARACTERS, "").trim().toLowerCase();
+
 export default function Leaderboard() {
   const [text, setText] = useState("");
-  const query = useDebouncedValue(text.trim().toLowerCase(), 250);
-  const searching = query.length >= SEARCH_MIN_QUERY_LENGTH;
+  const normalized = normalizeQuery(text);
+  const query = useDebouncedValue(normalized, 250);
   const leaderboard = useLeaderboard();
   const search = useSearch(query);
   // While the debounce catches up with typing, keep showing the search view, not the leaderboard.
-  const typedEnough = text.trim().length >= SEARCH_MIN_QUERY_LENGTH;
+  const typedEnough = normalized.length >= SEARCH_MIN_QUERY_LENGTH;
+  const searchStatus = search.isError ? "error" : search.data ? "success" : "pending";
+  const settled = searchStatus === "success" && !search.isPlaceholderData && query === normalized;
+  const count = search.data?.results.length ?? 0;
+  const liveMessage = !text.trim()
+    ? ""
+    : !typedEnough
+      ? `Type at least ${SEARCH_MIN_QUERY_LENGTH} letters to search.`
+      : searchStatus === "error"
+        ? "Search failed."
+        : !settled
+          ? "Searching…"
+          : count === 0
+            ? "No players match that search."
+            : `${count} ${count === 1 ? "player" : "players"} found`;
 
   return (
     <Page>
@@ -38,17 +57,20 @@ export default function Leaderboard() {
         <DisplayText variant="h1">Rankings</DisplayText>
         <LastUpdated />
         <SearchBox value={text} onChange={setText} />
-        {text.trim().length === 1 ? (
+        <View role="status" aria-live="polite" testID="search-status" style={styles.live}>
           <BodyText variant="bodySm" muted>
-            Type at least {SEARCH_MIN_QUERY_LENGTH} letters to search.
+            {liveMessage}
           </BodyText>
-        ) : null}
+        </View>
       </View>
       {typedEnough ? (
         <PlayerList
           label={`search results for ${query}`}
-          status={
-            searching && !search.isPending ? (search.isError ? "error" : "success") : "pending"
+          status={searchStatus}
+          errorText={
+            search.error instanceof ApiError && search.error.status < 500
+              ? "That search was not accepted. Try different letters."
+              : undefined
           }
           rows={(search.data?.results ?? []).map((player) => ({
             playerId: player.playerId,
@@ -85,6 +107,7 @@ export default function Leaderboard() {
 }
 
 const styles = StyleSheet.create({
+  live: { minHeight: 20 },
   note: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   top: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.md },
 });
