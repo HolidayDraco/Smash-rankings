@@ -27,6 +27,8 @@ interface World {
   complexityAbove?: number;
   setPages?: number;
   weirdSets?: boolean;
+  introspectionBlocked?: boolean;
+  missingEvent?: boolean;
 }
 
 function fakeClient(world: World = {}) {
@@ -75,6 +77,8 @@ function fakeClient(world: World = {}) {
     queries.push(body.query);
     sent.push(body);
     if (body.query.includes("LiveCheckSchema")) {
+      if (world.introspectionBlocked)
+        return { json: { errors: [{ message: "Introspection is disabled" }] } };
       const field = (name: string, ofType: string) => ({
         name,
         type: { kind: "SCALAR", name: ofType },
@@ -128,6 +132,7 @@ function fakeClient(world: World = {}) {
       return { json: { data: { event: { sets: { pageInfo: { total: 33 } } } } } };
     }
     if (body.query.includes("EventSetsPage")) {
+      if (world.missingEvent) return { json: { data: { event: null } } };
       if (world.weirdSets)
         return { json: { data: { event: { id: id(1), sets: { pageInfo: null, nodes: null } } } } };
       return {
@@ -196,6 +201,25 @@ function fakeClient(world: World = {}) {
 }
 
 describe("live check report", () => {
+  it("still probes the state filter when introspection is blocked", async () => {
+    const { client, queries } = fakeClient({ introspectionBlocked: true });
+    const result = await runLiveCheck(client);
+    expect(result.schema).toBeNull();
+    expect(queries.some((q) => q.includes("LiveCheckState"))).toBe(true);
+    expect(result.stateFilterProbe).toMatchObject({ total: 120 });
+  });
+
+  it("flags completed-only vs unfiltered set totals that differ on a finished event", async () => {
+    const report = renderReport(await runLiveCheck(fakeClient().client));
+    expect(report).toContain("differs by 2: on a finished event these sets are invisible to sync");
+  });
+
+  it("reports an --event id that does not exist, and labels a hand-picked event", async () => {
+    const result = await runLiveCheck(fakeClient({ missingEvent: true }).client, { eventId: 999 });
+    expect(result.errors.some((e) => e.message.includes("event 999 not found"))).toBe(true);
+    expect(renderReport(result)).toContain("Event chosen with --event");
+  });
+
   it("answers the addrState filter question yes, and probes it", async () => {
     const { client, queries } = fakeClient({ addrStateFilter: true });
     const result = await runLiveCheck(client);

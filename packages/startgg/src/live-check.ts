@@ -187,6 +187,8 @@ export interface LiveCheckResult {
   stoppedForBudget: boolean;
   steps: { step: string; requests: number }[];
   errors: { step: string; name: string; message: string }[];
+  /** True when --event picked the event, so it was not checked against the launch rules. */
+  eventChosenByFlag: boolean;
   schema: null | {
     tournamentFilterFields: string[];
     hasAddrStateFilter: boolean;
@@ -330,6 +332,7 @@ export async function runLiveCheck(
     typedSchemaAccepts: {},
     event: null,
     noEventReason: null,
+    eventChosenByFlag: options.eventId !== undefined,
   };
   const idTypes = new Map<string, Set<string>>();
   const noteId = (label: string, value: unknown) => {
@@ -505,7 +508,9 @@ export async function runLiveCheck(
     });
 
     // 3. If the server can filter by state, try it once: it also finds an event faster.
-    if (result.schema?.hasAddrStateFilter && result.tournaments) {
+    // If introspection was blocked (schema unknown), send the probe anyway: its success or
+    // validation error is the answer to the key P1-12 question.
+    if ((result.schema === null || result.schema.hasAddrStateFilter) && result.tournaments) {
       await attempt("state filter", async () => {
         const vars = { ...tournamentVars, addrState: REGION_STATE };
         const { data } = await paged("LiveCheckState", STATE_PROBE_QUERY, vars, 1, perPage);
@@ -580,7 +585,10 @@ export async function runLiveCheck(
         const setsQuery = print(EventSetsPageDocument);
         const first = await paged("EventSetsPage", setsQuery, eventVars, 1, 40);
         result.typedSchemaAccepts.sets = setsDataSchema.safeParse(first.data).success;
-        const firstSets = parse("sets", looseSets, first.data)?.event?.sets;
+        const firstEvent = parse("sets", looseSets, first.data)?.event;
+        if (firstEvent === null)
+          fail("sets", "NotFound", `event ${String(chosen.eventId)} not found`);
+        const firstSets = firstEvent?.sets;
         if (!firstSets) return undefined;
         const pages = [firstSets.nodes];
         const sets = firstSets.pageInfo?.totalPages ?? null;
@@ -749,14 +757,19 @@ export function renderReport(r: LiveCheckResult): string {
   out.push(
     `- Our strict schemas accept the real responses: tournaments ${acc.tournaments ?? "n/a"}, sets ${acc.sets ?? "n/a"}, standings ${acc.standings ?? "n/a"}`,
   );
-  out.push("", `## One completed ${REGION_STATE} 16+ singles event`);
+  out.push(
+    "",
+    r.eventChosenByFlag
+      ? "## Event chosen with --event (not checked against the Texas 16+ rules)"
+      : `## One completed ${REGION_STATE} 16+ singles event`,
+  );
   if (r.event) {
     const e = r.event;
     out.push(`- Event id ${e.id}`);
     if (e.sets) {
       const s = e.sets;
       out.push(
-        `- Completed sets (state filter on): total ${s.completedTotal ?? "unknown"}; unfiltered total ${e.allSetsTotal ?? "unknown"}${s.completedTotal !== null && e.allSetsTotal !== null ? (s.completedTotal === e.allSetsTotal ? " (same: every set is completed)" : " (differs: the filter drops unfinished sets)") : ""}`,
+        `- Completed sets (state filter on): total ${s.completedTotal ?? "unknown"}; unfiltered total ${e.allSetsTotal ?? "unknown"}${s.completedTotal !== null && e.allSetsTotal !== null ? (s.completedTotal === e.allSetsTotal ? " (same: every set is completed)" : ` (differs by ${e.allSetsTotal - s.completedTotal}: on a finished event these sets are invisible to sync, possibly DQs; check them)`) : ""}`,
         `- Sets pages: ${s.firstPageSets} on page 1 (page size ${s.pageSize}), ${s.lastPageSets ?? "no separate"} on the last page of ${s.totalPages ?? "?"}; about ${s.objectsPerPage} objects per page`,
         `- Player.user.slug visible for ${s.userSlugVisible.visible} of ${s.userSlugVisible.players} players`,
         `- DQ signals across the first and last pages: displayScore says DQ ${s.dq.displayScoreDq}; a score of -1 ${s.dq.scoreMinusOne}; completedAt null ${s.dq.completedAtNull}; winnerId null ${s.dq.winnerIdNull}`,
