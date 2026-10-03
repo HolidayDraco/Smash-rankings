@@ -326,3 +326,28 @@ Ranking tweaks: equal scores now break ties by the *numerically* lower start.gg 
 **Questions for Clay:** None.
 
 **Questions for Genghis:** None open. Per Genghis, `--as-of <date>` is a manual diagnostic only, so it always runs as a dry run and can never rewrite the live leaderboard or the 7-day snapshot. Scheduled runs never pass it.
+
+---
+
+## 2026-10-03 — Phase 1: leaderboard page
+
+**Date:** October 3, 2026
+
+**What changed:** The home page is now the **leaderboard**, the first real screen:
+
+- **Top 100 ranked players** as dense rows: rank, tag (sponsor prefix small and grey), country, score, and the 7-day change (an arrow *and* a number, so it isn't color-only).
+- **Search box:** start typing a tag (2+ letters) and matching players replace the list; ranked players come first, unranked show "NR". Escape or "Clear" brings the leaderboard back.
+- **"Last updated X min ago"** badge, from the API.
+- **Grey placeholder rows** while loading (no spinner), a friendly message if nothing matches, and a **"Try again" button** if the API is unreachable.
+- **"Data from start.gg"** in the footer and an "unofficial fan project" note.
+- Tapping a player goes to their page. That page arrives in the next PR, so for now those links don't work yet.
+
+The website talks to the API through the typed client, and Claude checked that the page's code contains **no server or database code** (only the small web-request library).
+
+Automatic browser tests now run against a real temporary database filled with the made-up sample players, with the API running alongside.
+
+**What's next:** Player page, then the methodology and status pages, then Sentry error alerts.
+
+**Questions for Clay:** Look at the phone screenshot in the PR. Does it look like the leaderboard you pictured? Any feedback becomes a follow-up PR.
+
+**Questions for Genghis:** This PR is about 675 hand-written lines (two row/list components are most of it), over the ~400 target. OK, or split?
