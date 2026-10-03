@@ -1,0 +1,148 @@
+# Scheduled data ingest. Sync runs every 2 hours (hourly Friday to Monday), backfill runs
+# nightly, and rate runs after either one succeeds. Discover has no trigger of its own:
+# the first sync of the day runs it. One shared queue (concurrency group "ingest", never
+# cancelling a running job) means runs never overlap. Cron minutes are off the hour.
+name: Ingest
+
+on:
+  schedule:
+    # Sync: even hours every day, plus odd hours Fri-Mon (so weekends are hourly, no double runs).
+    # The odd hours next to the 07:41 backfill (07:23) are left out, so a sync never queues behind it
+    # and gets dropped (GitHub keeps only one waiting run per concurrency group).
+    # Keep in step with CRON_MONITORS in jobs/src/sentry.ts (schedule, and timeout-minutes as maxRuntime).
+    - cron: "23 */2 * * *"
+    - cron: "23 1-5/2,9-23/2 * * 5,6,0,1"
+    # Backfill (resumes from its checkpoint each night).
+    - cron: "41 7 * * *"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Which job to run
+        type: choice
+        options: [sync, backfill, rate]
+        default: sync
+      months:
+        description: Backfill only, how many months back (1 to 24)
+        type: string
+        default: "12"
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      configured: ${{ steps.secrets.outputs.configured }}
+      job: ${{ steps.which.outputs.job }}
+    steps:
+      - name: Pick the job
+        id: which
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          REQUESTED: ${{ inputs.job }}
+        run: |
+          if [ "$SCHEDULE" = "41 7 * * *" ]; then job=backfill
+          elif [ -n "$REQUESTED" ]; then job="$REQUESTED"
+          else job=sync; fi
+          echo "job=$job" >> "$GITHUB_OUTPUT"
+      - name: Check the secrets exist
+        id: secrets
+        env:
+          STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -n "$STARTGG_TOKEN" ] && [ -n "$DATABASE_URL" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Ingest: not configured yet (add the STARTGG_TOKEN and DATABASE_URL Actions secrets). Nothing ran." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  sync:
+    name: Sync
+    needs: check
+    if: needs.check.outputs.configured == 'true' && needs.check.outputs.job == 'sync'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Sync (runs discover first if it has not succeeded in 24 h)
+        env:
+          STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Optional: error reports and missed-run alerts (docs/monitoring.md). Off when unset.
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_CRONS: ${{ vars.SENTRY_CRONS }}
+        run: pnpm job:sync -- --time-budget-minutes 40
+
+  backfill:
+    name: Backfill
+    needs: check
+    if: needs.check.outputs.configured == 'true' && needs.check.outputs.job == 'backfill'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Backfill (75 minute budget, resumes next night)
+        env:
+          STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Optional: error reports and missed-run alerts (docs/monitoring.md). Off when unset.
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_CRONS: ${{ vars.SENTRY_CRONS }}
+          MONTHS: ${{ inputs.months }}
+        run: pnpm job:backfill -- --months "${MONTHS:-12}"
+
+  rate:
+    name: Rate
+    needs: [check, sync, backfill]
+    # Runs after a sync or backfill that succeeded (a run that stopped at its time budget
+    # exits cleanly, so it counts), or on its own when asked for by hand.
+    if: >-
+      !cancelled() && needs.check.outputs.configured == 'true' &&
+      (needs.check.outputs.job == 'rate' ||
+      needs.sync.result == 'success' || needs.backfill.result == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Rate (also writes the top 20 and database size to the summary)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Optional: error reports and missed-run alerts (docs/monitoring.md). Off when unset.
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_CRONS: ${{ vars.SENTRY_CRONS }}
+          # The full recompute peaks around 2.5 GB at ~50k players / 1M sets; runners have 16 GB.
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: pnpm job:rate

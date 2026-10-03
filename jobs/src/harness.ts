@@ -23,7 +23,13 @@ export interface JobArgs {
   event?: number;
   /** The rate job's "as of" date (default: now). */
   asOf?: Date;
+  /** Sync: do not run the daily discover first. */
+  skipDiscover: boolean;
+  /** Backfill: how many months back to cover (1 to 24). */
+  months?: number;
 }
+
+export const MAX_BACKFILL_MONTHS = 24;
 
 export class UsageError extends Error {
   override name = "UsageError";
@@ -50,6 +56,8 @@ export function parseJobArgs(argv: string[]): JobArgs {
         to: { type: "string" },
         event: { type: "string" },
         "as-of": { type: "string" },
+        "skip-discover": { type: "boolean", default: false },
+        months: { type: "string" },
       },
     }));
   } catch (error) {
@@ -68,7 +76,23 @@ export function parseJobArgs(argv: string[]): JobArgs {
   // --as-of is a manual diagnostic only: it always runs as a dry run, so it can
   // never rewrite the live leaderboard or the 7-day snapshot to a past week.
   const dryRun = values["dry-run"] || asOf !== undefined;
-  return { dryRun, timeBudgetMinutes, from, to, event, asOf };
+  const months = values.months === undefined ? undefined : Number(values.months);
+  if (
+    months !== undefined &&
+    !(Number.isInteger(months) && months >= 1 && months <= MAX_BACKFILL_MONTHS)
+  ) {
+    throw new UsageError(`--months must be a whole number from 1 to ${MAX_BACKFILL_MONTHS}`);
+  }
+  return {
+    dryRun,
+    timeBudgetMinutes,
+    from,
+    to,
+    event,
+    asOf,
+    skipDiscover: values["skip-discover"],
+    months,
+  };
 }
 
 export interface Deadline {

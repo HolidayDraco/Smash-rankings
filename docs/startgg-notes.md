@@ -31,6 +31,11 @@ and has no token. Replace it with the real schema:
 - **Player location.** Not queried. We believe `Player.user.location { country state }` and `Participant.user` exist, but whether they are public and filled in is unknown. The blueprint's `players.country_code/region` columns depend on this.
 - **ID types.** Codegen treats `ID` as a JSON number (docs examples show `"id": 1386`). If real ids come back as strings, the Zod schemas will reject them loudly.
 - **Event `sets` sort.** We use `RECENT` so new sets land on early pages. During a live event pages shift, so the client de-duplicates by id and the sync job should re-run until stable.
+- **(a) Sets `total`.** Does `pageInfo.total` for sets filtered by `state: [3]` count only completed sets? The stale-row delete in sync depends on it (a larger total than the rows we see blocks the delete).
+- **(b) DQ sets with no `completedAt`.** Are they dropped? If start.gg leaves `completedAt` null on DQs, they never reach the database.
+- **(c) `Player.user.slug`.** Is it visible to our token? (`players.user_slug` stays empty if not.)
+- **(d) Real discover request count** versus the 50-requests-a-day rule (Genghis). Until measured, backfill checks the cap between months and so can overshoot by one month of pages (see the backfill estimate below).
+- **(e) 7-day cap for never-COMPLETED events.** Is it right? Some events may never reach `COMPLETED`; after 7 days sync treats them as finished.
 - **Objects per page.** Estimates: about 14 objects per set (40 sets = 560), 4 per standing (100 = 400), about 20-60 per tournament (20 = 400-1,200, shrinks automatically if too complex). Measure live and tune the defaults in `client.ts`.
 
 ## Request budget
@@ -84,3 +89,25 @@ Signals still pending a live check, each in one function in `packages/core/src/q
 **Per page:** sets are fetched 40 per page (completed only). Players, sets, and the `events.sync_cursor` checkpoint (`{"page","perPage"}`) are saved in one transaction. Standings follow (100 per page); standings for a player we never saw in a set are skipped and counted. On the last sets page the cursor keeps pointing at that page, so a stop during standings redoes one page only.
 
 **Request estimate:** per event, `ceil(sets / 40) + ceil(entrants / 100)`. A 64-entrant event has about 120 sets, so about 3 + 1 = 4 requests (a 16-entrant local is about 30 sets, so 1 + 1 = 2); a 256-entrant event about 500 sets, so about 13 + 3 = 16. A run of the full cap of 25 events is therefore roughly 100 to 400 requests, about 2 to 7 minutes at the 60 requests per minute limit. The one re-check costs the same as a first sync, and each live event costs that again every run. Not measured live.
+
+## Backfill (P1-3)
+
+`jobs/src/backfill.ts` covers the current month plus the 12 before it (`--months`, max 24), newest first. Per month it runs discover over that calendar month, then syncs that month's qualifying events (online events are never synced). `meta.backfill_cursor` holds the start of the oldest finished month; a run ends at 75 minutes and the next night resumes. Once the target is reached the job is a no-op.
+
+**Estimate (guesses, not measured live; Texas, 16+ entrants per ADR-0003):** about 125 discover requests a month (discover still lists every Ultimate tournament, about 2,500, and keeps the Texas ones), and perhaps 40 to 80 qualifying Texas events a month at about 2 to 4 requests each (about 100 to 300). So event syncing for 13 months is only about 1,300 to 4,000 requests (well under an hour in total). **Discover is the bottleneck, not syncing.**
+
+**The 50 requests a day discover cap is enforced and reserved** (`jobs/src/discover-budget.ts`). The day (UTC) is split so neither job starves the other: the daily discover inside sync gets 20 (`SYNC_DISCOVER_SHARE`) and backfill gets 30 (`BACKFILL_DISCOVER_SHARE`). From 12:00 UTC either may also use what the other left unused. The total never passes 50. `meta.discover_day` holds the UTC date and `meta.discover_day_requests_sync` / `_backfill` what each spent that day (written in one transaction, and also when discover throws). A window cut short is not lost:
+
+- Backfill saves `meta.backfill_discover_cursor` (`{from, cursor}`, after every page, or `{from, done}` once a month's discover finished but its events are not all synced) and continues at that page next time.
+- Sync's discover saves `meta.sync_discover_cursor` (`{from, to, cursor}`, after every page) and continues the same window. A cut-short run is recorded `partial`, so it counts as not done.
+- When a job has nothing left today it skips discover (sync still syncs known events).
+
+**The daily discover is narrow:** the last 3 days plus the next 7 (`DAILY_DISCOVER_DAYS_BACK/AHEAD`). The manual `pnpm job:discover` keeps 14 / 30. Events further out are found when they enter the 7-day window, early enough because sync only fetches events that have started.
+
+**Estimates with the reserve (guesses, not measured):** at about 125 discover requests a month (about 2,500 tournaments, 20 a page), a 10-day window is about **42 requests a pass**. At 20 a day that is a pass about every 2 days, which is fine for "last updated" on discovery. Backfill at 30 a night needs about 4 nights per month, so 13 months is about 54 nights, **about 8 weeks (roughly 2 months)**. Event syncing for Texas fits easily. Both depend on the real count (item (d)). Two things shorten this a lot after the live check: a server-side `addrState` filter on `tournaments` (⚠ unverified; Texas alone is likely well under 200 tournaments a month, so about 10 requests a month and the full 13 months in a few nights), or raising the cap (at 125 a day, 13 months is about 2 weeks).
+
+**Month boundaries.** Discover windows select by tournament start, backfill sync windows by event start. A tournament in month M can have an event starting a few days into M+1. Backfill goes newest first, so M+1 is done before M's tournaments are known: therefore month M's sync window extends 7 days past its end, and the regular sync covers anything starting in the last 14 days (and serves older pending events last, so they are not stranded).
+
+**Regular sync and old events.** Pending events that started more than 14 days ago are served last (after fresh and live events, re-checks and error retries); backfill normally gets them first.
+
+Neon compute hours (100 CU-hours a month on the free plan) cannot be queried from SQL. Check the Neon console by hand. The rate job's summary shows database size and warns at 70% of 1 GB.

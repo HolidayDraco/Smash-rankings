@@ -7,6 +7,7 @@
     "discover": "tsx src/discover.ts",
     "sync": "tsx src/sync.ts",
     "rate": "tsx src/rate.ts",
+    "backfill": "tsx src/backfill.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

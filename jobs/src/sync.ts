@@ -1,12 +1,33 @@
-import { and, asc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  notInArray,
+  or,
+  sql,
+} from "drizzle-orm";
+import { z } from "zod";
 import { periodIndexFor } from "@sr/core";
-import { events, players, sets, standings, type Database } from "@sr/db";
+import { events, ingestRuns, players, sets, standings, type Database } from "@sr/db";
 import {
   StartggAuthError,
   type Cursor,
   type NormalizedPlayer,
   type NormalizedSet,
 } from "@sr/startgg";
+import {
+  deleteMeta,
+  discoverBudgeted,
+  getMeta,
+  remainingDiscoverBudget,
+  setMeta,
+} from "./discover-budget";
+import { DAY_MS, DEFAULT_DAYS_BACK } from "./discover";
 import { isMain, runJob, UsageError, type JobContext, type JobResult } from "./harness";
 
 const HOUR_MS = 3_600_000;
@@ -45,6 +66,8 @@ export async function selectEvents(
   db: Pick<Database, "select">,
   now: Date,
   limit = MAX_EVENTS_PER_RUN,
+  /** Backfill: only events starting in [from, to), skipping ids already handled this run. */
+  filter: { window?: { from: Date; to: Date }; excludeIds?: number[] } = {},
 ): Promise<SyncCandidate[]> {
   const sinceStart = (ms: number) => sql`${events.startAt} + ${ms / 1000} * interval '1 second'`;
   const recheckDue = and(
@@ -60,6 +83,8 @@ export async function selectEvents(
       lt(events.lastSyncedAt, new Date(now.getTime() - ERROR_RETRY_AFTER_MS)),
     ),
   );
+  // Pending events older than the discover lookback are served last (backfill normally gets them).
+  const freshAfter = new Date(now.getTime() - DEFAULT_DAYS_BACK * DAY_MS).toISOString();
   return db
     .select({
       id: events.id,
@@ -73,11 +98,17 @@ export async function selectEvents(
       and(
         eq(events.qualifies, true),
         lt(events.startAt, now),
+        filter.window
+          ? and(gte(events.startAt, filter.window.from), lt(events.startAt, filter.window.to))
+          : undefined,
+        filter.excludeIds?.length ? notInArray(events.id, filter.excludeIds) : undefined,
         or(inArray(events.syncStatus, ["pending", "partial"]), recheckDue, errorRetryDue),
       ),
     )
     .orderBy(
-      sql`case ${events.syncStatus} when 'done' then 1 when 'error' then 2 else 0 end`,
+      sql`case ${events.syncStatus} when 'done' then 1 when 'error' then 2
+        when 'pending' then (case when ${events.startAt} < ${freshAfter}::timestamptz then 3 else 0 end)
+        else 0 end`,
       sql`${events.lastSyncedAt} asc nulls first`,
       asc(events.startAt),
       asc(events.id),
@@ -369,38 +400,11 @@ async function stop(
   return false;
 }
 
-export async function sync(ctx: JobContext): Promise<JobResult> {
-  const { args, db, readDb, deadline, now } = ctx;
-  if (!readDb) {
-    throw new UsageError(
-      "sync needs DATABASE_URL to know which events qualify (even in a dry run)",
-    );
-  }
-  let candidates: SyncCandidate[];
-  if (args.event !== undefined) {
-    const [row] = await readDb
-      .select({
-        id: events.id,
-        syncCursor: events.syncCursor,
-        state: events.state,
-        startAt: events.startAt,
-        syncStatus: events.syncStatus,
-        qualifies: events.qualifies,
-      })
-      .from(events)
-      .where(eq(events.id, args.event));
-    if (!row)
-      throw new UsageError(`event ${args.event} is not in the database; run discover first`);
-    if (!row.qualifies) {
-      throw new UsageError(
-        `event ${args.event} does not qualify (online or too small); its sets and standings are never fetched`,
-      );
-    }
-    candidates = [row];
-  } else {
-    candidates = await selectEvents(readDb, new Date(now()));
-  }
-
+export async function syncCandidates(
+  ctx: JobContext,
+  candidates: SyncCandidate[],
+): Promise<{ counts: Counts; stoppedEarly: boolean }> {
+  const { db, deadline, now } = ctx;
   const counts: Counts = {
     events: 0,
     partialEvents: 0,
@@ -433,6 +437,126 @@ export async function sync(ctx: JobContext): Promise<JobResult> {
     }
     if (stoppedEarly) break;
   }
+  return { counts, stoppedEarly };
+}
+
+/** Discover has no trigger of its own: the first sync of the day runs it. */
+/** The daily discover is narrow (the 14 / 30 day default is for the manual job): events further out are found as they come into the 7 day window, early enough because sync only fetches started events. */
+export const DAILY_DISCOVER_DAYS_BACK = 3;
+export const DAILY_DISCOVER_DAYS_AHEAD = 7;
+export const DISCOVER_EVERY_MS = 24 * HOUR_MS;
+/** meta key: where a budget-limited daily discover stopped, JSON {from, to, cursor}; the next one continues there. */
+export const SYNC_DISCOVER_CURSOR_KEY = "sync_discover_cursor";
+
+const syncDiscoverCursorSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  cursor: z.object({ page: z.number().int(), perPage: z.number().int() }),
+});
+
+async function discoverIfStale(ctx: JobContext, db: Database): Promise<void> {
+  const since = new Date(ctx.now() - DISCOVER_EVERY_MS);
+  const [recent] = await db
+    .select({ id: ingestRuns.id })
+    .from(ingestRuns)
+    .where(
+      and(
+        eq(ingestRuns.job, "discover"),
+        eq(ingestRuns.status, "success"),
+        gte(ingestRuns.finishedAt, since),
+      ),
+    )
+    .limit(1);
+  if (recent) return;
+  // The 50 a day discover budget is shared with backfill (UTC day).
+  if ((await remainingDiscoverBudget(db, ctx.now(), "sync")) <= 0) {
+    ctx.out("sync: skipping discover, today's discover budget is used up (it continues tomorrow)");
+    return;
+  }
+  const [row] = await db
+    .insert(ingestRuns)
+    .values({ job: "discover", status: "running" })
+    .returning({ id: ingestRuns.id });
+  const requestsBefore = ctx.client.requestsUsed;
+  const touchedBefore = ctx.progress.eventsTouched;
+  const finish = (fields: Partial<typeof ingestRuns.$inferInsert>) =>
+    row
+      ? db
+          .update(ingestRuns)
+          .set({
+            ...fields,
+            finishedAt: new Date(ctx.now()),
+            requestsUsed: ctx.client.requestsUsed - requestsBefore,
+            eventsTouched: ctx.progress.eventsTouched - touchedBefore,
+          })
+          .where(eq(ingestRuns.id, row.id))
+      : Promise.resolve();
+  try {
+    // A window cut short by the budget continues where it stopped (same window, next page).
+    const savedText = await getMeta(db, SYNC_DISCOVER_CURSOR_KEY);
+    const saved = syncDiscoverCursorSchema.safeParse(JSON.parse(savedText ?? "null"));
+    const from = saved.success
+      ? new Date(saved.data.from)
+      : new Date(ctx.now() - DAILY_DISCOVER_DAYS_BACK * DAY_MS);
+    const to = saved.success
+      ? new Date(saved.data.to)
+      : new Date(ctx.now() + DAILY_DISCOVER_DAYS_AHEAD * DAY_MS);
+    const result = await discoverBudgeted(ctx, db, "sync", from, to, {
+      cursor: saved.success ? saved.data.cursor : undefined,
+      // Saved after every page, so an error resumes at the page that failed.
+      onPage: (next) =>
+        setMeta(
+          db,
+          SYNC_DISCOVER_CURSOR_KEY,
+          JSON.stringify({ from: from.toISOString(), to: to.toISOString(), cursor: next }),
+        ).then(() => undefined),
+    });
+    ctx.out(`discover (first sync of the day): ${result?.summary ?? "no budget left"}`);
+    if (result && !result.partial) await deleteMeta(db, SYNC_DISCOVER_CURSOR_KEY);
+    await finish({ status: result && !result.partial ? "success" : "partial" });
+  } catch (error) {
+    await finish({ status: "error", error: ctx.redact(error) });
+    // A bad token fails the whole run loudly; anything else must not block syncing what we have.
+    if (error instanceof StartggAuthError) throw error;
+    process.stderr.write(`sync: discover failed, syncing known events: ${ctx.redact(error)}\n`);
+  }
+}
+
+export async function sync(ctx: JobContext): Promise<JobResult> {
+  const { args, db, readDb, now } = ctx;
+  if (!readDb) {
+    throw new UsageError(
+      "sync needs DATABASE_URL to know which events qualify (even in a dry run)",
+    );
+  }
+  if (db && !args.skipDiscover && args.event === undefined) await discoverIfStale(ctx, db);
+  let candidates: SyncCandidate[];
+  if (args.event !== undefined) {
+    const [row] = await readDb
+      .select({
+        id: events.id,
+        syncCursor: events.syncCursor,
+        state: events.state,
+        startAt: events.startAt,
+        syncStatus: events.syncStatus,
+        qualifies: events.qualifies,
+      })
+      .from(events)
+      .where(eq(events.id, args.event));
+    if (!row)
+      throw new UsageError(`event ${args.event} is not in the database; run discover first`);
+    if (!row.qualifies) {
+      throw new UsageError(
+        `event ${args.event} does not qualify (online or too small); its sets and standings are never fetched`,
+      );
+    }
+    candidates = [row];
+  } else {
+    candidates = await selectEvents(readDb, new Date(now()));
+  }
+
+  const { counts, stoppedEarly } = await syncCandidates(ctx, candidates);
+  // Only the regular sync fails on this (backfill logs failures and carries on).
   if (counts.failedEvents > 0 && counts.events === 0 && !stoppedEarly) {
     throw new Error(`all ${counts.failedEvents} event(s) failed to sync`);
   }

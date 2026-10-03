@@ -25,6 +25,20 @@ import { isMain, runDbJob, type DbJobContext, type JobResult } from "./harness";
  */
 const RATE_LOCK_KEY = 7_265_101;
 
+/** Neon free tier storage is 1 GB; warn from 70%. (Compute hours cannot be read from SQL: check the Neon console by hand.) */
+export const DB_SIZE_LIMIT_BYTES = 1024 ** 3;
+export const DB_SIZE_WARN_FRACTION = 0.7;
+
+export async function databaseSizeLine(db: ReadDb): Promise<string> {
+  const [row] = await db
+    .select({ bytes: sql<string>`pg_database_size(current_database())` })
+    .from(sql`(select 1) as one`);
+  const bytes = Number(row?.bytes ?? 0);
+  const percent = Math.round((bytes / DB_SIZE_LIMIT_BYTES) * 100);
+  const line = `Database size: ${(bytes / 1024 ** 2).toFixed(1)} MB (${percent}% of the 1 GB free limit)`;
+  return bytes >= DB_SIZE_LIMIT_BYTES * DB_SIZE_WARN_FRACTION ? `WARNING: ${line}` : line;
+}
+
 /** Rows per INSERT … jsonb_to_recordset statement, to keep each parameter a few MB at most. */
 const CHUNK_ROWS = 10_000;
 
@@ -344,8 +358,13 @@ export function rateJob(hooks: RateHooks = {}) {
     const week = periodIndexToIsoWeek(asOfPeriod);
     out(`Top 20, week ${week}:\n${table}\n${ATTRIBUTION}`);
     const summaryFile = ctx.env.GITHUB_STEP_SUMMARY;
+    const sizeLine = await databaseSizeLine(readDb);
+    out(sizeLine);
     if (summaryFile) {
-      appendFileSync(summaryFile, `### Top 20 (week ${week})\n\n${table}\n\n_${ATTRIBUTION}_\n\n`);
+      appendFileSync(
+        summaryFile,
+        `### Top 20 (week ${week})\n\n${table}\n\n_${ATTRIBUTION}_\n\n${sizeLine}\n\n`,
+      );
     }
 
     ctx.progress.eventsTouched = ratedEvents.size;

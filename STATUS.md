@@ -466,3 +466,30 @@ Discover still reads every Ultimate tournament nationwide and filters locally, s
 **Questions for Clay:** None.
 
 **Questions for Genghis:** None.
+
+---
+
+## 2026-10-03 — Phase 1: backfill and the scheduled data workflow (Texas)
+
+**Date:** October 3, 2026
+
+**What changed:** The data jobs now run on their own, on a schedule (GitHub Actions, `.github/workflows/ingest.yml`):
+
+- **Every 2 hours**, and **every hour Friday–Monday** (tournament weekends): **sync** pulls new results, then **rate** rebuilds the leaderboard. The first sync each day also runs **discover** to find new events, so there's no separate discover schedule to clash with.
+- **Every night at 07:41 UTC: backfill** works backwards through the last 12 months, one chunk per night (about 75 minutes). It remembers where it stopped and resumes the next night. The ≤ 50 discover requests a day limit is enforced and split: the daily discover gets 20 (it only looks 3 days back and 7 ahead) and backfill gets 30 (after 12:00 UTC either can use the other's leftovers). A month cut short continues the next day. At that pace the full 12 months need roughly **8 weeks (about 2 months)** of nights (a guess until the live check). When it's done, it does nothing.
+- **Jobs never overlap**: they share one queue, so the rate job can't step on itself. GitHub keeps only one waiting run per queue, so starting a manual run while another is already waiting can cancel the waiting one. The hourly weekend sync skips 07:23 so it never waits behind the nightly backfill.
+- **Safe before setup**: until the start.gg token and database address are added as GitHub secrets, each run just writes "not configured yet" and stops. It doesn't fail, and it doesn't send daily error emails.
+- **You can also start a job by hand** from the GitHub Actions tab ("Run workflow"): sync, backfill (with a number of months), or rate.
+- Each rate run reports the **database size** and warns at 70% of Neon's free 1 GB.
+- Automatic checks now also lint the workflow files (actionlint).
+- **Texas only, 16+ entrants** (decided earlier today): the jobs only keep Texas events, and each Texas local is cheap to sync (about 2 to 4 requests). Finding events is the slow part: start.gg is still read for every Ultimate tournament, then filtered to Texas.
+- **Error alerts:** the sync, backfill and rate jobs now get the Sentry key, so failures and missed runs reach you once `SENTRY_DSN` is added as a GitHub secret.
+
+**What's next:** Phase 1 is complete in code. The last step, the first live check (P1-12), needs your setup: the start.gg token, a Neon database, Vercel, and Sentry. It will measure real request counts, confirm how start.gg writes "Texas", and check whether start.gg can filter tournaments by state, which would cut the history fill from about 8 weeks to a few nights.
+
+**Questions for Clay:**
+1. **Heads-up on timing:** with our 50-requests-a-day limit for finding events (30 of it for backfill), the 12-month Texas history may take about 8 weeks to fill in. The live check will tell us whether a start.gg state filter can shorten that to a few nights.
+2. **Neon compute hours** can't be read automatically. About once a month, glance at the Neon dashboard's "Compute hours" (the free plan includes 100 per month). Claude will add an alert later if usage gets close.
+3. Once the GitHub secrets (`STARTGG_TOKEN`, `DATABASE_URL`) are in, the first backfill starts that night. You can also start it right away from the Actions tab.
+
+**Questions for Genghis:** Default I picked, please confirm: the 50/day discover budget is reserved, 20 for the daily discover (window narrowed to 3 days back, 7 ahead, about 42 requests a pass, so a pass every ~2 days) and 30 for backfill, with leftovers shareable after 12:00 UTC. With Texas only, discover (not syncing) is the bottleneck: about 8 weeks for 12 months until a server-side `addrState` filter is verified at P1-12.

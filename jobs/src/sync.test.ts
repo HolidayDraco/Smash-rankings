@@ -19,7 +19,8 @@ import { parseCursor, selectEvents, sync } from "./sync";
 const TOKEN = "SECRET-TOKEN-abc123";
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 const HOUR = 3_600_000;
-const NOW = Date.parse("2026-10-03T12:00:00Z");
+// Four days after the event: inside the regular sync's 14 day pending lookback.
+const NOW = Date.parse("2025-10-12T12:00:00Z");
 const EVENT_START = new Date("2025-10-08T18:00:00Z");
 
 const fixture = (name: string): unknown =>
@@ -71,7 +72,7 @@ describe.skipIf(!testDatabaseUrl)(
 
     const run = (argv: string[] = [], out: string[] = []) => {
       let clientNow = 1_000_000;
-      return runJob("sync", argv, sync, {
+      return runJob("sync", ["--skip-discover", ...argv], sync, {
         env,
         now: () => nowMs,
         clientOptions: {
