@@ -13,6 +13,7 @@
     "@expo-google-fonts/barlow": "0.4.1",
     "@expo-google-fonts/barlow-condensed": "0.4.1",
     "@expo/metro-runtime": "57.0.16",
+    "@sentry/react": "11.4.0",
     "@sr/api": "workspace:*",
     "@sr/core": "workspace:*",
     "@sr/ui": "workspace:*",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@sr/config": "workspace:*",
     "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
     "typescript": "6.0.3",
     "vitest": "5.0.3"
   }

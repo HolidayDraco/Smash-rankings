@@ -19,6 +19,11 @@ import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors } from "@sr/ui";
 import { AppHeader } from "../components/AppHeader";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { initSentry } from "../lib/sentry";
+
+// Once per page load, before the first render, so crashes during it are reported too.
+initSentry();
 
 export default function RootLayout() {
   // Content renders right away with fallback fonts; the real fonts swap in when loaded (no blank screen).
@@ -42,10 +47,15 @@ export default function RootLayout() {
         </Head>
         <StatusBar style="dark" />
         <View style={{ flex: 1, backgroundColor: colors.white }}>
-          <AppHeader />
-          <Stack
-            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white } }}
-          />
+          <ErrorBoundary>
+            <AppHeader />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.white },
+              }}
+            />
+          </ErrorBoundary>
         </View>
       </SafeAreaProvider>
     </QueryClientProvider>
