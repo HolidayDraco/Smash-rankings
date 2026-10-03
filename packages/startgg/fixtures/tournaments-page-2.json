@@ -21,7 +21,7 @@
             {
               "id": 9004,
               "name": "Ultimate Singles",
-              "slug": "tournament/fake-major/event/ultimate-singles",
+              "slug": "tournament/fake-weekly/event/ultimate-singles",
               "numEntrants": 20,
               "isOnline": false,
               "state": "COMPLETED",

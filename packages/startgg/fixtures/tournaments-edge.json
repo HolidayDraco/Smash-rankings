@@ -1,28 +1,28 @@
 {
-  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake ids. Boundary cases for discover: 64 vs 63 entrants, and an online event.",
   "data": {
     "tournaments": {
       "pageInfo": {
         "total": 3,
-        "totalPages": 2
+        "totalPages": 1
       },
       "nodes": [
         {
-          "id": 5001,
-          "name": "Fake Major",
-          "slug": "tournament/fake-5001",
+          "id": 5101,
+          "name": "Fake Edge",
+          "slug": "tournament/fake-5101",
           "countryCode": "US",
           "addrState": "CA",
           "isOnline": false,
-          "numAttendees": 300,
+          "numAttendees": 100,
           "startAt": 1760000000,
           "endAt": 1760086400,
           "events": [
             {
-              "id": 9001,
+              "id": 9101,
               "name": "Ultimate Singles",
-              "slug": "tournament/fake-major/event/ultimate-singles",
-              "numEntrants": 212,
+              "slug": "tournament/fake-edge/event/exactly-64",
+              "numEntrants": 64,
               "isOnline": false,
               "state": "COMPLETED",
               "startAt": 1760000000,
@@ -33,18 +33,15 @@
               }
             },
             {
-              "id": 9002,
-              "name": "Ultimate Doubles",
-              "slug": "tournament/fake-major/event/ultimate-doubles",
-              "numEntrants": 60,
+              "id": 9102,
+              "name": "Ultimate Singles",
+              "slug": "tournament/fake-edge/event/just-63",
+              "numEntrants": 63,
               "isOnline": false,
               "state": "COMPLETED",
               "startAt": 1760000000,
-              "type": 5,
-              "teamRosterSize": {
-                "minPlayers": 2,
-                "maxPlayers": 2
-              },
+              "type": 1,
+              "teamRosterSize": null,
               "videogame": {
                 "id": 1386
               }
@@ -52,22 +49,22 @@
           ]
         },
         {
-          "id": 5002,
-          "name": "Fake Regional",
-          "slug": "tournament/fake-5002",
+          "id": 5102,
+          "name": "Fake Online Cup",
+          "slug": "tournament/fake-5102",
           "countryCode": "US",
           "addrState": "CA",
-          "isOnline": false,
-          "numAttendees": 300,
+          "isOnline": true,
+          "numAttendees": 100,
           "startAt": 1760000000,
           "endAt": 1760086400,
           "events": [
             {
-              "id": 9003,
+              "id": 9103,
               "name": "Ultimate Singles",
-              "slug": "tournament/fake-regional/event/ultimate-singles",
-              "numEntrants": 80,
-              "isOnline": false,
+              "slug": "tournament/fake-online/event/online-singles",
+              "numEntrants": 128,
+              "isOnline": true,
               "state": "COMPLETED",
               "startAt": 1760000000,
               "type": 1,

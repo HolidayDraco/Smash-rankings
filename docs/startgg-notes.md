@@ -35,7 +35,7 @@ and has no token. Replace it with the real schema:
 
 ## Request budget
 
-At the defaults, a 2,000-entrant double-elimination event (about 4,000 sets) is about 100 set pages plus 20 standings pages, so about 120 requests (about 2 minutes at 60 requests a minute). Discovery of a 14-day window is a handful of requests.
+At the defaults, a 2,000-entrant double-elimination event (about 4,000 sets) is about 100 set pages plus 20 standings pages, so about 120 requests (about 2 minutes at 60 requests a minute). Discovery: see below.
 
 ## Normalized set conventions
 
@@ -43,3 +43,20 @@ At the defaults, a 2,000-entrant double-elimination event (about 4,000 sets) is 
 - Sets are dropped when either side is not a single named player (teams, no gamer tag) or both sides are the same player.
 - `User.slug` (public profile slug) is requested for `players.user_slug`. Pending live check: that `Player.user` is exposed with a token.
 - Rate-limit errors back off from 10 s (or `Retry-After` if sent); other transient errors from 1 s.
+
+## Discover job request estimate (P1-1)
+
+`jobs/src/discover.ts` pages `tournaments` (videogame 1386) over the last 14 plus next 30 days, 20 tournaments per page, so **requests per run = ceil(tournaments in the window / 20)**. Nothing else is requested.
+
+- Fixtures: 3 tournaments in 2 pages (the fixture's `totalPages`), which is the dry-run sample (2 requests).
+- Live: **not measured.** The number of Ultimate tournaments listed on start.gg in a 44-day window (locals and online weeklies included, because the tournaments query cannot filter by size) is unknown. The 50-request daily target holds only up to about 1,000 tournaments in the window. A 44-day window with every local on start.gg may well exceed that.
+- If the first live dry run shows more than 50: (1) raise `DEFAULT_TOURNAMENTS_PER_PAGE` if the objects-per-request measurement allows it; (2) scan the full window weekly and only the last 3 plus next 30 days daily. P1-12 should record the real number.
+- The job writes each page as it goes and is safe to rerun, so a time-budget stop (reported as status `partial`) loses nothing.
+
+Signals still pending a live check, each in one function in `packages/core/src/qualifying.ts`: `isSinglesEvent` (Event.type 1) and `isOnlineEvent` (event flag, then tournament flag; unknown counts as in person).
+
+### Discover: reruns, stale flags, and slug clashes
+
+- Tournaments are paged by `startAt`, so pages can shift while the run is going (a tournament added mid-run). The daily rerun catches anything missed.
+- If a stored event now classifies as skip (fewer than 64 entrants, switched to doubles), its `qualifies` is set to false and `num_entrants` refreshed. Only existing rows are updated; skipped events are never inserted.
+- `tournaments.slug` and `events.slug` are unique, but a recreated tournament or event arrives with a new id and the old slug. Before upserting, the old row keeps its data and its slug is renamed to `<slug>~stale-<oldId>`. That cannot clash again, so the run neither fails nor loops, and nothing is deleted.
