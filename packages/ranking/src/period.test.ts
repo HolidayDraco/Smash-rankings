@@ -6,6 +6,7 @@ import {
   periodIndexToIsoWeek,
   periodStart,
   ratingPeriodFor,
+  ratingWindow,
 } from "./period";
 
 const at = (iso: string): string => ratingPeriodFor(new Date(iso));
@@ -82,5 +83,18 @@ describe("integer period index", () => {
         expect(ratingPeriodFor(nextWeek)).not.toBe(ratingPeriodFor(date));
       }),
     );
+  });
+});
+
+describe("ratingWindow", () => {
+  it("covers the 52 weeks ending at the as-of period, inclusive", () => {
+    expect(ratingWindow(100)).toEqual({ fromPeriod: 49, toPeriod: 100 });
+    expect(ratingWindow(100, 1)).toEqual({ fromPeriod: 100, toPeriod: 100 });
+  });
+
+  it("rejects windows shorter than one week and non-integers", () => {
+    expect(() => ratingWindow(100, 0)).toThrow(RangeError);
+    expect(() => ratingWindow(100, -3)).toThrow(RangeError);
+    expect(() => ratingWindow(1.5)).toThrow(RangeError);
   });
 });

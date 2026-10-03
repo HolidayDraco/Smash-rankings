@@ -129,6 +129,25 @@ describe("rateHistory", () => {
     ).toThrow(/cycle/);
   });
 
+  it("keeps only active weeks plus the last week with historyRows: active-weeks", () => {
+    const sets = [set("a", "b", 10), set("a", "c", 12)];
+    const full = rateHistory({ sets, fromPeriod: 10, toPeriod: 14 });
+    const slim = rateHistory({ sets, fromPeriod: 10, toPeriod: 14, historyRows: "active-weeks" });
+    expect(slim.history.map((row) => [row.playerId, row.period])).toEqual([
+      ["a", 10],
+      ["b", 10],
+      ["a", 12],
+      ["c", 12],
+      ["a", 14],
+      ["b", 14],
+      ["c", 14],
+    ]);
+    // Same ratings, and every kept row matches the full history.
+    expect(slim.ratings).toEqual(full.ratings);
+    expect(ratingsAt(slim.history, 14)).toEqual(ratingsAt(full.history, 14));
+    for (const row of slim.history) expect(full.history).toContainEqual(row);
+  });
+
   it("rejects bad period ranges", () => {
     expect(() => rateHistory({ sets: [], fromPeriod: 3, toPeriod: 2 })).toThrow(RangeError);
     expect(() => rateHistory({ sets: [], fromPeriod: 0.5, toPeriod: 2 })).toThrow(RangeError);

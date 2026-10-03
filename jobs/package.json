@@ -6,14 +6,17 @@
   "scripts": {
     "discover": "tsx src/discover.ts",
     "sync": "tsx src/sync.ts",
+    "rate": "tsx src/rate.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
     "@sr/core": "workspace:*",
     "@sr/db": "workspace:*",
+    "@sr/ranking": "workspace:*",
     "@sr/startgg": "workspace:*",
-    "drizzle-orm": "0.45.3"
+    "drizzle-orm": "0.45.3",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@sr/config": "workspace:*",

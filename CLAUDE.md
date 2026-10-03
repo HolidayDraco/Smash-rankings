@@ -36,6 +36,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 - `pnpm codegen`: regenerate start.gg GraphQL types
 - `pnpm job:discover -- --dry-run`: find events in the last 14 / next 30 days without writing to the DB (`--from` / `--to` override the window)
 - `pnpm job:sync -- --dry-run`: run a job without writing to the DB (sync is a stub until P1-2)
+- `pnpm job:rate`: recompute ratings and rebuild the leaderboard. Needs only `DATABASE_URL`. `-- --dry-run` prints the top 20 without writing; `-- --as-of 2026-09-01` rates as of a past date
 
 ## start.gg rules (IMPORTANT: Terms of Use and rate limits)
 - Hard limits: average ≤ 80 requests per 60 s, ≤ 1,000 objects per request including nested ones. Our client targets **≤ 60 req/min** and backs off exponentially on `Rate limit exceeded`. On `Query complexity too high`, it shrinks the page size.
