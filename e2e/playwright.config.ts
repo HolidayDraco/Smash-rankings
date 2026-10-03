@@ -5,9 +5,9 @@ import { defineConfig } from "@playwright/test";
 const PORT = Number(process.env.E2E_PORT ?? 4173);
 
 /**
- * Locally the browser is pre-installed under PLAYWRIGHT_BROWSERS_PATH. If Playwright's expected
- * revision is missing there (version drift), fall back to whatever chromium is installed.
- * In CI we always use the browser that `playwright install` downloads.
+ * Locally the browser is pre-installed under PLAYWRIGHT_BROWSERS_PATH. We always launch the newest
+ * chromium-<revision> found there, whether or not it matches Playwright's expected revision.
+ * In CI we use the browser that `playwright install` downloads.
  */
 function localChromiumPath(): string | undefined {
   if (process.env.CI) return undefined;
@@ -15,7 +15,7 @@ function localChromiumPath(): string | undefined {
   if (!existsSync(base)) return undefined;
   const dir = readdirSync(base)
     .filter((d) => /^chromium-\d+$/.test(d))
-    .sort()
+    .sort((a, b) => Number(a.split("-")[1]) - Number(b.split("-")[1]))
     .pop();
   const exe = dir ? join(base, dir, "chrome-linux", "chrome") : "";
   return exe && existsSync(exe) ? exe : undefined;

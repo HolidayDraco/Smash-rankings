@@ -1,6 +1,6 @@
 import { Link } from "expo-router";
 import Head from "expo-router/head";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import {
   AngledPanel,
   BodyText,
@@ -41,16 +41,18 @@ export default function Home() {
         <BodyText muted style={styles.note}>
           This is an unofficial fan project. It is not affiliated with Nintendo or start.gg.
         </BodyText>
-        <Link
-          href="/style-guide"
-          role="link"
-          aria-label="Open the style guide"
-          {...ring.handlers}
-          style={[styles.cta, ring.style]}
-        >
-          <BodyText variant="label" color={colors.white}>
-            Open the style guide
-          </BodyText>
+        <Link href="/style-guide" asChild>
+          <Pressable
+            role="link"
+            aria-label="Open the style guide"
+            {...ring.handlers}
+            // Flattened: Link asChild merges styles as objects, so an array would be mangled.
+            style={StyleSheet.flatten([styles.cta, ring.style])}
+          >
+            <BodyText variant="label" color={colors.white}>
+              Open the style guide
+            </BodyText>
+          </Pressable>
         </Link>
       </View>
     </Page>

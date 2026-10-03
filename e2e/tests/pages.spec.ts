@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { colors } from "@sr/ui/tokens";
 
 const routes = [
   { path: "/", title: "Bracket Index", heading: "Bracket Index" },
@@ -59,19 +60,38 @@ test("style guide shows every required section", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Replay motion sample" })).toBeVisible();
 });
 
-test("keyboard focus is visible on interactive elements", async ({ page }) => {
+test("keyboard focus shows an accent-colored outline", async ({ page }) => {
   await page.goto("/");
   await page.keyboard.press("Tab");
-  const outline = await page.evaluate(
-    () => getComputedStyle(document.activeElement as Element).outlineStyle,
-  );
-  expect(outline).not.toBe("none");
+  const outline = await page.evaluate(() => {
+    const style = getComputedStyle(document.activeElement as Element);
+    return { style: style.outlineStyle, color: style.outlineColor };
+  });
+  expect(outline.style).not.toBe("none");
+  const accent = parseInt(colors.accent.slice(1), 16);
+  expect(outline.color).toBe(`rgb(${accent >> 16}, ${(accent >> 8) & 255}, ${accent & 255})`);
 });
 
-test("touch targets are at least 44px", async ({ page }) => {
+for (const path of ["/", "/style-guide"]) {
+  test(`touch targets on ${path} are at least 44px`, async ({ page }) => {
+    await page.goto(path);
+    const targets = await page.getByRole("link").or(page.getByRole("button")).all();
+    expect(targets.length).toBeGreaterThan(0);
+    for (const target of targets) {
+      const box = await target.boundingBox();
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(43.5);
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(43.5);
+    }
+  });
+}
+
+test("reduced motion is announced and bars show without animation", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/style-guide");
-  const targets = page.getByRole("link").or(page.getByRole("button"));
-  for (const box of await Promise.all((await targets.all()).map((t) => t.boundingBox()))) {
-    expect(box?.height ?? 0).toBeGreaterThanOrEqual(43.5);
-  }
+  await expect(page.getByText(/Reduced motion is on/)).toBeVisible();
+});
+
+test("reduced-motion message is absent by default", async ({ page }) => {
+  await page.goto("/style-guide");
+  await expect(page.getByText(/Reduced motion is on/)).toHaveCount(0);
 });

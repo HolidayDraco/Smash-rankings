@@ -2,7 +2,7 @@
   "extends": "@sr/config/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "lib": ["ES2023", "DOM"],
+    "lib": ["ES2023"],
     "types": ["node"]
   },
   "include": ["src"]

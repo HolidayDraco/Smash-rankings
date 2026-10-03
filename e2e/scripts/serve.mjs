@@ -26,7 +26,13 @@ async function exists(path) {
 }
 
 createServer(async (req, res) => {
-  const pathname = decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname);
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname);
+  } catch {
+    res.writeHead(400, { "content-type": "text/plain" }).end("Bad request");
+    return;
+  }
   const safe = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
   const candidates = [join(root, safe), join(root, `${safe}.html`), join(root, safe, "index.html")];
   let file = null;

@@ -14,10 +14,14 @@ export function MotionSample() {
   const ring = useFocusRing();
   const values = useRef(BARS.map(() => new Animated.Value(0))).current;
 
+  const running = useRef<Animated.CompositeAnimation | null>(null);
+
   const play = useCallback(() => {
+    if (reduced === null) return; // preference not known yet
+    running.current?.stop();
     values.forEach((v) => v.setValue(reduced ? 1 : 0));
     if (reduced) return;
-    Animated.stagger(
+    running.current = Animated.stagger(
       staggerMs,
       values.map((v) =>
         Animated.timing(v, {
@@ -27,10 +31,14 @@ export function MotionSample() {
           useNativeDriver,
         }),
       ),
-    ).start();
+    );
+    running.current.start();
   }, [reduced, values]);
 
-  useEffect(play, [play]);
+  useEffect(() => {
+    play();
+    return () => running.current?.stop();
+  }, [play]);
 
   return (
     <View>
@@ -69,7 +77,7 @@ export function MotionSample() {
           Replay
         </BodyText>
       </Pressable>
-      {reduced ? (
+      {reduced === true ? (
         <BodyText variant="bodySm" muted>
           Reduced motion is on, so bars appear without animation.
         </BodyText>

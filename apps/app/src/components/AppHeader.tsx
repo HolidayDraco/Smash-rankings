@@ -1,22 +1,24 @@
 import { Link, usePathname } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { BodyText, DisplayText, colors, minTouchTarget, spacing, useFocusRing } from "@sr/ui";
 
 function NavLink({ href, label }: { href: "/" | "/style-guide"; label: string }) {
   const ring = useFocusRing();
   const active = usePathname() === href;
   return (
-    <Link
-      href={href}
-      role="link"
-      aria-label={label}
-      aria-current={active ? "page" : undefined}
-      {...ring.handlers}
-      style={[styles.link, ring.style, active && styles.linkActive]}
-    >
-      <BodyText variant="label" color={colors.ink}>
-        {label}
-      </BodyText>
+    <Link href={href} asChild>
+      <Pressable
+        role="link"
+        aria-label={label}
+        aria-current={active ? "page" : undefined}
+        {...ring.handlers}
+        // Flattened: Link asChild merges styles as objects, so an array would be mangled.
+        style={StyleSheet.flatten([styles.link, ring.style, active && styles.linkActive])}
+      >
+        <BodyText variant="label" color={colors.ink}>
+          {label}
+        </BodyText>
+      </Pressable>
     </Link>
   );
 }
