@@ -493,3 +493,53 @@ Discover still reads every Ultimate tournament nationwide and filters locally, s
 3. Once the GitHub secrets (`STARTGG_TOKEN`, `DATABASE_URL`) are in, the first backfill starts that night. You can also start it right away from the Actions tab.
 
 **Questions for Genghis:** Default I picked, please confirm: the 50/day discover budget is reserved, 20 for the daily discover (window narrowed to 3 days back, 7 ahead, about 42 requests a pass, so a pass about every 3 days, or about daily once backfill is finished and sync can borrow its unused share after 12:00 UTC; each new pass starts looking back from a little before the previous pass began, so nothing that starts between two passes is missed) and 30 for backfill, with leftovers shareable after 12:00 UTC. With Texas only, discover (not syncing) is the bottleneck: about 8 weeks for 12 months until a server-side `addrState` filter is verified at P1-12.
+
+---
+
+## 2026-10-03 — End of session: Phase 1 code complete
+
+**Date:** October 3, 2026
+
+**What changed today (all merged):**
+
+- **Phase 0:** monorepo and CI with the secret scan; database tables; the start.gg client with its rate limiter; the Glicko-2 ranking engine (it passes Glickman's worked example); the app shell and the style guide.
+- **Phase 1:**
+  - **Data jobs:** find events, pull results, update rankings, and fill in 12 months of history. They run on a GitHub schedule every 2 hours, and hourly from Friday to Monday.
+  - **API.**
+  - **Website pages:** leaderboard with search, player pages, "How rankings work", and "Data status".
+  - **Sentry error alerts.**
+  - **Texas only, 16+ entrants** (#20, #21).
+- **A start.gg courtesy email** is drafted in `docs/startgg-email-draft.md`, for you to send before sharing the site. Nothing has been sent.
+- **Fix found while writing this checklist (in this PR, #22):** the scheduled jobs now create the database tables themselves before running. Without this, the first run against a new Neon database would have failed.
+
+**What's next:** the first live run (P1-12). It needs your setup. Nothing costs money, since everything uses free plans. In order:
+
+1. ☐ **start.gg token:** start.gg → Settings → Developer Settings → create a token. Add it as the GitHub Actions secret `STARTGG_TOKEN` (repo → Settings → Secrets and variables → Actions).
+2. ☐ **Neon database (free):** create a project. Copy its connection string and add it as the GitHub secret `DATABASE_URL`.
+3. ☐ **Vercel, two projects from this repo (free Hobby plan):**
+   - **API:** Root Directory `apps/api`, Framework "Other". Add the settings `DATABASE_URL` (same Neon string) and `ALLOWED_ORIGINS` = the app's full address, starting with `https://`.
+   - **App:** Root Directory `apps/app`. Add the setting `EXPO_PUBLIC_API_URL` = the API's full address, starting with `https://`.
+   - These settings are read when the site is built, so after adding or changing one, press **Redeploy** on that project.
+   - Optional, so PR preview links can load data: `ALLOWED_ORIGIN_PATTERN` on the API project. Tell me the app project's name and I'll give you the exact value to paste.
+4. ☐ **Sentry (optional, free):** create a project. Add its DSN as:
+   - the GitHub secret `SENTRY_DSN`
+   - `SENTRY_DSN` on the Vercel API project
+   - `EXPO_PUBLIC_SENTRY_DSN` on the Vercel app project (then Redeploy)
+5. ☐ **Claude's cloud environment** (claude.ai → Claude Code → this environment's settings), so Claude can run the live check:
+   - allow network access to `api.start.gg`
+   - add the same start.gg token as the environment secret `STARTGG_TOKEN`
+   - Never paste the token or the database string into chat.
+
+Once 1 and 2 are done, the jobs start on their own schedule. Each run first creates or updates the database tables (safe to repeat), so there's nothing to set up inside Neon. The first history fill starts that night. To start it right away: GitHub → Actions tab → Ingest → "Run workflow", and choose **backfill** in the "Which job to run" list. Then the live check confirms several things:
+- how start.gg writes "Texas"
+- whether start.gg can filter tournaments by state on its side, which could cut the history fill from about 8 weeks to a few nights
+- the disqualification format
+- real request counts
+
+**Questions for Clay:**
+
+1. Please work through the setup checklist above when you have time. Tell me when 1, 2 and 5 are done, and I'll run the live check.
+2. Should out-of-state players who play enough Texas events appear on the leaderboard? The default is **yes**.
+3. Please read the start.gg email draft. Send it when you're ready to share the site.
+
+**Questions for Genghis:** None open. The P1-12 follow-ups are listed at the end of `docs/startgg-notes.md`.
