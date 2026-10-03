@@ -6,30 +6,36 @@
   "scripts": {
     "dev": "expo start --web",
     "build:web": "expo export -p web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@expo-google-fonts/barlow": "0.4.1",
     "@expo-google-fonts/barlow-condensed": "0.4.1",
     "@expo/metro-runtime": "57.0.16",
+    "@sr/api": "workspace:*",
     "@sr/core": "workspace:*",
     "@sr/ui": "workspace:*",
+    "@tanstack/react-query": "5.104.1",
     "expo": "57.0.26",
     "expo-constants": "57.0.20",
     "expo-font": "57.0.4",
     "expo-linking": "57.0.11",
     "expo-router": "57.0.24",
     "expo-status-bar": "57.0.1",
+    "hono": "4.13.12",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "5.7.0",
     "react-native-screens": "4.26.2",
-    "react-native-web": "0.21.3"
+    "react-native-web": "0.21.3",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@sr/config": "workspace:*",
     "@types/react": "19.2.18",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
   }
 }
