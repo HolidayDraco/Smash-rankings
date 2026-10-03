@@ -255,3 +255,26 @@ ADR-0001's cache time was corrected to 15 minutes to match the plan.
 **Questions for Clay:** When you connect Vercel, the API is a **second** Vercel project from the same repo: Root Directory `apps/api`, Framework "Other", plus `DATABASE_URL` and `ALLOWED_ORIGINS` (the app's web address) as environment variables.
 
 **Questions for Genghis:** In `/v1/status`, a run that hit its time limit and will resume next time ("partial") counts as ok. Agree?
+
+---
+
+## 2026-10-03 — Phase 1: sync job
+
+**Date:** October 3, 2026
+
+**What changed:** Added the `sync` job (`pnpm job:sync`). For each event that counts, it pulls the sets (who beat whom and the game score), the final placings, and the players (tag, sponsor prefix, start.gg profile link). In plain terms:
+
+- **Picks up where it left off.** It saves its place after every page, so a stopped run resumes without missing or doubling anything.
+- **Catches bracket fixes.** About two days after an event, it re-checks it once.
+- **Never fetches online events**, per Genghis: they're stored as names and dates only.
+- **DQs** are saved with a "DQ" flag and no score, so the ranking math skips them.
+- **One bad event doesn't stop the rest.** It's marked "error" and retried next time. A bad or expired token stops everything loudly.
+- **Budget:** about 4 start.gg requests for a 64-player event and about 16 for a 256-player one. One run handles up to 25 events, which takes roughly 2–7 minutes at our pace.
+
+Each set is tagged with its week number (week 2960 is the week of Oct 3, 2026), which is what the weekly ratings use.
+
+**What's next:** The backfill (12 months of history) and the scheduled workflow, then the rate job.
+
+**Questions for Clay:** None.
+
+**Questions for Genghis:** An event that keeps failing is retried on every run and uses one of the 25 per-run slots. Should there be a retry cap? The default plan is to leave it for now and add a cap once the live check shows whether this happens.
