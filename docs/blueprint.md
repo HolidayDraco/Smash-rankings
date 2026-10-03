@@ -9,16 +9,17 @@
 
 ## Decisions locked (Oct 3, 2026, by Clay)
 
-Clay accepted recommended defaults 1–7 in [§7 Decisions for Clay](#7-decisions-for-clay-plain-language-each-with-a-recommended-default) as-is. On Oct 3, 2026 he replaced default 8 (dark theme) with a white, light theme. See [Design principles](#design-principles). Treat these as decided. Don't re-ask them unless Clay opens one back up.
+Clay accepted recommended defaults 1–7 in [§7 Decisions for Clay](#7-decisions-for-clay-plain-language-each-with-a-recommended-default) as-is. On Oct 3, 2026 he replaced default 8 (dark theme) with a white, light theme. See [Design principles](#design-principles). Later on Oct 3, 2026 he changed decision 2 and added decision 9: **launch Texas-only, counting events with 16+ entrants** (see [ADR-0003](adr/0003-texas-launch-scope.md)). Treat these as decided. Don't re-ask them unless Clay opens one back up.
 
 1. **Public or private GitHub repo?** Public. Unlimited free automation minutes. The code is readable; secrets stay out of the repo.
-2. **Which tournaments count?** (a) Any singles event with **≥ 64 entrants**. Weeklies and smaller events do not count.
+2. **Which tournaments count? (changed Oct 3, 2026):** In-person singles events with **≥ 16 entrants**, so Texas locals and weeklies with 16+ entrants count. (Was: ≥ 64 entrants.)
 3. **Online events?** In-person only. Online events are stored but not rated.
 4. **Ranking style?** (a) Skill rating with **Glicko-2**, which updates after events and handles inactivity. A "this season" view is added in Phase 2.
 5. **How far back?** **12 months** live at launch, with history backfilled to **24 months** later.
 6. **How "live"?** Refresh every 2 hours, and hourly on tournament weekends (Friday–Monday). Stay at $0. Faster refresh is possible later but uses more of the start.gg request budget.
 7. **Database: Neon or Supabase?** **Neon** Postgres (Free). It has more free storage and does not pause when idle.
 8. **Name and look:** A neutral, non-Nintendo name (for example "Bracket Index"). Clay can pick the final name anytime before Phase 3. **Look (changed Oct 3, 2026):** white background, light theme, premium and specific. Not a dark theme. Rules are in [Design principles](#design-principles).
+9. **Where? (added Oct 3, 2026):** **Texas only** at launch. Only events held in Texas are ingested and rated, so the leaderboard is Texas players. The region is a setting (`LAUNCH_REGIONS` in `packages/core`), not hard-coded, so more states can be added one at a time later. Goal: ship a Texas phone app first. A federation-rankings tab, user logins, and admin users come in the **next phase**, not now. Our Glicko-2 ranking stays the main ranking.
 
 ---
 
@@ -88,7 +89,7 @@ Set by Clay on Oct 3, 2026. This replaces the dark-theme default.
   2. **Weekly rating periods** (Mon 00:00 UTC to Sun 23:59 UTC). At a major, a player typically plays several sets, so weekly periods come closest to the paper's 10–15-games guidance without blurring time. (Monthly is the fallback if testing shows weekly is noisy.)
   3. Sort the leaderboard by a **conservative score = r − 2·RD** (the bottom of Glickman's 95% interval) so lucky new players don't jump to #1.
   4. **Eligibility:** ≥ 10 rated sets in the trailing 12 months, at ≥ 3 qualifying events, and RD ≤ 110 (tunable).
-  5. **Qualifying events:** singles events with ≥ 64 entrants (UltRank's x1 minimum) [U1], excluding obvious weeklies. Offline/online is a Clay decision.
+  5. **Qualifying events:** singles events with ≥ 64 entrants (UltRank's x1 minimum) [U1], excluding obvious weeklies. Offline/online is a Clay decision. *(Superseded by decision 2, Oct 3, 2026: ≥ 16 entrants, Texas only.)*
   6. Implement it ourselves in `packages/ranking`, pure TypeScript. **The acceptance test must reproduce Glickman's worked example to 2 decimal places** [R1].
   7. Phase 2 experiment: backtest Glicko-2 vs Elo vs OpenSkill by predictive log-loss on held-out sets, and publish the result on the Methodology page.
 
@@ -264,7 +265,7 @@ EAS project, icons/splash, native tabs, follow + push notifications, offline cac
 |---|---|---|---|
 | 1 | **start.gg ToS / revocation:** "no databases except as necessary," "minimum data," no redistribution, one token per product, revocable at any time [SG7] | Medium / High | Store only fields the app shows. No bulk export or public data API. Attribution everywhere. One token. Respectful rate (≤ 60/min). Before any public launch or monetization, email devrelations@start.gg describing the app [SG8]. Apple 5.2.2 also requires permission to show third-party service content [A1]. |
 | 2 | **Rate limits and token expiry:** 80 req/min, 1,000 objects/query [SG2]; tokens expire yearly [SG1] | High / Medium | Central rate limiter + exponential backoff, page-size auto-tuning against the complexity error, checkpointed resumable sync, daily request budget logged in `ingest_runs`, a token-expiry calendar reminder, and a failing health check plus a Sentry alert when auth fails. |
-| 3 | **Data gaps and identity:** events not on start.gg (some regions use other platforms; ⚠ unverified which), players with multiple accounts or none, DQs/forfeits, online vs offline mixing, sandbagging at locals | High / Medium | Show a "coverage" note. Manual `merged_into` alias table edited via PR. Exclude DQs. Make offline-only a setting (Decision 3). Require ≥ 64 entrants. Phase 2+ could use Liquipedia gap-fill (CC-BY-SA; LPDB needs approval, 60 req/h) [LP1]. |
+| 3 | **Data gaps and identity:** events not on start.gg (some regions use other platforms; ⚠ unverified which), players with multiple accounts or none, DQs/forfeits, online vs offline mixing, sandbagging at locals | High / Medium | Show a "coverage" note. Manual `merged_into` alias table edited via PR. Exclude DQs. Make offline-only a setting (Decision 3). Require ≥ 16 entrants (Decision 2, changed Oct 3, 2026). Phase 2+ could use Liquipedia gap-fill (CC-BY-SA; LPDB needs approval, 60 req/h) [LP1]. |
 | 4 | Free-tier ceilings: Neon 1 GB; scheduled workflows auto-disabled after 60 days without activity in public repos [GH2]; Vercel Hobby non-commercial [V1] | Medium / Medium | DB size alarm at 70%. Keepalive. Don't monetize on Hobby. |
 | 5 | Expo Router web/SSR on Vercel is newer than Next.js | Medium / Medium | Phase 0 spike. Static-render fallback. Monorepo allows a Next.js `apps/web` later without touching shared packages. |
 | 6 | App Store rejection (4.2 minimum functionality; 5.2 IP, e.g. "Smash" naming or character art) [A1] | Medium / Medium | Native features (follow, push, offline). No Nintendo assets. Neutral name. Clear "unofficial fan project" disclaimer. |
@@ -273,13 +274,14 @@ EAS project, icons/splash, native tabs, follow + push notifications, offline cac
 
 ## 7. Decisions for Clay (plain language, each with a recommended default)
 1. **Public or private GitHub repo?** Public means unlimited free automation minutes [GH1], and anyone can read the code (never secrets). Private gives 2,000 free minutes/month, which our data jobs might exceed. **Default: Public.**
-2. **Which tournaments count?** Options: (a) any singles event with **≥ 64 entrants**, the community's minimum for ranked events [U1]; (b) only big events (≥ 256 entrants); (c) everything including weeklies. **Default: (a).**
+2. **Which tournaments count?** Options: (a) any singles event with **≥ 64 entrants**, the community's minimum for ranked events [U1]; (b) only big events (≥ 256 entrants); (c) everything including weeklies. **Default: (a).** **Superseded Oct 3, 2026:** in-person singles with ≥ 16 entrants, Texas only (decisions 2 and 9, ADR-0003).
 3. **Online events?** Count online tournaments or only in-person ones? Community rankings exclude many online events [U1]. **Default: In-person only, with online stored but not rated.**
 4. **Ranking style?** (a) **Skill rating (Glicko-2):** updates after every event and handles inactivity. (b) Season points like UltRank, which resets each half-year. **Default: (a)**, with a "this season" view added in Phase 2.
 5. **How far back?** Rate the last **12 months** at launch and backfill to 24 months later. **Default: 12 months live, 24 months history.**
 6. **How "live"?** Refresh every 2 h, hourly on tournament weekends (Fri–Mon). **Default: as stated, $0.** (Faster is possible but uses more of the start.gg budget.)
 7. **Database: Neon or Supabase?** Neon has twice the free storage and never pauses [N1]. Supabase has a friendlier dashboard and built-in logins but pauses after a week idle [S1]. **Default: Neon.**
 8. **Name and look:** a neutral, non-Nintendo name (e.g., "Bracket Index"), flags and text instead of character art. Clay can pick the name anytime before Phase 3. **Original look default:** dark esports theme. **Superseded Oct 3, 2026** by the white light theme in [Design principles](#design-principles). That change wins.
+9. **Where?** Added Oct 3, 2026 by Clay: Texas only at launch. See [Decisions locked](#decisions-locked-oct-3-2026-by-clay) and [ADR-0003](adr/0003-texas-launch-scope.md).
 
 ---
 

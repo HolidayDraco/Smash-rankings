@@ -1,6 +1,7 @@
 # Phase 1 plan: MVP web
 
 **Status:** Planned, October 3, 2026 (architect subagent)
+**Scope change (Oct 3, 2026):** Texas only, 16+ entrants. Wherever this plan says 64+ or nationwide, [ADR-0003](../adr/0003-texas-launch-scope.md) wins.
 **Goal (plain English):** Pull the last 12 months of in-person Ultimate singles events with 64 or more entrants from start.gg, rate every player with Glicko-2, and show the results on a fast website. The site has a top-100 leaderboard with search, player pages, a methodology page, a status page, start.gg attribution, and error monitoring.
 
 ## Ground rules (same as Phase 0)

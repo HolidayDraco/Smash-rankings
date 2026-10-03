@@ -1,12 +1,12 @@
 # Smash Rankings — Project Instructions for Claude Code
 
-Unofficial fan app showing live Super Smash Bros. Ultimate player rankings computed from start.gg data.
+Unofficial fan app showing live Super Smash Bros. Ultimate player rankings computed from start.gg data. **Launch scope: Texas only, in-person singles events with 16+ entrants** (decisions 2 and 9, changed Oct 3, 2026; see ADR-0003).
 Web first, iOS/Android later from the same Expo codebase. The full plan is in `docs/blueprint.md` (read it when planning; it is deliberately not auto-imported to save context). The kickoff prompt is in `docs/mission.md`. Current status is in `STATUS.md` at the repo root.
 
 ## Who you're working for
 - The owner, Clay, is **not an engineer**. Write PR descriptions, ADRs, and status notes in plain English. Explain any jargon you can't avoid.
 - Clay steers through PRs: a preview link, screenshots, and an acceptance checklist. Once tests and review pass, merge the PR. Do not wait for his approval. This covers every PR, including the style guide page. Decided October 3, 2026.
-- The eight choices at the top of `docs/blueprint.md` are locked, including the Oct 3, 2026 light-theme change to decision 8. See **Decisions locked** and **Design principles**. Don't re-ask them. For any new product-facing choice, ask, or use a stated default and say so in the PR.
+- The nine choices at the top of `docs/blueprint.md` are locked, including the Oct 3, 2026 light-theme change to decision 8 and the Oct 3, 2026 Texas-only, 16+ entrant scope (decisions 2 and 9). See **Decisions locked** and **Design principles**. Don't re-ask them. For any new product-facing choice, ask, or use a stated default and say so in the PR.
 
 ## Session start, status, and PR comments
 - At the start of every session, read `STATUS.md` before planning or editing. It is the running log of what shipped, what's next, and open questions.
@@ -87,6 +87,7 @@ Use them: `architect` (plans/ADRs), `startgg-ingestion`, `ranking-engine`, `fron
 
 ## Gotchas
 - Ultimate videogame id is **1386**. Rate **sets**, not games. Exclude DQs.
+- Region is config, not logic: `LAUNCH_REGIONS` in `packages/core`. Never hard-code "TX" elsewhere. Federation tab, logins, and admin users are next phase, not now.
 - start.gg tokens expire after 1 year. Auth failures should make the health check and Sentry alert loud.
 - Vercel Hobby cron only runs once a day, so scheduling lives in GitHub Actions (`.github/workflows/ingest.yml`).
 - Scheduled workflows in public repos get disabled after 60 days without activity. Keep the keepalive workflow.

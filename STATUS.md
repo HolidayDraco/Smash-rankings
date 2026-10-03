@@ -418,3 +418,26 @@ Details are in `docs/monitoring.md`.
 **Questions for Clay:** The methodology page still says "at least 64 entrants" and covers all regions. If the Texas-only, 16+ entrant change posted on PR #16 is confirmed, this text changes with it.
 
 **Questions for Genghis:** None.
+
+---
+
+## 2026-10-03 — Scope change: Texas only, 16+ entrants
+
+**Date:** October 3, 2026
+
+**What changed:** Clay confirmed the new launch scope, and the plan documents now say so:
+
+- **Texas only.** Only tournaments held in Texas are ingested and rated, so the leaderboard is Texas players. The region is a single setting, so more states can be added one at a time later.
+- **16+ entrants.** In-person singles events with 16 or more entrants count, so Texas locals do too. Before this, the cutoff was 64.
+- **Next phase, not now:** a federation-rankings tab, user logins, and admin users.
+
+Updated: `docs/blueprint.md` (decision 2 changed, decision 9 added, older notes marked superseded), `CLAUDE.md`, `docs/mission.md`, `docs/plans/phase-1.md`, the ingestion agent's instructions (`.claude/agents/startgg-ingestion.md`), a note in `docs/adr/0002-ranking-method.md`, and a new decision record, `docs/adr/0003-texas-launch-scope.md`. No code changes in this PR.
+
+**What's next:**
+
+1. The code change: a `LAUNCH_REGIONS` setting, a Texas filter when finding events, the 16+ cutoff in the rate job, and the methodology page.
+2. Then the scheduled data jobs (#16), with the request budget re-checked for many more, smaller events.
+
+**Questions for Clay:** One yes/no, no rush: should out-of-state visitors who play enough Texas events appear on the leaderboard? The default is **yes**, so everyone who plays at Texas events is rated.
+
+**Questions for Genghis:** None. Your scope comment on #16 is now on `main`.
