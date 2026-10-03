@@ -1,7 +1,7 @@
 // Tiny static server for the Expo web export. Mirrors Vercel's cleanUrls (/style-guide -> style-guide.html).
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
-import { extname, join, normalize, resolve } from "node:path";
+import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("../../apps/app/dist", import.meta.url)));
@@ -31,17 +31,21 @@ createServer(async (req, res) => {
   const candidates = [join(root, safe), join(root, `${safe}.html`), join(root, safe, "index.html")];
   let file = null;
   for (const c of candidates) {
-    if (c.startsWith(root) && (await exists(c))) {
+    if ((c === root || c.startsWith(root + sep)) && (await exists(c))) {
       file = c;
       break;
     }
   }
   const status = file ? 200 : 404;
   file ??= join(root, "+not-found.html");
+  // Read before writing headers, so a missing file can still get a clean 404.
+  let body;
   try {
-    res.writeHead(status, { "content-type": types[extname(file)] ?? "application/octet-stream" });
-    res.end(await readFile(file));
+    body = await readFile(file);
   } catch {
-    res.writeHead(404).end("Not found");
+    res.writeHead(404, { "content-type": "text/plain" }).end("Not found");
+    return;
   }
+  res.writeHead(status, { "content-type": types[extname(file)] ?? "application/octet-stream" });
+  res.end(body);
 }).listen(port, () => console.log(`Serving ${root} on http://localhost:${port}`));
