@@ -109,7 +109,10 @@ export const playerResponseSchema = z.strictObject({
   ratingDeviation: z.number().nonnegative().nullable(),
   ratedSets: z.number().int().nonnegative(),
   qualifyingEvents: z.number().int().nonnegative(),
-  /** Non-DQ sets completed in the 52 weeks before the last rating run. */
+  /**
+   * Non-DQ sets from qualifying events in the ranking window: the 52 rating
+   * weeks ending with the week of the last rating run (as for ratedSets).
+   */
   setRecord: z.strictObject({
     wins: z.number().int().nonnegative(),
     losses: z.number().int().nonnegative(),

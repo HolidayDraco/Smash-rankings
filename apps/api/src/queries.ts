@@ -15,9 +15,8 @@ import {
   tournaments,
   type Database,
 } from "@sr/db";
-import { and, asc, desc, eq, gte, ilike, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, lte, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
-const WEEK_MS = 7 * 86_400_000;
 const MAX_MERGE_HOPS = 5;
 
 export async function readMeta(db: Database) {
@@ -85,7 +84,7 @@ export function notRankedReason(setsPlayed: number, eventsPlayed: number, rd: nu
 }
 
 /** A main player with their leaderboard row, 12-month set record, and recent results. */
-export async function readPlayer(db: Database, id: number, asOf: Date) {
+export async function readPlayer(db: Database, id: number, asOfPeriod: number) {
   const [player] = await db
     .select({
       gamerTag: players.gamerTag,
@@ -105,19 +104,22 @@ export async function readPlayer(db: Database, id: number, asOf: Date) {
     .where(eq(players.id, id));
   if (!player) return null;
 
-  const cutoff = new Date(asOf.getTime() - LEADERBOARD_ELIGIBILITY.trailingWeeks * WEEK_MS);
-  // Uses sets_winner_id_idx / sets_loser_id_idx (bitmap OR).
+  // The ranking's window and rules: non-DQ sets from qualifying events with
+  // rating_period in (asOfPeriod - 52, asOfPeriod]. Uses the winner/loser indexes.
+  const firstPeriod = asOfPeriod - LEADERBOARD_ELIGIBILITY.trailingWeeks + 1;
   const [record] = await db
     .select({
       wins: sql<number>`count(*) filter (where ${eq(sets.winnerId, id)})`.mapWith(Number),
       losses: sql<number>`count(*) filter (where ${eq(sets.loserId, id)})`.mapWith(Number),
     })
     .from(sets)
+    .innerJoin(events, and(eq(events.id, sets.eventId), eq(events.qualifies, true)))
     .where(
       and(
         sql`(${eq(sets.winnerId, id)} or ${eq(sets.loserId, id)})`,
         eq(sets.isDq, false),
-        gte(sets.completedAt, cutoff),
+        gte(sets.ratingPeriod, firstPeriod),
+        lte(sets.ratingPeriod, asOfPeriod),
       ),
     );
 

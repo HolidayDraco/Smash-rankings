@@ -13,6 +13,7 @@ import {
   type JobStatus,
 } from "@sr/core";
 import { ingestRuns, type Database } from "@sr/db";
+import { periodIndexFor } from "@sr/ranking";
 import { desc } from "drizzle-orm";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
@@ -57,11 +58,31 @@ const validQuery = <T extends z.ZodType<Record<string, unknown>>>(schema: T) =>
   });
 
 const leaderboardQuerySchema = z.strictObject({
-  limit: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().min(1)).optional(),
+  // One spelling per value (no "0005", no 101+), so limit can't mint extra cache keys.
+  limit: z
+    .string()
+    .regex(/^[1-9]\d{0,2}$/)
+    .transform(Number)
+    .pipe(z.number().max(LEADERBOARD_MAX_LIMIT))
+    .optional(),
 });
 const searchQuerySchema = z.strictObject({ q: z.string() });
 /** Digits only, and short enough to stay an exact JS number. */
-const playerIdSchema = z.string().regex(/^\d{1,15}$/);
+const playerIdSchema = z.string().regex(/^[1-9]\d{0,14}$/);
+
+// Matching control characters is the point here (e.g. a NUL makes Postgres error out).
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
+
+/** Hono passes malformed escapes like "%zz" through as text; treat them as a bad request. */
+function isValidPercentEncoding(search: string) {
+  try {
+    decodeURIComponent(search.replace(/\+/g, " "));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const isoOrNull = (date: Date | null) => date?.toISOString() ?? null;
 
@@ -145,11 +166,8 @@ export function createApp({ getDb, allowedOrigins, allowedOriginPattern }: AppOp
         return c.json(statusResponseSchema.parse({ jobs, attribution: ATTRIBUTION }));
       })
       .get("/v1/leaderboard", validQuery(leaderboardQuerySchema), async (c) => {
-        // Values above the cap are clamped, never an error: there is no way past the top 100.
-        const limit = Math.min(
-          c.req.valid("query").limit ?? LEADERBOARD_MAX_LIMIT,
-          LEADERBOARD_MAX_LIMIT,
-        );
+        // Anything above 100 is a 400: there is no way past the top 100.
+        const limit = c.req.valid("query").limit ?? LEADERBOARD_MAX_LIMIT;
         const db = getDb();
         const [rows, { dataVersion, lastRatedAt }] = await Promise.all([
           readLeaderboard(db, limit),
@@ -186,7 +204,7 @@ export function createApp({ getDb, allowedOrigins, allowedOriginPattern }: AppOp
           if (mainId !== id) return c.redirect(`/v1/players/${mainId}`, 301);
 
           const { lastRatedAt } = await readMeta(db);
-          const found = await readPlayer(db, id, lastRatedAt ?? new Date());
+          const found = await readPlayer(db, id, periodIndexFor(lastRatedAt ?? new Date()));
           if (!found) return c.json(errorBody("Not found"), 404);
           const { player, record, recentResults } = found;
           const rated = player.rating !== null;
@@ -221,14 +239,20 @@ export function createApp({ getDb, allowedOrigins, allowedOriginPattern }: AppOp
       )
       .get("/v1/search", validQuery(searchQuerySchema), async (c) => {
         const query = c.req.valid("query").q.trim().toLowerCase();
-        if (query.length < SEARCH_MIN_QUERY_LENGTH || query.length > SEARCH_MAX_QUERY_LENGTH) {
+        const search = new URL(c.req.url).search;
+        if (
+          query.length < SEARCH_MIN_QUERY_LENGTH ||
+          query.length > SEARCH_MAX_QUERY_LENGTH ||
+          CONTROL_CHARACTERS.test(query) ||
+          !isValidPercentEncoding(search)
+        ) {
           return badRequest(c, "Invalid q");
         }
         // The CDN keys on the raw query string, so send every spelling of one
-        // search ("  ACE ", "Ace") to a single canonical, cacheable URL.
-        // Parsed through URL like the request, so both sides use the same encoding.
-        const canonical = new URL(`?q=${encodeURIComponent(query)}`, c.req.url).search;
-        if (new URL(c.req.url).search !== canonical) {
+        // search ("  ACE ", "Ace") to a single canonical, cacheable URL. That
+        // form is URLSearchParams' (space as "+"), which is what hc sends.
+        const canonical = `?${new URLSearchParams({ q: query }).toString()}`;
+        if (search !== canonical) {
           return c.redirect(`/v1/search${canonical}`, 301);
         }
         const rows = await searchPlayers(getDb(), query);

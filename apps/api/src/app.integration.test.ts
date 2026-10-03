@@ -15,6 +15,7 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CACHE_CONTROL_NO_STORE, CACHE_CONTROL_PUBLIC, createApp } from "./app";
 import { createApiClient } from "./client";
+import { periodIndexFor } from "@sr/ranking";
 
 // A throwaway Postgres server. This suite uses its own sibling database
 // (`<name>_api`) because @sr/db's tests drop the main one's schema in parallel.
@@ -240,16 +241,27 @@ describe.skipIf(!testDatabaseUrl)(
         expect(body.entries.some((entry) => entry.playerId === String(ember))).toBe(false);
       });
 
-      it("caps limit at 100 and rejects a non-numeric limit", async () => {
+      it("allows limit 1..100 in one spelling and rejects everything else", async () => {
         expect(
           leaderboardResponseSchema.parse(await json("/v1/leaderboard?limit=1")).entries,
         ).toHaveLength(1);
-        const capped = await app.request("/v1/leaderboard?limit=1000");
-        expect(capped.status).toBe(200);
+        const top = await app.request("/v1/leaderboard?limit=100");
+        expect(top.status).toBe(200);
         expect(
-          leaderboardResponseSchema.parse(await capped.json()).entries.length,
+          leaderboardResponseSchema.parse(await top.json()).entries.length,
         ).toBeLessThanOrEqual(100);
-        for (const limit of ["abc", "0", "-1", "1.5", "5&limit=6"]) {
+        // Over the cap, or another spelling of a valid value, would be a new cache key.
+        for (const limit of [
+          "1000",
+          "101",
+          "1000000000000000",
+          "0005",
+          "abc",
+          "0",
+          "-1",
+          "1.5",
+          "5&limit=6",
+        ]) {
           expect((await app.request(`/v1/leaderboard?limit=${limit}`)).status).toBe(400);
         }
       });
@@ -287,21 +299,20 @@ describe.skipIf(!testDatabaseUrl)(
         expect(uncertain.notRankedReason?.uncertaintyTooHigh).toBe(true);
       });
 
-      it("leaves DQs and sets older than 52 weeks out of the set record", async () => {
+      it("counts the set record over the ranking window, without DQs", async () => {
         const before = playerResponseSchema.parse(await json(`/v1/players/${dash}`)).setRecord;
         const base = { eventId: SYNTHETIC_ID_MIN + 1, winnerId: dash, loserId: ember };
+        const asOf = periodIndexFor(new Date("2026-10-03T11:06:00Z")); // seeded last_rated_at
         await db.insert(sets).values([
-          {
-            ...base,
-            id: SYNTHETIC_ID_MIN + 900_001,
-            isDq: true,
-            completedAt: new Date("2026-10-01"),
-          },
-          { ...base, id: SYNTHETIC_ID_MIN + 900_002, completedAt: new Date("2025-09-01") },
-          { ...base, id: SYNTHETIC_ID_MIN + 900_003, completedAt: new Date("2026-10-02") },
+          { ...base, id: SYNTHETIC_ID_MIN + 900_001, ratingPeriod: asOf, isDq: true },
+          { ...base, id: SYNTHETIC_ID_MIN + 900_002, ratingPeriod: asOf - 52 }, // just outside
+          { ...base, id: SYNTHETIC_ID_MIN + 900_003, ratingPeriod: asOf - 51 }, // first week in
+          { ...base, id: SYNTHETIC_ID_MIN + 900_004, ratingPeriod: asOf },
+          // Played after the last rating run: the ranking hasn't seen it yet.
+          { ...base, id: SYNTHETIC_ID_MIN + 900_005, ratingPeriod: asOf + 1 },
         ]);
         const after = playerResponseSchema.parse(await json(`/v1/players/${dash}`)).setRecord;
-        expect(after).toEqual({ wins: before.wins + 1, losses: before.losses });
+        expect(after).toEqual({ wins: before.wins + 2, losses: before.losses });
       });
 
       it("redirects merged aliases (even chains) to the main player with 301", async () => {
@@ -314,7 +325,7 @@ describe.skipIf(!testDatabaseUrl)(
 
       it("returns 404 for an unknown player and 400 for a malformed id", async () => {
         expect((await app.request(`/v1/players/${SYNTHETIC_ID_MIN + 999_999}`)).status).toBe(404);
-        for (const id of ["abc", "12a", "-5", "1234567890123456"]) {
+        for (const id of ["abc", "12a", "-5", "0", "09000000000004", "1234567890123456"]) {
           const response = await app.request(`/v1/players/${id}`);
           expect(response.status).toBe(400);
           expect(errorResponseSchema.parse(await response.json()).error).toBe("Invalid player id");
@@ -349,15 +360,24 @@ describe.skipIf(!testDatabaseUrl)(
       });
 
       it("rejects short searches and redirects un-normalized ones to one cache key", async () => {
-        for (const q of ["a", "%20%20b%20", ""]) {
-          expect((await app.request(`/v1/search?q=${q}`)).status).toBe(400);
+        // Too short, a NUL or other control character, or broken percent-encoding.
+        for (const q of ["a", "%20%20b%20", "", "a%00b", "ab%1F", "ab%zz", "ab%E0%A4%A"]) {
+          const response = await app.request(`/v1/search?q=${q}`);
+          expect(response.status, q).toBe(400);
+          expect(errorResponseSchema.parse(await response.json()).error).toBe("Invalid q");
         }
         for (const q of ["%20%20ACE%20", "Ace", "a%63e"]) {
           const response = await app.request(`/v1/search?q=${q}`);
           expect(response.status).toBe(301);
           expect(response.headers.get("Location")).toBe("/v1/search?q=ace");
         }
-        expect((await app.request("/v1/search?q=o'neil")).status).toBe(200);
+        // Already canonical (URLSearchParams form, as hc sends it): no redirect.
+        for (const q of ["mk+leo", "o'neil", "o%27neil"]) {
+          expect((await app.request(`/v1/search?q=${q}`)).status, q).toBe(200);
+        }
+        expect((await app.request("/v1/search?q=mk%20leo")).headers.get("Location")).toBe(
+          "/v1/search?q=mk+leo",
+        );
       });
 
       it("rejects unexpected query parameters on every read endpoint", async () => {
