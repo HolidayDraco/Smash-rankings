@@ -24,7 +24,10 @@
                       "player": {
                         "id": 2,
                         "gamerTag": "FakeBravo",
-                        "prefix": null
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fakebrav"
+                        }
                       }
                     }
                   ]
@@ -45,7 +48,10 @@
                       "player": {
                         "id": 4,
                         "gamerTag": "FakeDelta",
-                        "prefix": null
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fakedelt"
+                        }
                       }
                     }
                   ]

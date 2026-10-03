@@ -20,6 +20,9 @@ query EventSetsPage($eventId: ID!, $page: Int!, $perPage: Int!) {
                 id
                 gamerTag
                 prefix
+                user {
+                  slug
+                }
               }
             }
           }

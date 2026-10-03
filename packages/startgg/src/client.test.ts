@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createStartggClient, StartggAuthError, StartggSchemaError, type LogEntry } from "./client";
 import { TokenBucket } from "./limiter";
-import { isSinglesEvent } from "./normalize";
+import { isSinglesEvent, normalizeSet } from "./normalize";
+import type { SetNode } from "./schemas";
 
 const TOKEN = "SECRET-TOKEN-abc123";
 const fixture = (name: string): unknown =>
@@ -88,7 +89,7 @@ describe("pagination", () => {
 });
 
 describe("DQ sets", () => {
-  it("flags the DQ and zeroes games", async () => {
+  it("flags the DQ and stores null games", async () => {
     const { client } = harness([
       { body: fixture("sets-page-1") },
       { body: fixture("sets-page-2") },
@@ -96,10 +97,63 @@ describe("DQ sets", () => {
     const sets = await collect(client.eventSetsPages(9001));
     expect(sets.find((s) => s.id === 7002)).toMatchObject({
       isDq: true,
-      winnerGames: 0,
-      loserGames: 0,
+      winnerGames: null,
+      loserGames: null,
     });
     expect(sets.filter((s) => s.isDq)).toHaveLength(1);
+  });
+});
+
+function rawSet(
+  overrides: Partial<SetNode> & { scores?: [number | null, number | null]; ids?: [number, number] },
+): SetNode {
+  const scores = overrides.scores ?? [2, 0];
+  const ids = overrides.ids ?? [1, 2];
+  const slot = (entrantId: number, playerId: number, score: number | null) => ({
+    entrant: {
+      id: entrantId,
+      participants: [
+        {
+          player: {
+            id: playerId,
+            gamerTag: `Fake${playerId}`,
+            prefix: null,
+            user: { slug: `user/fake${playerId}` },
+          },
+        },
+      ],
+    },
+    standing: { stats: { score: { value: score } } },
+  });
+  return {
+    id: 1,
+    completedAt: 1_760_000_000,
+    winnerId: 11,
+    displayScore: "x",
+    fullRoundText: "Round 1",
+    slots: [slot(11, ids[0], scores[0]), slot(12, ids[1], scores[1])],
+    ...overrides,
+  };
+}
+
+describe("normalizeSet", () => {
+  it("gives null games when a finished set has no scores", () => {
+    expect(normalizeSet(rawSet({ scores: [null, null] }), 9)).toMatchObject({
+      isDq: false,
+      winnerGames: null,
+      loserGames: null,
+    });
+  });
+
+  it("drops sets where the winner and loser are the same player", () => {
+    expect(normalizeSet(rawSet({ ids: [5, 5] }), 9)).toBeNull();
+  });
+
+  it("carries player info for both sides", () => {
+    expect(normalizeSet(rawSet({}), 9)).toMatchObject({
+      winner: { playerId: 1, gamerTag: "Fake1", prefix: null, userSlug: "user/fake1" },
+      loser: { playerId: 2, userSlug: "user/fake2" },
+    });
   });
 });
 
@@ -113,9 +167,9 @@ describe("retries and shrinking", () => {
     const standings = await collect(client.eventStandingsPages(9001));
     expect(standings).toHaveLength(2);
     expect(client.requestsUsed).toBe(3);
-    // The first two sleeps are backoff (1 s then 2 s, jitter fixed at max); the limiter adds the rest.
-    expect(sleeps).toContain(1_000);
-    expect(sleeps).toContain(2_000);
+    // The first two sleeps are backoff (10 s then 20 s, jitter fixed at max); the limiter adds the rest.
+    expect(sleeps).toContain(10_000);
+    expect(sleeps).toContain(20_000);
   });
 
   it("retries 5xx and gives up after maxAttempts", async () => {
@@ -175,7 +229,41 @@ describe("limiter", () => {
   });
 });
 
+describe("limiter concurrency", () => {
+  it("spaces simultaneous acquire() calls at least 1 s apart", async () => {
+    vi.useFakeTimers();
+    try {
+      const bucket = new TokenBucket({
+        ratePerMinute: 60,
+        clock: Date.now,
+        sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+      });
+      const stamps: number[] = [];
+      const all = Promise.all(
+        Array.from({ length: 5 }, () => bucket.acquire().then(() => stamps.push(Date.now()))),
+      );
+      await vi.advanceTimersByTimeAsync(10_000);
+      await all;
+      expect(stamps).toHaveLength(5);
+      for (let i = 1; i < stamps.length; i++) {
+        expect(stamps[i]! - stamps[i - 1]!).toBeGreaterThanOrEqual(1_000);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("safety", () => {
+  it("rejects an empty token immediately", () => {
+    expect(() => createStartggClient({ token: "" })).toThrow(StartggAuthError);
+  });
+
+  it("treats HTTP 200 with errors and no data as a failure", async () => {
+    const { client } = harness([{ body: { errors: [{ message: "Something odd" }] } }]);
+    await expect(client.rawQuery("Raw", "{ x }")).rejects.toThrow(/Something odd/);
+  });
+
   it("never logs the token, even on failures", async () => {
     const { client, logs } = harness([
       { status: 500, body: { message: `boom ${TOKEN}` } },

@@ -1,12 +1,23 @@
 import type { EventNode, SetNode } from "./schemas";
 
+/** What sync needs to upsert a players row before the set that references it. */
+export interface NormalizedPlayer {
+  playerId: number;
+  gamerTag: string;
+  prefix: string | null;
+  userSlug: string | null;
+}
+
 export interface NormalizedSet {
   id: number;
   eventId: number;
   winnerPlayerId: number;
   loserPlayerId: number;
-  winnerGames: number;
-  loserGames: number;
+  winner: NormalizedPlayer;
+  loser: NormalizedPlayer;
+  /** Null when unknown: DQ sets, or a finished set with no score reported. */
+  winnerGames: number | null;
+  loserGames: number | null;
   isDq: boolean;
   roundLabel: string | null;
   completedAt: Date;
@@ -24,9 +35,11 @@ export function normalizeSet(raw: SetNode, eventId: number): NormalizedSet | nul
   if (slots.length !== 2 || raw.winnerId === null || raw.completedAt === null) return null;
   const winner = slots.find((slot) => slot.entrant?.id === raw.winnerId);
   const loser = slots.find((slot) => slot !== winner);
-  const winnerPlayerId = singlesPlayerId(winner?.entrant);
-  const loserPlayerId = singlesPlayerId(loser?.entrant);
-  if (!winner || !loser || winnerPlayerId === null || loserPlayerId === null) return null;
+  const winnerPlayer = singlesPlayer(winner?.entrant);
+  const loserPlayer = singlesPlayer(loser?.entrant);
+  if (!winner || !loser || !winnerPlayer || !loserPlayer) return null;
+  // The DB has a check constraint against a player beating themselves (duplicate entries).
+  if (winnerPlayer.playerId === loserPlayer.playerId) return null;
 
   const winnerScore = winner.standing?.stats?.score?.value ?? null;
   const loserScore = loser.standing?.stats?.score?.value ?? null;
@@ -35,25 +48,46 @@ export function normalizeSet(raw: SetNode, eventId: number): NormalizedSet | nul
   return {
     id: raw.id,
     eventId,
-    winnerPlayerId,
-    loserPlayerId,
-    winnerGames: isDq ? 0 : Math.max(0, winnerScore ?? 0),
-    loserGames: isDq ? 0 : Math.max(0, loserScore ?? 0),
+    winnerPlayerId: winnerPlayer.playerId,
+    loserPlayerId: loserPlayer.playerId,
+    winner: winnerPlayer,
+    loser: loserPlayer,
+    winnerGames: isDq ? null : gamesWon(winnerScore),
+    loserGames: isDq ? null : gamesWon(loserScore),
     isDq,
     roundLabel: raw.fullRoundText,
     completedAt: new Date(raw.completedAt * 1000),
   };
 }
 
-function singlesPlayerId(
-  entrant:
-    | { participants: readonly ({ player: { id: number } | null } | null)[] | null }
-    | null
-    | undefined,
-) {
+function gamesWon(score: number | null): number | null {
+  return score === null || score < 0 ? null : score;
+}
+
+type RawEntrant =
+  | {
+      participants: readonly ({ player: RawPlayer | null } | null)[] | null;
+    }
+  | null
+  | undefined;
+type RawPlayer = {
+  id: number;
+  gamerTag: string | null;
+  prefix: string | null;
+  user: { slug: string | null } | null;
+};
+
+/** The single player of a 1v1 entrant. Null for teams or players with no gamer tag (players.gamer_tag is NOT NULL). */
+function singlesPlayer(entrant: RawEntrant): NormalizedPlayer | null {
   const participants = entrant?.participants ?? [];
-  if (participants.length !== 1) return null;
-  return participants[0]?.player?.id ?? null;
+  const player = participants.length === 1 ? participants[0]?.player : null;
+  if (!player?.gamerTag) return null;
+  return {
+    playerId: player.id,
+    gamerTag: player.gamerTag,
+    prefix: player.prefix || null,
+    userSlug: player.user?.slug ?? null,
+  };
 }
 
 /** start.gg event type 1 = singles, 5 = teams (pending live check). */

@@ -17,7 +17,12 @@ const pageInfo = z.object({ total: nullableInt, totalPages: nullableInt }).nulla
 const connection = <T extends z.ZodType>(node: T) =>
   z.object({ pageInfo, nodes: z.array(node.nullable()) });
 
-const player = z.object({ id, gamerTag: nullableString, prefix: nullableString });
+const player = z.object({
+  id,
+  gamerTag: nullableString,
+  prefix: nullableString,
+  user: z.object({ slug: nullableString }).nullable(),
+});
 const entrant = z.object({
   id,
   participants: z.array(z.object({ player: player.nullable() }).nullable()).nullable(),

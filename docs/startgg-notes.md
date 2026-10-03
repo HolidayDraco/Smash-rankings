@@ -36,3 +36,10 @@ and has no token. Replace it with the real schema:
 ## Request budget
 
 At the defaults, a 2,000-entrant double-elimination event (about 4,000 sets) is about 100 set pages plus 20 standings pages, so about 120 requests (about 2 minutes at 60 requests a minute). Discovery of a 14-day window is a handful of requests.
+
+## Normalized set conventions
+
+- DQ sets: `isDq = true`, games `null`. A finished set with no score also has null games.
+- Sets are dropped when either side is not a single named player (teams, no gamer tag) or both sides are the same player.
+- `User.slug` (public profile slug) is requested for `players.user_slug`. Pending live check: that `Player.user` is exposed with a token.
+- Rate-limit errors back off from 10 s (or `Retry-After` if sent); other transient errors from 1 s.

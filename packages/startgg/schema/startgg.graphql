@@ -161,4 +161,9 @@ type Player {
   id: ID
   gamerTag: String
   prefix: String
+  user: User
+}
+
+type User {
+  slug: String
 }

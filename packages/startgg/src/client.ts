@@ -1,5 +1,5 @@
 import { print, type DocumentNode } from "graphql";
-import type { z } from "zod";
+import { z } from "zod";
 import { STARTGG_MAX_REQUESTS_PER_MINUTE, ULTIMATE_VIDEOGAME_ID } from "@sr/core";
 import {
   EventSetsPageDocument,
@@ -34,7 +34,15 @@ export class StartggComplexityError extends StartggError {
 export class StartggSchemaError extends StartggError {
   override name = "StartggSchemaError";
 }
-class TransientError extends StartggError {}
+class TransientError extends StartggError {
+  constructor(
+    message: string,
+    readonly rateLimited = false,
+    readonly retryAfterMs?: number,
+  ) {
+    super(message);
+  }
+}
 
 export interface StartggClientOptions {
   token: string;
@@ -45,7 +53,10 @@ export interface StartggClientOptions {
   random?: () => number;
   maxRequestsPerMinute?: number;
   maxAttempts?: number;
+  /** Backoff base for 5xx/network errors. */
   baseBackoffMs?: number;
+  /** Backoff base for rate-limit errors; start.gg counts over a 60 s window. */
+  rateLimitBackoffMs?: number;
   maxBackoffMs?: number;
 }
 
@@ -88,8 +99,10 @@ export function createStartggClient(options: StartggClientOptions) {
     random = Math.random,
     maxAttempts = 6,
     baseBackoffMs = 1_000,
+    rateLimitBackoffMs = 10_000,
     maxBackoffMs = 60_000,
   } = options;
+  if (!token) throw new StartggAuthError("STARTGG_TOKEN is empty");
   const limiter = new TokenBucket({
     ratePerMinute: Math.min(
       options.maxRequestsPerMinute ?? STARTGG_MAX_REQUESTS_PER_MINUTE,
@@ -105,11 +118,11 @@ export function createStartggClient(options: StartggClientOptions) {
 
   async function request<TData>(
     queryName: string,
-    document: DocumentNode,
+    query: string,
     variables: Record<string, unknown>,
     schema: z.ZodType<TData>,
   ): Promise<TData> {
-    const body = JSON.stringify({ query: print(document), variables });
+    const body = JSON.stringify({ query, variables });
     const page = variables["page"];
     const perPage = variables["perPage"];
     for (let attempt = 1; ; attempt++) {
@@ -148,8 +161,11 @@ export function createStartggClient(options: StartggClientOptions) {
           error: message,
         });
         if (!retryable || attempt >= maxAttempts) throw error;
-        const ceiling = Math.min(maxBackoffMs, baseBackoffMs * 2 ** (attempt - 1));
-        await sleep(Math.round(ceiling * (0.5 + 0.5 * random())));
+        const transient = error as TransientError;
+        const base = transient.rateLimited ? rateLimitBackoffMs : baseBackoffMs;
+        const ceiling = Math.min(maxBackoffMs, base * 2 ** (attempt - 1));
+        const jittered = Math.round(ceiling * (0.5 + 0.5 * random()));
+        await sleep(Math.max(jittered, transient.retryAfterMs ?? 0));
       }
     }
   }
@@ -189,12 +205,20 @@ export function createStartggClient(options: StartggClientOptions) {
       );
     }
     if (response.status === 429 || /rate limit exceeded/i.test(joined)) {
-      throw new TransientError(`rate limited: ${joined || "HTTP 429"}`);
+      const retryAfter = Number(response.headers.get("retry-after"));
+      throw new TransientError(
+        `rate limited: ${joined || "HTTP 429"}`,
+        true,
+        Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : undefined,
+      );
     }
     if (/complexity/i.test(joined)) throw new StartggComplexityError(joined);
     if (response.status >= 500) throw new TransientError(`HTTP ${response.status}`);
     if (!response.ok || json.errors?.length) {
       throw new StartggError(`HTTP ${response.status}: ${joined || "request failed"}`);
+    }
+    if (json.data === undefined || json.data === null) {
+      throw new StartggError(`HTTP ${response.status}: response had no data`);
     }
     return json.data;
   }
@@ -218,7 +242,7 @@ export function createStartggClient(options: StartggClientOptions) {
     for (;;) {
       let data: TData;
       try {
-        data = await request(queryName, document, { ...variables, page, perPage }, schema);
+        data = await request(queryName, print(document), { ...variables, page, perPage }, schema);
       } catch (error) {
         if (!(error instanceof StartggComplexityError) || perPage <= 1) throw error;
         perPage = Math.max(1, Math.floor(perPage / 2));
@@ -250,6 +274,11 @@ export function createStartggClient(options: StartggClientOptions) {
   return {
     get requestsUsed() {
       return requestsUsed;
+    },
+
+    /** Escape hatch for manual scripts (schema introspection). Still rate limited, authenticated, and redacted. */
+    rawQuery(queryName: string, query: string, variables: Record<string, unknown> = {}) {
+      return request<unknown>(queryName, query, variables, z.unknown());
     },
 
     /** Tournaments with Ultimate events in a date window (singles filtering is the caller's job; see isSinglesEvent). */
@@ -317,6 +346,7 @@ export function createStartggClient(options: StartggClientOptions) {
             ? { placement: s.placement, playerId, entrantId: s.entrant?.id ?? 0 }
             : null;
         },
+        // Rows without an entrant are dropped by toItem anyway; -1 only keeps them from colliding in the de-dupe set.
         (s) => s.entrant?.id ?? -1,
       );
     },

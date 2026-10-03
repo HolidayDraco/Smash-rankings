@@ -24,7 +24,10 @@
                       "player": {
                         "id": 1,
                         "gamerTag": "FakeAlpha",
-                        "prefix": "FAKE"
+                        "prefix": "FAKE",
+                        "user": {
+                          "slug": "user/fakealph"
+                        }
                       }
                     }
                   ]
@@ -45,7 +48,10 @@
                       "player": {
                         "id": 2,
                         "gamerTag": "FakeBravo",
-                        "prefix": null
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fakebrav"
+                        }
                       }
                     }
                   ]
@@ -75,7 +81,10 @@
                       "player": {
                         "id": 3,
                         "gamerTag": "FakeCharlie",
-                        "prefix": null
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fakechar"
+                        }
                       }
                     }
                   ]
@@ -96,7 +105,10 @@
                       "player": {
                         "id": 4,
                         "gamerTag": "FakeDelta",
-                        "prefix": null
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fakedelt"
+                        }
                       }
                     }
                   ]
