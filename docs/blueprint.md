@@ -206,7 +206,7 @@ Head-to-head is a query over `sets` (indexed on both player columns). Add a mate
 "Live" means rankings refresh within about 1–2 h of sets finishing on weekends. A small "Last updated X min ago" badge reads `meta.last_rated_at`. Minutes are avoided as cron offsets because of GitHub's top-of-hour delays [GH2].
 
 ### 3.5 API surface (v1, read-only)
-`GET /v1/leaderboard?region=&country=&limit=&cursor=` · `GET /v1/players/:id` · `GET /v1/players/:id/history` · `GET /v1/players/:id/results` · `GET /v1/h2h/:a/:b` · `GET /v1/search?q=` · `GET /v1/events/recent` · `GET /v1/meta` (last updated, data version).
+`GET /v1/leaderboard?region=&country=&limit=&cursor=` · `GET /v1/players/:id` · `GET /v1/players/:id/history` · `GET /v1/players/:id/results` · `GET /v1/h2h/:a/:b` · `GET /v1/search?q=` · `GET /v1/events/recent` · `GET /v1/meta` (last updated, data version) · `GET /v1/dashboard` (this year in Texas and this week: top 10, movers, upsets, events; added for issue #24).
 All responses are Zod-validated, carry `attribution: "Data from start.gg"`, and are CDN-cached. There is **no bulk export endpoint**, because of the ToS no-redistribution clause [SG7].
 
 ### 3.6 Mobile path

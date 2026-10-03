@@ -7,6 +7,9 @@ const attributionField = z.literal(ATTRIBUTION);
 /** ISO-8601 timestamp string, or null when unknown. */
 const isoTimestamp = z.iso.datetime({ offset: true });
 
+/** Only https links on www.start.gg, because the app opens these URLs. */
+const startggUrlField = z.url({ protocol: /^https$/, hostname: /^www\.start\.gg$/ });
+
 export const INGEST_JOBS = ["discover", "sync", "backfill", "rate"] as const;
 export type IngestJob = (typeof INGEST_JOBS)[number];
 
@@ -100,8 +103,7 @@ export const playerResponseSchema = z.strictObject({
   gamerTag: z.string(),
   prefix: z.string().nullable(),
   countryCode: z.string().nullable(),
-  /** Only https links on www.start.gg, because the app opens this URL. */
-  startggUrl: z.url({ protocol: /^https$/, hostname: /^www\.start\.gg$/ }).nullable(),
+  startggUrl: startggUrlField.nullable(),
   rank: z.number().int().positive().nullable(),
   eligible: z.boolean(),
   notRankedReason: notRankedReasonSchema.nullable(),
@@ -137,3 +139,117 @@ export const searchResponseSchema = z.strictObject({
   attribution: attributionField,
 });
 export type SearchResponse = z.infer<typeof searchResponseSchema>;
+
+/** Section sizes for `GET /v1/dashboard`. All small on purpose (start.gg ToS: no bulk lists). */
+export const DASHBOARD_TOP_COUNT = 10;
+export const DASHBOARD_MOVERS_COUNT = 3;
+export const DASHBOARD_UPSETS_COUNT = 5;
+export const DASHBOARD_WEEK_EVENTS_MAX = 20;
+
+/** Enough to show a player and link to their page (the link is built from id + tag). */
+export const dashboardPlayerSchema = z.strictObject({
+  playerId: playerIdField,
+  gamerTag: z.string(),
+  prefix: z.string().nullable(),
+});
+export type DashboardPlayer = z.infer<typeof dashboardPlayerSchema>;
+
+/** A top-10 row: the leaderboard entry, trimmed. `rankDelta7d` null means new this week. */
+export const dashboardTopEntrySchema = z.strictObject({
+  rank: z.number().int().positive(),
+  playerId: playerIdField,
+  gamerTag: z.string(),
+  prefix: z.string().nullable(),
+  /** Rating minus two times rating deviation, rounded (as on the leaderboard). */
+  conservativeScore: z.number().int(),
+  rankDelta7d: z.number().int().nullable(),
+});
+
+/** A climber (delta > 0) or faller (delta < 0) among currently ranked players. */
+export const dashboardMoverSchema = z.strictObject({
+  rank: z.number().int().positive(),
+  playerId: playerIdField,
+  gamerTag: z.string(),
+  prefix: z.string().nullable(),
+  rankDelta7d: z
+    .number()
+    .int()
+    .refine((delta) => delta !== 0),
+});
+
+/**
+ * A set this week where the winner's rating at the start of the week was lower than
+ * the loser's. `ratingGap` is loser minus winner, rounded; `score` is "3-1" or null.
+ */
+export const dashboardUpsetSchema = z.strictObject({
+  setId: playerIdField,
+  winner: dashboardPlayerSchema,
+  loser: dashboardPlayerSchema,
+  score: z
+    .string()
+    .regex(/^\d+-\d+$/)
+    .nullable(),
+  eventName: z.string(),
+  tournamentName: z.string(),
+  ratingGap: z.number().int().nonnegative(),
+  completedAt: isoTimestamp,
+});
+
+/** A qualifying event starting this week. `winner` is null until a 1st place is known. */
+export const dashboardWeekEventSchema = z.strictObject({
+  eventId: playerIdField,
+  eventName: z.string(),
+  tournamentName: z.string(),
+  city: z.string().nullable(),
+  startAt: isoTimestamp,
+  numEntrants: z.number().int().nonnegative().nullable(),
+  winner: dashboardPlayerSchema.nullable(),
+  startggUrl: startggUrlField,
+});
+
+/** Totals for qualifying events that started this calendar year (UTC), up to now. */
+export const dashboardYearSchema = z.strictObject({
+  eventCount: z.number().int().nonnegative(),
+  totalEntrants: z.number().int().nonnegative(),
+  uniquePlayers: z.number().int().nonnegative(),
+  biggestEvent: z
+    .strictObject({
+      eventId: playerIdField,
+      eventName: z.string(),
+      tournamentName: z.string(),
+      numEntrants: z.number().int().nonnegative(),
+      startggUrl: startggUrlField,
+    })
+    .nullable(),
+  mostWins: z
+    .strictObject({
+      player: dashboardPlayerSchema,
+      wins: z.number().int().positive(),
+    })
+    .nullable(),
+});
+
+/**
+ * `GET /v1/dashboard`: "Texas Smash, <year>" plus this week. The week is the current rating
+ * period: Monday 00:00 UTC up to (not including) the next Monday. `weekStart` is that Monday
+ * and `weekEnd` the Sunday, both as YYYY-MM-DD. Every list may be empty.
+ */
+export const dashboardResponseSchema = z.strictObject({
+  header: z.strictObject({
+    year: z.number().int(),
+    weekStart: z.iso.date(),
+    weekEnd: z.iso.date(),
+    /** Same as `GET /v1/meta` lastRatedAt. */
+    lastUpdated: isoTimestamp.nullable(),
+  }),
+  top10: z.array(dashboardTopEntrySchema).max(DASHBOARD_TOP_COUNT),
+  movers: z.strictObject({
+    climbers: z.array(dashboardMoverSchema).max(DASHBOARD_MOVERS_COUNT),
+    fallers: z.array(dashboardMoverSchema).max(DASHBOARD_MOVERS_COUNT),
+  }),
+  upsets: z.array(dashboardUpsetSchema).max(DASHBOARD_UPSETS_COUNT),
+  weekEvents: z.array(dashboardWeekEventSchema).max(DASHBOARD_WEEK_EVENTS_MAX),
+  year: dashboardYearSchema,
+  attribution: attributionField,
+});
+export type DashboardResponse = z.infer<typeof dashboardResponseSchema>;

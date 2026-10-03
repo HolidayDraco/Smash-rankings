@@ -43,6 +43,7 @@ describe("methodology copy", () => {
       'Why the leaderboard uses a "conservative score"',
       "Who appears on the leaderboard",
       "Rank change over 7 days",
+      "Dashboard numbers",
       "When the numbers update",
       "Limits",
     ]);

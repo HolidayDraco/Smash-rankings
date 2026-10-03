@@ -4,8 +4,17 @@
  *
  * All synthetic rows use ids in a reserved range far above real start.gg ids,
  * so re-seeding deletes exactly the rows it created and never touches real data.
+ *
+ * Everything is placed relative to `now` (default: the moment you run the seed), so the
+ * Dashboard always has something to show on the day e2e tests or screenshots run:
+ * - three older events, 9, 6 and 3 weeks before `now` (always before this week);
+ * - two "this week" events, with their sets and 1st places, timed between the later of
+ *   this Monday 00:00 UTC and January 1 00:00 UTC, and `now`. So they are in this week,
+ *   in this calendar year, and never in the future, whatever weekday the seed runs;
+ * - a rating_history row for last week for every player, so this week's sets have
+ *   "start of week" ratings and some of them are upsets.
  */
-import { periodIndexFor } from "@sr/core";
+import { EPOCH_MONDAY_MS, periodIndexFor, WEEK_MS } from "@sr/core";
 import { and, gte, lt } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import type { Database } from "./client";
@@ -15,6 +24,7 @@ import {
   leaderboard,
   meta,
   players,
+  ratingHistory,
   sets,
   standings,
   tournaments,
@@ -59,8 +69,59 @@ const COUNTRIES = ["US", "CA", "MX", "JP", "FR", "GB"];
 const TOURNAMENT_NAMES = ["Sample Showdown", "Sample Invitational", "Sample Regional"];
 const TOURNAMENT_CITIES = ["Austin", "Houston", "Dallas"];
 const SETS_PER_EVENT = 45;
-const DAY_MS = 86_400_000;
-const WEEK_MS = 7 * DAY_MS;
+
+/**
+ * This week's two events. Players are listed by index into TAG_WORDS (a lower index means a
+ * higher seeded rating), and only players who are already ranked play, so ranks don't move.
+ * `null` games is a DQ. A higher index beating a lower one is an upset.
+ */
+const WEEK_EVENTS = [
+  {
+    name: "Sample Weekly",
+    city: "San Antonio",
+    entrants: 24,
+    at: 0.25,
+    sets: [
+      [7, 10, 3, 1], // Halo beats Kite
+      [18, 11, 2, 1], // upset: Sage beats Lumen (gap 140)
+      [12, 19, 2, 0], // Mako beats Tide
+      [24, 13, null, null], // DQ: Yarrow "beats" Nova; never counted as an upset
+      [7, 18, 3, 0], // Halo beats Sage in the final
+    ],
+    standings: [
+      [7, 1],
+      [18, 2],
+      [12, 3],
+      [10, 4],
+      [11, 5],
+      [19, 5],
+      [13, 7],
+      [24, 7],
+    ],
+  },
+  {
+    name: "Sample Arcadian",
+    city: null, // start.gg may not report a city; the UI must cope
+    entrants: 16,
+    at: 0.5,
+    sets: [
+      [23, 21, 2, 1], // upset: Xeno beats Vex (gap 40)
+      [22, 13, 3, 2], // upset: Wisp beats Nova (gap 180)
+      [13, 19, 2, 0], // Nova beats Tide
+      [22, 23, 3, 1], // Wisp beats Xeno
+      [11, 13, 3, 1], // Lumen beats Nova
+      [22, 11, 3, 2], // upset: Wisp beats Lumen in the final (gap 220)
+    ],
+    standings: [
+      [22, 1],
+      [11, 2],
+      [13, 3],
+      [23, 4],
+      [21, 5],
+      [19, 5],
+    ],
+  },
+] as const;
 
 /** Tiny deterministic PRNG (mulberry32) so every seed produces the same sets. */
 function createRandom(seed: number): () => number {
@@ -96,16 +157,31 @@ export async function seedSynthetic(
     countryCode: COUNTRIES[index % COUNTRIES.length] ?? null,
     userSlug: word === "Dash" ? "user/sample-dash" : null, // one ranked player has a start.gg link for e2e
   }));
-  const tournamentRows = TOURNAMENT_NAMES.map((name, index) => ({
-    id: id(index + 1),
-    slug: `tournament/synthetic-${index + 1}`,
-    name,
-    startAt: new Date(now.getTime() - (3 - index) * 3 * WEEK_MS),
-    countryCode: "US",
-    region: "TX",
-    city: TOURNAMENT_CITIES[index % TOURNAMENT_CITIES.length] ?? null,
-    numAttendees: 32 + index * 32,
-  }));
+  // "This week" times: a fraction of the way from max(this Monday, January 1) to now.
+  const period = periodIndexFor(now);
+  const weekStartMs = EPOCH_MONDAY_MS + period * WEEK_MS;
+  const windowStartMs = Math.max(weekStartMs, Date.UTC(now.getUTCFullYear(), 0, 1));
+  const thisWeek = (fraction: number) =>
+    new Date(windowStartMs + Math.floor((now.getTime() - windowStartMs) * fraction));
+
+  const tournamentRows = [
+    ...TOURNAMENT_NAMES.map((name, index) => ({
+      id: id(index + 1),
+      slug: `tournament/synthetic-${index + 1}`,
+      name,
+      startAt: new Date(now.getTime() - (3 - index) * 3 * WEEK_MS),
+      city: TOURNAMENT_CITIES[index % TOURNAMENT_CITIES.length] ?? null,
+      numAttendees: 32 + index * 32,
+    })),
+    ...WEEK_EVENTS.map((event, index) => ({
+      id: id(TOURNAMENT_NAMES.length + index + 1),
+      slug: `tournament/synthetic-${TOURNAMENT_NAMES.length + index + 1}`,
+      name: event.name,
+      startAt: thisWeek(event.at),
+      city: event.city,
+      numAttendees: event.entrants,
+    })),
+  ].map((tournament) => ({ ...tournament, countryCode: "US", region: "TX" }));
   const eventRows = tournamentRows.map((tournament, index) => ({
     id: id(index + 1),
     tournamentId: tournament.id,
@@ -118,9 +194,11 @@ export async function seedSynthetic(
     syncStatus: "done" as const,
   }));
 
+  const baseEvents = eventRows.slice(0, TOURNAMENT_NAMES.length);
   const setRows: (typeof sets.$inferInsert)[] = [];
   const setsPlayed = new Map<number, number>();
-  for (const event of eventRows) {
+  const eventsPlayed = new Map<number, number>();
+  for (const event of baseEvents) {
     for (let index = 0; index < SETS_PER_EVENT; index++) {
       const a = Math.floor(random() * playerRows.length);
       const b = (a + 1 + Math.floor(random() * (playerRows.length - 1))) % playerRows.length;
@@ -141,6 +219,41 @@ export async function seedSynthetic(
         setsPlayed.set(player, (setsPlayed.get(player) ?? 0) + 1);
     }
   }
+  const standingRows = baseEvents.flatMap((event) =>
+    playerRows.map((player, index) => ({
+      eventId: event.id,
+      playerId: player.id,
+      placement: index + 1,
+    })),
+  );
+  for (const [index] of playerRows.entries()) eventsPlayed.set(index, baseEvents.length);
+
+  WEEK_EVENTS.forEach((weekEvent, eventIndex) => {
+    const event = eventRows[TOURNAMENT_NAMES.length + eventIndex];
+    if (!event) throw new Error("seed: missing this-week event row");
+    weekEvent.sets.forEach(([winner, loser, winnerGames, loserGames], index) => {
+      const completedAt = thisWeek(weekEvent.at + (index + 1) * 0.02);
+      const isDq = winnerGames === null;
+      setRows.push({
+        id: id(setRows.length + 1),
+        eventId: event.id,
+        winnerId: id(winner + 1),
+        loserId: id(loser + 1),
+        winnerGames,
+        loserGames,
+        isDq,
+        completedAt,
+        ratingPeriod: periodIndexFor(completedAt),
+      });
+      if (!isDq)
+        for (const player of [winner, loser])
+          setsPlayed.set(player, (setsPlayed.get(player) ?? 0) + 1);
+    });
+    for (const [player, placement] of weekEvent.standings) {
+      standingRows.push({ eventId: event.id, playerId: id(player + 1), placement });
+      eventsPlayed.set(player, (eventsPlayed.get(player) ?? 0) + 1);
+    }
+  });
 
   let rank = 0;
   const leaderboardRows = playerRows.map((player, index) => {
@@ -154,13 +267,22 @@ export async function seedSynthetic(
       rating,
       rd,
       rankDelta7d: eligible ? (index % 5) - 2 : null,
-      lastActiveAt: eventRows.at(-1)?.startAt ?? now,
+      lastActiveAt: baseEvents.at(-1)?.startAt ?? now,
       eligible,
       countryCode: player.countryCode,
       setsPlayed: setsPlayed.get(index) ?? 0,
-      eventsPlayed: eventRows.length,
+      eventsPlayed: eventsPlayed.get(index) ?? 0,
     };
   });
+  // Last week's ratings: the "start of this week" ratings that decide what is an upset.
+  const historyRows = leaderboardRows.map((row) => ({
+    playerId: row.playerId,
+    period: period - 1,
+    rating: row.rating,
+    rd: row.rd,
+    volatility: 0.06,
+    setsPlayed: 0,
+  }));
 
   const hoursAgo = (hours: number) => new Date(now.getTime() - hours * 3_600_000);
   const runRows = [
@@ -188,6 +310,7 @@ export async function seedSynthetic(
     await tx.delete(sets).where(inRange(sets.id));
     await tx.delete(standings).where(inRange(standings.eventId));
     await tx.delete(leaderboard).where(inRange(leaderboard.playerId));
+    await tx.delete(ratingHistory).where(inRange(ratingHistory.playerId));
     await tx.delete(events).where(inRange(events.id));
     await tx.delete(tournaments).where(inRange(tournaments.id));
     await tx.delete(players).where(inRange(players.id));
@@ -197,16 +320,9 @@ export async function seedSynthetic(
     await tx.insert(tournaments).values(tournamentRows);
     await tx.insert(events).values(eventRows);
     await tx.insert(sets).values(setRows);
-    await tx.insert(standings).values(
-      eventRows.flatMap((event) =>
-        playerRows.map((player, index) => ({
-          eventId: event.id,
-          playerId: player.id,
-          placement: index + 1,
-        })),
-      ),
-    );
+    await tx.insert(standings).values(standingRows);
     await tx.insert(leaderboard).values(leaderboardRows);
+    await tx.insert(ratingHistory).values(historyRows);
     await tx
       .insert(ingestRuns)
       .overridingSystemValue()

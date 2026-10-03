@@ -46,6 +46,15 @@ Next to each rank is how many places the player moved compared with the ranks at
 
 Ranks can change even in a week you didn't play. Other players' results move them, and your RD grows a little every week you sit out, which lowers your conservative score.
 
+## Dashboard numbers
+
+The Dashboard uses the same counting rules as the rankings: qualifying Texas events only, and no disqualifications.
+
+- **This week** is the current rating week, Monday 00:00 to Sunday 23:59 UTC.
+- **Biggest movers** are the ranked players whose rank changed the most over 7 days, up to 3 climbers and 3 fallers. New players aren't included.
+- **Upsets** are sets this week where the winner's rating at the start of the week was lower than the loser's. The bigger the gap, the bigger the upset. A set is skipped if either player had no rating before this week.
+- **This year** counts qualifying events that have started since January 1 (UTC). "Players" counts everyone who played at least one counted set at them, and "most wins" counts 1st-place finishes.
+
 ## When the numbers update
 
 The rankings are recalculated after every data refresh (every few hours, hourly on weekends). The current week counts the sets played so far, so it can change until the week ends. Each update replaces the whole list at once, so you never see a half-finished list. "Last active" is the time of the player's most recent counted set.
