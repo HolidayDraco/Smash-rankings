@@ -166,4 +166,24 @@ Because this environment can't reach start.gg, the list of start.gg fields our c
 
 **Questions for Clay:** To let Claude check against the real start.gg, add both `api.start.gg` and `developer.start.gg` to this cloud environment's network allowlist, and provide the token (see the setup list in `docs/plans/phase-0.md`).
 
+---
+
+## 2026-10-03 — Phase 0: app shell and style guide
+
+**Date:** October 3, 2026
+
+**What changed:** The first version of the website:
+
+- **App shell** (Expo SDK 57, pages built ahead of time per ADR-0001): a header, a home page, and the "Data from start.gg" footer on every page. It works on phone and desktop.
+- **Style guide page** (`/style-guide`): white background, Barlow Condensed black italic headings, color swatches with their contrast scores, an angled panel with a diagonal cut, a dense stat row (rank, tag, rating, ± uncertainty, change shown with arrows *and* color), and a snappy motion sample that respects "reduce motion" settings. Fonts ship with the app (no Google Fonts call). No Nintendo fonts, logos, or art. Sample player names are fake.
+- **Working title "Bracket Index"** in the header (the neutral-name default from the open questions; easy to change).
+- **Automatic browser tests** (Playwright) on phone (390 px) and desktop (1280 px) sizes. They check titles, headings, the start.gg attribution link, no sideways scrolling, keyboard focus, 44 px touch targets, and an accessibility scan (axe) with zero serious or critical issues. A unit test checks every text color against its background is at least 4.5:1 contrast.
+- **Vercel settings** are ready (`apps/app/vercel.json`), but Vercel isn't connected yet, so screenshots stand in for a preview link.
+
+Per Clay's auto-merge rule, real screens start right after this merges.
+
+**What's next:** Phase 1: discover job, sync, backfill, rate job, API, then the leaderboard and player pages.
+
+**Questions for Clay:** Do you like the look? Any feedback becomes a follow-up PR, so nothing waits on it. Connecting Vercel (setup step 1) will give you a tappable preview on every PR.
+
 **Questions for Genghis:** None.
