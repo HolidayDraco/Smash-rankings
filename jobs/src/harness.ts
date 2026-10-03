@@ -64,7 +64,10 @@ export function parseJobArgs(argv: string[]): JobArgs {
     throw new UsageError("--event must be a start.gg event id (a positive whole number)");
   }
   const asOf = parseDate("--as-of", values["as-of"]);
-  return { dryRun: values["dry-run"], timeBudgetMinutes, from, to, event, asOf };
+  // --as-of is a manual diagnostic only: it always runs as a dry run, so it can
+  // never rewrite the live leaderboard or the 7-day snapshot to a past week.
+  const dryRun = values["dry-run"] || asOf !== undefined;
+  return { dryRun, timeBudgetMinutes, from, to, event, asOf };
 }
 
 export interface Deadline {

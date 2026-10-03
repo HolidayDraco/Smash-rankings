@@ -29,6 +29,8 @@ const P = periodIndexFor(new Date(NOW));
 describe("rate job flags and env", () => {
   it("parses --as-of", () => {
     expect(parseJobArgs(["--as-of", "2026-09-01"]).asOf).toEqual(new Date("2026-09-01"));
+    // Manual diagnostic only: --as-of never writes.
+    expect(parseJobArgs(["--as-of", "2026-09-01"]).dryRun).toBe(true);
   });
   it("scrubs DATABASE_URL from ctx.redact and from the failure message", async () => {
     const url = "postgres://127.0.0.1:1/sr-fake-db-marker";

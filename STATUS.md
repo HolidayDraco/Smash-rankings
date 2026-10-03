@@ -322,4 +322,4 @@ Ranking tweaks: equal scores now break ties by the *numerically* lower start.gg 
 
 **Questions for Clay:** None.
 
-**Questions for Genghis:** `--as-of <date>` re-rates the live leaderboard as of a past date. It's meant only for manual fixes, and the next normal run then shows everyone as "new" for the 7-day change. OK as a manual-only tool?
+**Questions for Genghis:** None open. Per Genghis, `--as-of <date>` is a manual diagnostic only, so it always runs as a dry run and can never rewrite the live leaderboard or the 7-day snapshot. Scheduled runs never pass it.
