@@ -7,14 +7,7 @@ import {
   type NormalizedPlayer,
   type NormalizedSet,
 } from "@sr/startgg";
-import {
-  isMain,
-  redactError,
-  runJob,
-  UsageError,
-  type JobContext,
-  type JobResult,
-} from "./harness";
+import { isMain, runJob, UsageError, type JobContext, type JobResult } from "./harness";
 
 const HOUR_MS = 3_600_000;
 /** Events handled per run; the rest wait for the next run (oldest first). */
@@ -290,7 +283,7 @@ export async function sync(ctx: JobContext): Promise<JobResult> {
     } catch (error) {
       if (error instanceof StartggAuthError) throw error;
       counts.failedEvents++;
-      process.stderr.write(`sync: event ${candidate.id} failed: ${redactError(error, [])}\n`);
+      process.stderr.write(`sync: event ${candidate.id} failed: ${ctx.redact(error)}\n`);
       // The cursor of the last saved page is kept, so the next run resumes there.
       if (db)
         await db.update(events).set({ syncStatus: "error" }).where(eq(events.id, candidate.id));

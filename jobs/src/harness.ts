@@ -94,6 +94,8 @@ export interface JobContext {
   now: () => number;
   /** Running totals, so a failed run still records how far it got. */
   progress: { eventsTouched: number };
+  /** Error text with the token and database URL scrubbed. Use this for any log line. */
+  redact: (error: unknown) => string;
 }
 
 export interface JobResult {
@@ -164,6 +166,7 @@ export async function runJob(
       deadline: createDeadline(args.timeBudgetMinutes, now),
       now,
       progress,
+      redact: (error) => redactError(error, secrets),
     };
     const result = await body(ctx);
     out(

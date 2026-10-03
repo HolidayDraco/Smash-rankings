@@ -307,7 +307,8 @@ describe.skipIf(!testDatabaseUrl)(
       await seedEvent(9001, { startAt: new Date("2025-10-01T00:00:00Z") });
       await seedEvent(9002);
       queues = {
-        "sets:9001": [{ body: { errors: [{ message: "boom" }] } }],
+        // Upstream error text that echoes secrets must never reach the logs.
+        "sets:9001": [{ body: { errors: [{ message: `boom ${TOKEN} ${testDatabaseUrl}` }] } }],
         "sets:9002": [{ body: fixture("sets-noplayer") }],
         "standings:9002": [{ body: fixture("standings-noplayer") }],
       };
@@ -315,8 +316,11 @@ describe.skipIf(!testDatabaseUrl)(
         .update(events)
         .set({ syncCursor: '{"page":2,"perPage":40}' })
         .where(eq(events.id, 9001));
-      const { result } = await quietly(() => run());
+      const { result, text } = await quietly(() => run());
       expect(result).toBe(0);
+      expect(text).toMatch(/event 9001 failed/);
+      expect(text).not.toContain(TOKEN);
+      expect(text).not.toContain(String(testDatabaseUrl));
       expect(await eventRow(9001)).toMatchObject({
         syncStatus: "error",
         syncCursor: '{"page":2,"perPage":40}',
