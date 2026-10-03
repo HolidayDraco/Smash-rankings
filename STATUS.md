@@ -277,4 +277,4 @@ Each set is tagged with its week number (week 2960 is the week of Oct 3, 2026), 
 
 **Questions for Clay:** None.
 
-**Questions for Genghis:** An event that keeps failing is retried on every run and uses one of the 25 per-run slots. Should there be a retry cap? The default plan is to leave it for now and add a cap once the live check shows whether this happens.
+**Questions for Genghis:** None open. Genghis decided that an event that keeps failing stays uncapped for now. After the live check (P1-12), if such events show up, the sync job will stop after 3 consecutive errors and "park" the event until someone re-runs it by hand with `--event`. Genghis also caught that per-event error messages weren't scrubbed of secrets, and that's fixed in this PR.
