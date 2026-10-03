@@ -265,7 +265,7 @@ ADR-0001's cache time was corrected to 15 minutes to match the plan.
 **What changed:** Added the `sync` job (`pnpm job:sync`). For each event that counts, it pulls the sets (who beat whom and the game score), the final placings, and the players (tag, sponsor prefix, start.gg profile link). In plain terms:
 
 - **Picks up where it left off.** It saves its place after every page, so a stopped run resumes without missing or doubling anything.
-- **Catches bracket fixes.** About two days after an event, it re-checks it once.
+- **Catches bracket fixes.** About three days after an event starts, it re-checks it once. Events still in progress are re-read from the start each run so they stay fresh.
 - **Never fetches online events**, per Genghis: they're stored as names and dates only.
 - **DQs** are saved with a "DQ" flag and no score, so the ranking math skips them.
 - **One bad event doesn't stop the rest.** It's marked "error" and retried next time. A bad or expired token stops everything loudly.

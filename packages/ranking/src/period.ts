@@ -1,3 +1,5 @@
+import { periodIndexFor } from "@sr/core";
+
 const DAY_MS = 86_400_000;
 
 /**
@@ -21,16 +23,8 @@ const WEEK_MS = 7 * DAY_MS;
 /** Monday 1970-01-05 00:00 UTC (ISO week 1970-W02) is period index 0. */
 const EPOCH_MONDAY_MS = Date.UTC(1970, 0, 5);
 
-/**
- * The integer rating period stored in the DB (`sets.rating_period`,
- * `rating_history.period`): whole UTC weeks since Monday 1970-01-05.
- * Always the same week as `ratingPeriodFor(date)`; consecutive weeks differ by 1.
- */
-export function periodIndexFor(date: Date): number {
-  const time = date.getTime();
-  if (!Number.isFinite(time)) throw new RangeError("periodIndexFor: invalid date");
-  return Math.floor((time - EPOCH_MONDAY_MS) / WEEK_MS);
-}
+// One canonical definition lives in @sr/core (the sync job uses it too).
+export { periodIndexFor } from "@sr/core";
 
 /** Monday 00:00 UTC that starts the given period. */
 export function periodStart(period: number): Date {

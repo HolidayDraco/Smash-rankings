@@ -15,4 +15,7 @@ describe("periodIndexFor", () => {
     );
     expect(periodIndexFor(date)).toBe(2960);
   });
+  it("rejects an invalid date", () => {
+    expect(() => periodIndexFor(new Date("nope"))).toThrow(RangeError);
+  });
 });

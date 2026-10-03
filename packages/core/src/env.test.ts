@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadEnv, MissingEnvError } from "./env";
+import { loadEnv, loadOptionalEnv, MissingEnvError } from "./env";
 
 describe("loadEnv", () => {
   it("returns only the requested keys when they are valid", () => {
@@ -26,5 +26,18 @@ describe("loadEnv", () => {
 
   it("treats an empty string as missing", () => {
     expect(() => loadEnv(["STARTGG_TOKEN"], { STARTGG_TOKEN: "" })).toThrowError(MissingEnvError);
+  });
+});
+
+describe("loadOptionalEnv", () => {
+  it("leaves out an unset variable and validates a set one", () => {
+    expect(loadOptionalEnv(["DATABASE_URL"], {})).toEqual({});
+    expect(loadOptionalEnv(["DATABASE_URL"], { DATABASE_URL: "" })).toEqual({});
+    expect(loadOptionalEnv(["DATABASE_URL"], { DATABASE_URL: "postgres://u@h/db" })).toEqual({
+      DATABASE_URL: "postgres://u@h/db",
+    });
+    expect(() => loadOptionalEnv(["DATABASE_URL"], { DATABASE_URL: "not a url" })).toThrowError(
+      MissingEnvError,
+    );
   });
 });

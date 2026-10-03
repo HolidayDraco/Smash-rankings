@@ -41,7 +41,9 @@ describe("parseCursor", () => {
 if (process.env.CI && !testDatabaseUrl) throw new Error("TEST_DATABASE_URL must be set in CI");
 
 describe.skipIf(!testDatabaseUrl)(
-  "sync job (skipped: TEST_DATABASE_URL is not set; CI always sets it)",
+  testDatabaseUrl
+    ? "sync job"
+    : "sync job (skipped: TEST_DATABASE_URL is not set; CI always sets it)",
   () => {
     let db: Database;
     let close: () => Promise<void>;
@@ -106,6 +108,7 @@ describe.skipIf(!testDatabaseUrl)(
         name: `E ${id}`,
         startAt: EVENT_START,
         qualifies: true,
+        state: "COMPLETED",
         ...fields,
       });
     }
@@ -378,7 +381,7 @@ describe.skipIf(!testDatabaseUrl)(
       expect(await eventRow(9001)).toMatchObject({ syncStatus: "pending", lastSyncedAt: null });
     });
 
-    it("picks the right events: past, qualifying, due, oldest first, capped", async () => {
+    it("picks the right events: past, qualifying, due, in priority order, capped", async () => {
       const day = 24 * HOUR;
       const ago = (days: number) => new Date(NOW - days * day);
       await seedEvent(1, { startAt: ago(3), syncStatus: "pending" });
@@ -387,24 +390,148 @@ describe.skipIf(!testDatabaseUrl)(
       await seedEvent(4, {
         startAt: ago(10),
         syncStatus: "done",
-        lastSyncedAt: new Date(ago(10).getTime() + HOUR), // within 72 h of start, > 48 h ago
+        lastSyncedAt: new Date(ago(10).getTime() + HOUR), // synced within 48 h of start; now > start + 72 h
       });
       await seedEvent(5, {
-        startAt: ago(8),
+        startAt: ago(10),
         syncStatus: "done",
-        lastSyncedAt: new Date(NOW - HOUR), // synced recently
+        lastSyncedAt: new Date(ago(10).getTime() + 60 * HOUR), // already past 48 h: no re-check
       });
       await seedEvent(6, {
-        startAt: ago(7),
+        startAt: ago(2),
         syncStatus: "done",
-        lastSyncedAt: new Date(ago(7).getTime() + 100 * HOUR), // already past the 72 h window
+        lastSyncedAt: new Date(ago(2).getTime() + HOUR), // not yet 72 h after start
       });
-      await seedEvent(7, { startAt: ago(6), syncStatus: "error" });
+      await seedEvent(7, { startAt: ago(6), syncStatus: "error", lastSyncedAt: ago(0.5) }); // waits 24 h
       await seedEvent(8, { startAt: ago(5), syncStatus: "partial" });
       await seedEvent(9, { startAt: null, syncStatus: "pending" }); // no start date
+      await seedEvent(10, { startAt: ago(7), syncStatus: "error", lastSyncedAt: ago(0.9) });
+      await seedEvent(11, { startAt: ago(8), syncStatus: "error", lastSyncedAt: null });
       const picked = await selectEvents(db, new Date(NOW));
-      expect(picked.map((e) => e.id)).toEqual([4, 7, 8, 1]);
-      expect((await selectEvents(db, new Date(NOW), 2)).map((e) => e.id)).toEqual([4, 7]);
+      // pending/partial (oldest start first), then the due re-check, then the retryable error.
+      expect(picked.map((e) => e.id)).toEqual([8, 1, 4, 11]);
+      expect((await selectEvents(db, new Date(NOW), 2)).map((e) => e.id)).toEqual([8, 1]);
+    });
+
+    it("fires the 48 h re-check exactly once", async () => {
+      const start = new Date(NOW - 10 * 24 * HOUR);
+      await seedEvent(9001, {
+        startAt: start,
+        syncStatus: "done",
+        lastSyncedAt: new Date(start.getTime() + 5 * HOUR),
+      });
+      expect((await selectEvents(db, new Date(NOW))).map((e) => e.id)).toEqual([9001]);
+      expect(await run()).toBe(0);
+      expect(await eventRow(9001)).toMatchObject({
+        syncStatus: "done",
+        lastSyncedAt: new Date(NOW),
+      });
+      for (const later of [0, 1, 30, 400]) {
+        expect(await selectEvents(db, new Date(NOW + later * 24 * HOUR))).toEqual([]);
+      }
+    });
+
+    it("keeps failing events from starving fresh ones", async () => {
+      for (let id = 1; id <= 30; id++) {
+        await seedEvent(id, {
+          startAt: new Date(NOW - 20 * 24 * HOUR),
+          syncStatus: "error",
+          lastSyncedAt: new Date(NOW - 25 * HOUR),
+        });
+      }
+      await seedEvent(100, { startAt: new Date(NOW - 24 * HOUR), syncStatus: "pending" });
+      await seedEvent(101, { startAt: new Date(NOW - 23 * HOUR), syncStatus: "pending" });
+      const picked = (await selectEvents(db, new Date(NOW))).map((e) => e.id);
+      expect(picked).toHaveLength(25);
+      expect(picked.slice(0, 2)).toEqual([100, 101]);
+    });
+
+    it("records the attempt time on error and waits 24 h before retrying", async () => {
+      await seedEvent(9001);
+      queues["sets:9001"] = [{ body: { errors: [{ message: "boom" }] } }];
+      await quietly(() => run());
+      expect(await eventRow(9001)).toMatchObject({
+        syncStatus: "error",
+        lastSyncedAt: new Date(NOW),
+      });
+      expect(await selectEvents(db, new Date(NOW + 23 * HOUR))).toEqual([]);
+      expect((await selectEvents(db, new Date(NOW + 25 * HOUR))).map((e) => e.id)).toEqual([9001]);
+    });
+
+    it("stores one standings row per player when two entrants share a player", async () => {
+      await seedEvent(9001);
+      queues["standings:9001"] = [{ body: fixture("standings-duplicate-player") }];
+      expect(await run()).toBe(0);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "done" });
+      expect(
+        (await db.select().from(standings).orderBy(standings.playerId)).map((s) => [
+          s.playerId,
+          s.placement,
+        ]),
+      ).toEqual([
+        [1, 1],
+        [4, 2],
+      ]);
+    });
+
+    it("removes sets and standings that disappeared upstream on a full re-sync", async () => {
+      await seedEvent(9001);
+      await run();
+      expect(await setIds()).toEqual([7001, 7002, 7003]);
+      const gone = fixture("sets-page-2") as { data: { event: { sets: { nodes: unknown[] } } } };
+      gone.data.event.sets.nodes = []; // set 7003 is no longer completed
+      const fewer = fixture("standings-page-1") as {
+        data: { event: { standings: { nodes: unknown[] } } };
+      };
+      fewer.data.event.standings.nodes = fewer.data.event.standings.nodes.slice(0, 1);
+      queues = {
+        "sets:9001": [{ body: fixture("sets-page-1") }, { body: gone }],
+        "standings:9001": [{ body: fewer }],
+      };
+      await db.update(events).set({ syncStatus: "pending" }).where(eq(events.id, 9001));
+      await run();
+      expect(await setIds()).toEqual([7001, 7002]);
+      expect((await db.select().from(standings)).map((s) => s.playerId)).toEqual([1]);
+    });
+
+    it("does not delete anything when the pass resumed from a cursor", async () => {
+      await seedEvent(9001, { syncStatus: "partial", syncCursor: '{"page":2,"perPage":40}' });
+      await db.insert(players).values([
+        { id: 1, gamerTag: "A" },
+        { id: 2, gamerTag: "B" },
+      ]);
+      await db.insert(sets).values({ id: 7001, eventId: 9001, winnerId: 1, loserId: 2 });
+      queues["sets:9001"] = [{ body: fixture("sets-page-2") }];
+      expect(await run()).toBe(0);
+      expect(await setIds()).toEqual([7001, 7003]);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "done", syncCursor: null });
+    });
+
+    it("syncs a live event from page 1 every run, drops its cursor, and never marks it done", async () => {
+      await seedEvent(9001, {
+        state: "ACTIVE",
+        syncStatus: "partial",
+        syncCursor: '{"page":2,"perPage":40}',
+      });
+      expect(await run()).toBe(0);
+      expect(sent.filter((r) => r.query === "sets").map((r) => r.page)).toEqual([1, 2]);
+      expect(await eventRow(9001)).toMatchObject({
+        syncStatus: "partial",
+        syncCursor: null,
+        lastSyncedAt: new Date(NOW),
+      });
+      // Picked again next run, still from page 1.
+      queues = happy();
+      sent = [];
+      nowMs = NOW + 2 * HOUR;
+      expect(await run()).toBe(0);
+      expect(sent.filter((r) => r.query === "sets").map((r) => r.page)).toEqual([1, 2]);
+      expect((await eventRow(9001))?.syncStatus).toBe("partial");
+      // Once COMPLETED, one full pass marks it done.
+      await db.update(events).set({ state: "COMPLETED" }).where(eq(events.id, 9001));
+      queues = happy();
+      expect(await run()).toBe(0);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "done", syncCursor: null });
     });
   },
 );

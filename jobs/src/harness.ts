@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { eq } from "drizzle-orm";
-import { loadEnv, MissingEnvError } from "@sr/core";
+import { loadEnv, loadOptionalEnv, MissingEnvError } from "@sr/core";
 import { createDb, ingestRuns, type Database } from "@sr/db";
 import { createStartggClient, type StartggClient, type StartggClientOptions } from "@sr/startgg";
 
@@ -18,7 +18,7 @@ export interface JobArgs {
   timeBudgetMinutes: number;
   from?: Date;
   to?: Date;
-  /** Sync only this start.gg event id (manual use). */
+  /** Sync only this start.gg event id (manual use). Ignores start_at and the done status. */
   event?: number;
 }
 
@@ -131,7 +131,7 @@ export async function runJob(
   try {
     args = parseJobArgs(argv);
     env = args.dryRun
-      ? loadEnv(["STARTGG_TOKEN"], deps.env)
+      ? { ...loadEnv(["STARTGG_TOKEN"], deps.env), ...loadOptionalEnv(["DATABASE_URL"], deps.env) }
       : loadEnv(["STARTGG_TOKEN", "DATABASE_URL"], deps.env);
   } catch (error) {
     if (error instanceof UsageError || error instanceof MissingEnvError) {
@@ -142,8 +142,9 @@ export async function runJob(
   }
   const secrets = [env.STARTGG_TOKEN, env.DATABASE_URL ?? ""];
   // A dry run never requires the database, but uses it (read-only) when one is configured.
-  const databaseUrl = env.DATABASE_URL ?? (deps.env ?? process.env).DATABASE_URL;
-  const database = databaseUrl ? createDb(databaseUrl, { maxConnections: 2 }) : null;
+  const database = env.DATABASE_URL
+    ? createDb(env.DATABASE_URL, { maxConnections: 2, readOnly: args.dryRun })
+    : null;
   const client = createStartggClient({
     ...deps.clientOptions,
     token: env.STARTGG_TOKEN,
