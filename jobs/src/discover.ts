@@ -7,10 +7,10 @@ import {
   type EventClass,
 } from "@sr/core";
 import { events, tournaments, type Database } from "@sr/db";
-import type { EventNode, TournamentNode } from "@sr/startgg";
+import type { Cursor, EventNode, TournamentNode } from "@sr/startgg";
 import { isMain, runJob, type JobContext, type JobResult } from "./harness";
 
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 export const DEFAULT_DAYS_BACK = 14;
 export const DEFAULT_DAYS_AHEAD = 30;
 
@@ -172,10 +172,32 @@ async function upsertPage(
   });
 }
 
-export async function discover(ctx: JobContext): Promise<JobResult> {
-  const { args, client, db, deadline, now, progress } = ctx;
-  const from = args.from ?? new Date(now() - DEFAULT_DAYS_BACK * DAY_MS);
-  const to = args.to ?? new Date(now() + DEFAULT_DAYS_AHEAD * DAY_MS);
+export function discover(ctx: JobContext): Promise<JobResult> {
+  const { args, now } = ctx;
+  return discoverWindow(
+    ctx,
+    args.from ?? new Date(now() - DEFAULT_DAYS_BACK * DAY_MS),
+    args.to ?? new Date(now() + DEFAULT_DAYS_AHEAD * DAY_MS),
+  );
+}
+
+/** Discover over an explicit window (the backfill job calls this once per month). */
+export async function discoverWindow(
+  ctx: JobContext,
+  from: Date,
+  to: Date,
+  opts: {
+    /** Stop paging once this many requests were used; the result is partial and carries `resume`. */
+    maxRequests?: number;
+    /** Continue a window from a saved page. */
+    cursor?: Cursor;
+    /** Called after each page is stored, with the cursor to continue from (so a crash loses at most one page). */
+    onPage?: (next: Cursor) => Promise<void>;
+  } = {},
+): Promise<JobResult & { resume: Cursor | null }> {
+  const { client, db, deadline, now, progress } = ctx;
+  const requestsBefore = client.requestsUsed;
+  let resume: Cursor | null = null;
   // outOfRegion is part of skipped, counted apart so a run that finds no Texas events is visible.
   const counts = { found: 0, qualify: 0, online: 0, skipped: 0, outOfRegion: 0 };
   let partial = false;
@@ -184,6 +206,7 @@ export async function discover(ctx: JobContext): Promise<JobResult> {
     afterDate: epochSeconds(from),
     beforeDate: epochSeconds(to),
     videogameId: ULTIMATE_VIDEOGAME_ID,
+    ...(opts.cursor ? { cursor: opts.cursor } : {}),
   })) {
     const skippedEvents: EventNode[] = [];
     const keep: { tournament: TournamentNode; event: EventNode; qualifies: boolean }[] = [];
@@ -210,13 +233,18 @@ export async function discover(ctx: JobContext): Promise<JobResult> {
     }
     if (db && skippedEvents.length > 0)
       progress.eventsTouched += await demoteSkipped(db, skippedEvents);
-    if (page.nextCursor && deadline.expired()) {
+    if (page.nextCursor) await opts.onPage?.(page.nextCursor);
+    const overBudget =
+      opts.maxRequests !== undefined && client.requestsUsed - requestsBefore >= opts.maxRequests;
+    if (page.nextCursor && (deadline.expired() || overBudget)) {
       partial = true;
+      resume = page.nextCursor;
       break;
     }
   }
 
   return {
+    resume,
     eventsTouched: progress.eventsTouched,
     partial,
     summary:

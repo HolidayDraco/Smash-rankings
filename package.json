@@ -21,6 +21,7 @@
     "job:discover": "pnpm --filter @sr/jobs discover",
     "job:sync": "pnpm --filter @sr/jobs sync",
     "job:rate": "pnpm --filter @sr/jobs rate",
+    "job:backfill": "pnpm --filter @sr/jobs backfill",
     "db:seed": "pnpm --filter @sr/db db:seed"
   },
   "devDependencies": {

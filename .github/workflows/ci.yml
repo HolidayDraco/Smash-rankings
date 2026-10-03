@@ -43,6 +43,15 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Check workflow files (actionlint, pinned and checksum-verified)
+        run: |
+          version=1.7.7
+          sha256=023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757
+          curl -sSfL -o actionlint.tar.gz "https://github.com/rhysd/actionlint/releases/download/v${version}/actionlint_${version}_linux_amd64.tar.gz"
+          echo "${sha256}  actionlint.tar.gz" | sha256sum --check
+          tar -xzf actionlint.tar.gz actionlint
+          ./actionlint -color
+          rm actionlint actionlint.tar.gz
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
