@@ -1,4 +1,4 @@
-import { periodIndexFor } from "@sr/core";
+import { EPOCH_MONDAY_MS, periodIndexFor, WEEK_MS } from "@sr/core";
 
 const DAY_MS = 86_400_000;
 
@@ -18,10 +18,6 @@ export function ratingPeriodFor(date: Date): string {
   const week = 1 + Math.floor((thursday.getTime() - Date.UTC(weekYear, 0, 1)) / (7 * DAY_MS));
   return `${weekYear}-W${String(week).padStart(2, "0")}`;
 }
-
-const WEEK_MS = 7 * DAY_MS;
-/** Monday 1970-01-05 00:00 UTC (ISO week 1970-W02) is period index 0. */
-const EPOCH_MONDAY_MS = Date.UTC(1970, 0, 5);
 
 // One canonical definition lives in @sr/core (the sync job uses it too).
 export { periodIndexFor } from "@sr/core";

@@ -20,12 +20,16 @@ export const RESYNC_AFTER_START_MS = 72 * HOUR_MS;
 export const ERROR_RETRY_AFTER_MS = 24 * HOUR_MS;
 /** start.gg ActivityState of a finished event. Anything else is still live (or not yet closed). */
 export const COMPLETED_STATE = "COMPLETED";
+/** Discover stops refreshing `state` after 14 days, so past this age an event counts as finished. */
+export const LIVE_MAX_AGE_MS = 7 * 24 * HOUR_MS;
 
 export interface SyncCandidate {
   id: number;
   syncCursor: string | null;
   /** events.state as stored by discover. */
   state: string | null;
+  startAt: Date | null;
+  syncStatus: "pending" | "partial" | "done" | "error";
 }
 
 /**
@@ -38,7 +42,7 @@ export interface SyncCandidate {
  * Never selects qualifies = false events.
  */
 export async function selectEvents(
-  db: Database,
+  db: Pick<Database, "select">,
   now: Date,
   limit = MAX_EVENTS_PER_RUN,
 ): Promise<SyncCandidate[]> {
@@ -57,7 +61,13 @@ export async function selectEvents(
     ),
   );
   return db
-    .select({ id: events.id, syncCursor: events.syncCursor, state: events.state })
+    .select({
+      id: events.id,
+      syncCursor: events.syncCursor,
+      state: events.state,
+      startAt: events.startAt,
+      syncStatus: events.syncStatus,
+    })
     .from(events)
     .where(
       and(
@@ -226,16 +236,19 @@ async function deleteUnseen(
   eventId: number,
   seenSets: Set<number>,
   seenPlayers: Set<number>,
+  setsComplete: boolean,
+  standingsComplete: boolean,
 ): Promise<void> {
-  // An empty pass is more likely an upstream glitch than a wiped event: keep what we have.
-  if (seenSets.size > 0) {
+  // Only trust a pass that saw as many rows as start.gg said exist, and was not empty
+  // (an empty pass is more likely an upstream glitch than a wiped event).
+  if (setsComplete && seenSets.size > 0) {
     const stored = await tx.select({ id: sets.id }).from(sets).where(eq(sets.eventId, eventId));
     const stale = stored.map((r) => r.id).filter((id) => !seenSets.has(id));
     for (let i = 0; i < stale.length; i += 1000) {
       await tx.delete(sets).where(inArray(sets.id, stale.slice(i, i + 1000)));
     }
   }
-  if (seenPlayers.size > 0) {
+  if (standingsComplete && seenPlayers.size > 0) {
     const stored = await tx
       .select({ id: standings.playerId })
       .from(standings)
@@ -265,8 +278,17 @@ async function deleteUnseen(
 async function syncEvent(ctx: JobContext, candidate: SyncCandidate, counts: Counts) {
   const { client, db, deadline, now } = ctx;
   const eventId = candidate.id;
-  const completed = candidate.state === COMPLETED_STATE;
-  const resume = completed ? parseCursor(candidate.syncCursor) : undefined;
+  const completed =
+    candidate.state === COMPLETED_STATE ||
+    (candidate.startAt !== null && now() - candidate.startAt.getTime() > LIVE_MAX_AGE_MS);
+  // A re-check of a done event is always one full pass from page 1: no cursor read or saved.
+  const recheck = candidate.syncStatus === "done";
+  const resume = completed && !recheck ? parseCursor(candidate.syncCursor) : undefined;
+  const saveCursor = completed && !recheck;
+  let setsRows = 0;
+  let setsTotal: number | null = null;
+  let standingsRows = 0;
+  let standingsTotal: number | null = null;
   const seenSets = new Set<number>();
   const seenPlayers = new Set<number>();
 
@@ -275,12 +297,15 @@ async function syncEvent(ctx: JobContext, candidate: SyncCandidate, counts: Coun
     counts.dqSets += page.items.filter((s) => s.isDq).length;
     counts.noPlayer += page.skipped;
     for (const item of page.items) seenSets.add(item.id);
+    setsRows += page.items.length + page.skipped;
+    setsTotal = page.total;
     // On the last page keep pointing at it: a stop during standings redoes one page, no more.
-    const checkpoint = completed
+    const checkpoint = saveCursor
       ? (page.nextCursor ?? { page: page.page, perPage: page.perPage })
       : null;
     if (db) await writeSetsPage(db, eventId, page.items, checkpoint);
-    if (page.nextCursor && deadline.expired()) return stop(db, candidate, counts, now());
+    if (page.nextCursor && deadline.expired())
+      return stop(db, candidate, counts, now(), !completed);
   }
 
   for await (const page of client.eventStandingsPages(eventId)) {
@@ -291,12 +316,24 @@ async function syncEvent(ctx: JobContext, candidate: SyncCandidate, counts: Coun
       counts.noPlayer += result.unknownPlayer;
     } else counts.standings += page.items.length;
     for (const item of page.items) seenPlayers.add(item.playerId);
-    if (page.nextCursor && deadline.expired()) return stop(db, candidate, counts, now());
+    standingsRows += page.items.length + page.skipped;
+    standingsTotal = page.total;
+    if (page.nextCursor && deadline.expired())
+      return stop(db, candidate, counts, now(), !completed);
   }
 
   if (db) {
     await db.transaction(async (tx) => {
-      if (!resume) await deleteUnseen(tx, eventId, seenSets, seenPlayers);
+      if (!resume) {
+        await deleteUnseen(
+          tx,
+          eventId,
+          seenSets,
+          seenPlayers,
+          setsTotal !== null && setsRows >= setsTotal,
+          standingsTotal !== null && standingsRows >= standingsTotal,
+        );
+      }
       await tx
         .update(events)
         .set(
@@ -318,9 +355,10 @@ async function stop(
   candidate: SyncCandidate,
   counts: Counts,
   nowMs: number,
+  live: boolean,
 ): Promise<false> {
   // A live event restarts at page 1 anyway; record the attempt so others get their turn first.
-  if (db && candidate.state !== COMPLETED_STATE) {
+  if (db && live) {
     await db
       .update(events)
       .set({ lastSyncedAt: new Date(nowMs) })
@@ -345,6 +383,8 @@ export async function sync(ctx: JobContext): Promise<JobResult> {
         id: events.id,
         syncCursor: events.syncCursor,
         state: events.state,
+        startAt: events.startAt,
+        syncStatus: events.syncStatus,
         qualifies: events.qualifies,
       })
       .from(events)
@@ -356,7 +396,7 @@ export async function sync(ctx: JobContext): Promise<JobResult> {
         `event ${args.event} does not qualify (online or too small); its sets and standings are never fetched`,
       );
     }
-    candidates = [{ id: row.id, syncCursor: row.syncCursor, state: row.state }];
+    candidates = [row];
   } else {
     candidates = await selectEvents(readDb, new Date(now()));
   }

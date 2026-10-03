@@ -480,10 +480,12 @@ describe.skipIf(!testDatabaseUrl)(
       expect(await setIds()).toEqual([7001, 7002, 7003]);
       const gone = fixture("sets-page-2") as { data: { event: { sets: { nodes: unknown[] } } } };
       gone.data.event.sets.nodes = []; // set 7003 is no longer completed
+      (gone.data.event.sets as unknown as { pageInfo: { total: number } }).pageInfo.total = 2;
       const fewer = fixture("standings-page-1") as {
         data: { event: { standings: { nodes: unknown[] } } };
       };
       fewer.data.event.standings.nodes = fewer.data.event.standings.nodes.slice(0, 1);
+      (fewer.data.event.standings as unknown as { pageInfo: { total: number } }).pageInfo.total = 1;
       queues = {
         "sets:9001": [{ body: fixture("sets-page-1") }, { body: gone }],
         "standings:9001": [{ body: fewer }],
@@ -510,6 +512,7 @@ describe.skipIf(!testDatabaseUrl)(
     it("syncs a live event from page 1 every run, drops its cursor, and never marks it done", async () => {
       await seedEvent(9001, {
         state: "ACTIVE",
+        startAt: new Date(NOW - 2 * 24 * HOUR),
         syncStatus: "partial",
         syncCursor: '{"page":2,"perPage":40}',
       });
@@ -532,6 +535,65 @@ describe.skipIf(!testDatabaseUrl)(
       queues = happy();
       expect(await run()).toBe(0);
       expect(await eventRow(9001)).toMatchObject({ syncStatus: "done", syncCursor: null });
+    });
+
+    it("treats an unclosed event older than 7 days as finished and marks it done", async () => {
+      await seedEvent(9001, { state: "ACTIVE", startAt: new Date(NOW - 8 * 24 * HOUR) });
+      expect(await run()).toBe(0);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "done", syncCursor: null });
+    });
+
+    it("deletes nothing when the page total is missing or larger than what was seen", async () => {
+      await seedEvent(9001);
+      await run();
+      const short = fixture("sets-page-1") as {
+        data: { event: { sets: { pageInfo: { totalPages: number | null; total: number } } } };
+      };
+      short.data.event.sets.pageInfo.totalPages = null; // start.gg did not say; page 1 looks like the end
+      queues = {
+        "sets:9001": [{ body: short }],
+        "standings:9001": [{ body: fixture("standings-page-1") }],
+      };
+      await db.update(events).set({ syncStatus: "pending" }).where(eq(events.id, 9001));
+      await run();
+      expect(await setIds()).toEqual([7001, 7002, 7003]); // 7003 kept: saw 2 of total 3
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "done" });
+    });
+
+    it("re-checks a done event from page 1 without a cursor, and keeps it eligible if interrupted", async () => {
+      const start = new Date(NOW - 10 * 24 * HOUR);
+      await seedEvent(9001, {
+        startAt: start,
+        syncStatus: "done",
+        syncCursor: '{"page":2,"perPage":40}',
+        lastSyncedAt: new Date(start.getTime() + HOUR),
+      });
+      queues = {
+        "sets:9001": [
+          {
+            get body() {
+              nowMs += 30 * 60_000; // budget ends during page 1
+              return fixture("sets-page-1");
+            },
+          },
+        ],
+      };
+      expect(await run()).toBe(0);
+      expect(sent.filter((r) => r.query === "sets").map((r) => r.page)).toEqual([1]);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "partial", syncCursor: null });
+      expect((await selectEvents(db, new Date(NOW))).map((e) => e.id)).toEqual([9001]);
+    });
+
+    it("a dry run leaves every table unchanged", async () => {
+      await seedEvent(9001);
+      const counts = async () =>
+        [events, sets, players, standings, ingestRuns].map(
+          async (table) => (await db.select().from(table)).length,
+        );
+      const before = await Promise.all(await counts());
+      expect(await run(["--dry-run"])).toBe(0);
+      expect(await Promise.all(await counts())).toEqual(before);
+      expect(await eventRow(9001)).toMatchObject({ syncStatus: "pending", syncCursor: null });
     });
   },
 );

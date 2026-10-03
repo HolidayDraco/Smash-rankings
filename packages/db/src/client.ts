@@ -12,16 +12,11 @@ import * as schema from "./schema";
  * `prepare: false` because Neon's pooler (PgBouncer, transaction mode) does
  * not support named prepared statements.
  */
-export function createDb(
-  databaseUrl: string,
-  options: { maxConnections?: number; readOnly?: boolean } = {},
-) {
+export function createDb(databaseUrl: string, options: { maxConnections?: number } = {}) {
   const client = postgres(databaseUrl, {
     prepare: false,
     max: options.maxConnections ?? 5,
     onnotice: () => {},
-    // Dry runs open the database read-only so a bug cannot write.
-    ...(options.readOnly ? { connection: { default_transaction_read_only: true } } : {}),
   });
   const db = drizzle({ client, schema });
   return { db, close: () => client.end() };

@@ -88,8 +88,8 @@ export interface JobContext {
   client: StartggClient;
   /** Null in a dry run (the job must not need the database to preview). */
   db: Database | null;
-  /** Read-only access: the real database in a run, or in a dry run when DATABASE_URL happens to be set. */
-  readDb: Database | null;
+  /** Read-only access (SELECTs only, by type): the real database in a run, or in a dry run when DATABASE_URL happens to be set. */
+  readDb: Pick<Database, "select"> | null;
   deadline: Deadline;
   now: () => number;
   /** Running totals, so a failed run still records how far it got. */
@@ -142,9 +142,7 @@ export async function runJob(
   }
   const secrets = [env.STARTGG_TOKEN, env.DATABASE_URL ?? ""];
   // A dry run never requires the database, but uses it (read-only) when one is configured.
-  const database = env.DATABASE_URL
-    ? createDb(env.DATABASE_URL, { maxConnections: 2, readOnly: args.dryRun })
-    : null;
+  const database = env.DATABASE_URL ? createDb(env.DATABASE_URL, { maxConnections: 2 }) : null;
   const client = createStartggClient({
     ...deps.clientOptions,
     token: env.STARTGG_TOKEN,
