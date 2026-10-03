@@ -3,18 +3,12 @@
   "agentGuidance": false,
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     },
     "typecheck": {},
     "test": {
-      "env": [
-        "CI"
-      ]
+      "env": ["CI"]
     },
     "dev": {
       "cache": false,
