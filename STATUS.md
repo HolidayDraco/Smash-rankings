@@ -119,3 +119,26 @@ This follows the auto-merge rule from PR #2: Claude merges its own PRs once chec
 **Questions for Clay:** None new. The Neon setup ask above still stands; the app can't save real data until it exists.
 
 **Questions for Genghis:** The leaderboard is rebuilt by deleting and re-inserting it in one database transaction, instead of the blueprint's "build a new table and swap" approach, because a swap would drop the safety links (foreign keys) to the players table. Readers never see a half-built leaderboard either way. OK?
+
+---
+
+## 2026-10-03 — Phase 0: Glicko-2 ranking engine
+
+**Date:** October 3, 2026
+
+**What changed:** Added `packages/ranking`, the math that turns set results into ratings. It's pure math: no internet, no database, no clock, so the same results always give the same rankings. In plain terms:
+
+- **Rating** is how strong we think a player is (everyone starts at 1500).
+- **RD** ("rating deviation") is how *unsure* we are about that rating. It shrinks as a player plays and grows while they're inactive.
+- **Volatility** is how erratic a player's results are.
+- The leaderboard sorts by a **conservative score** = rating − 2 × RD, so a lucky newcomer can't jump to #1.
+
+Also includes the weekly rating-period helper, the eligibility rule (10+ sets, 3+ qualifying events, RD ≤ 110), the leaderboard sort with fixed tie-breaks, and a first draft of `docs/METHODOLOGY.md` for fans.
+
+**About the "Glickman worked example" test:** Glickman's paper prints the answer as 1464.06 / 151.52 / 0.05999, but it rounds numbers partway through its own calculation. Doing the math at full precision gives 1464.0507 / 151.5165 / 0.059996. Claude checked this with a second, independent calculation. The test now checks the full-precision answer tightly, and it also checks agreement with the paper's printed numbers to the precision the paper actually carries. `CLAUDE.md` and the ranking agent's instructions now explain this, so no one "fixes" the math to match the rounded digits.
+
+**What's next:** start.gg client and app shell PRs, then Phase 1 data jobs.
+
+**Questions for Clay:** Claude updated the worked-example rule in `CLAUDE.md` to note the paper's rounding (the numbers you listed, 1464.06 / 151.52 / 0.05999, are still checked). Under your auto-merge rule this merged without waiting. If you'd rather that rule stay word-for-word, say so and Claude will revert just that line.
+
+**Questions for Genghis:** Does the worked-example test approach (exact values asserted tightly, plus the paper's printed figures within 0.01 and σ within 0.00001) look right to you?
