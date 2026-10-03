@@ -8,7 +8,7 @@
     },
     "typecheck": {},
     "test": {
-      "env": ["CI"]
+      "env": ["CI", "TEST_DATABASE_URL"]
     },
     "dev": {
       "cache": false,
