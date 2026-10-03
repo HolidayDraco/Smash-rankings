@@ -30,7 +30,7 @@ const BADGES: Record<JobState, { text: string; bg: string; fg: string; meaning: 
     text: "Failed",
     bg: colors.hot,
     fg: colors.white,
-    meaning: "its last run hit an error. We retry on the next schedule.",
+    meaning: "had an error on its last run. We retry on the next schedule.",
   },
   running: {
     text: "Running",
