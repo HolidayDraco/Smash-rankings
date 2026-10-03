@@ -71,8 +71,18 @@ function createRandom(seed: number): () => number {
   };
 }
 
+export interface SeedOptions {
+  /** Clock for every generated timestamp (tests pass a fixed date). */
+  now?: Date;
+  /** Leave existing `meta` rows alone (only fill missing keys). Used for real databases. */
+  keepExistingMeta?: boolean;
+}
+
 /** Delete earlier synthetic rows and insert a fresh set, in one transaction. */
-export async function seedSynthetic(db: Database, now: Date = new Date()): Promise<void> {
+export async function seedSynthetic(
+  db: Database,
+  { now = new Date(), keepExistingMeta = false }: SeedOptions = {},
+): Promise<void> {
   const random = createRandom(1386);
   const id = (offset: number) => SYNTHETIC_ID_MIN + offset;
   const inRange = (column: AnyPgColumn) =>
@@ -199,10 +209,10 @@ export async function seedSynthetic(db: Database, now: Date = new Date()): Promi
       ["data_version", "1"],
       ["last_rated_at", hoursAgo(0.9).toISOString()],
     ] as const) {
-      await tx
-        .insert(meta)
-        .values({ key, value })
-        .onConflictDoUpdate({ target: meta.key, set: { value } });
+      const insert = tx.insert(meta).values({ key, value });
+      await (keepExistingMeta
+        ? insert.onConflictDoNothing({ target: meta.key })
+        : insert.onConflictDoUpdate({ target: meta.key, set: { value } }));
     }
   });
 }

@@ -11,4 +11,5 @@ let connection: ReturnType<typeof createDb> | undefined;
 export const app = createApp({
   getDb: () => (connection ??= createDb(config.databaseUrl, { maxConnections: 3 })).db,
   allowedOrigins: config.allowedOrigins,
+  allowedOriginPattern: config.allowedOriginPattern,
 });

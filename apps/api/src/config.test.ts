@@ -1,6 +1,6 @@
 import { MissingEnvError } from "@sr/core";
 import { describe, expect, it } from "vitest";
-import { loadApiConfig } from "./config";
+import { InvalidConfigError, loadApiConfig } from "./config";
 
 describe("loadApiConfig", () => {
   it("fails fast with MissingEnvError when DATABASE_URL is missing", () => {
@@ -26,10 +26,48 @@ describe("loadApiConfig", () => {
     expect(loadApiConfig({ ...base, ALLOWED_ORIGINS: origins, NODE_ENV: "production" })).toEqual({
       databaseUrl: base.DATABASE_URL,
       allowedOrigins: ["https://a.example", "https://b.example"],
+      allowedOriginPattern: undefined,
     });
     expect(loadApiConfig(base).allowedOrigins).toEqual([
       "http://localhost:8081",
       "http://localhost:8082",
     ]);
+  });
+
+  it("normalizes ALLOWED_ORIGINS entries to bare origins and rejects non-URLs", () => {
+    const base = { DATABASE_URL: "postgres://u:p@db.example.com/x", NODE_ENV: "production" };
+    expect(
+      loadApiConfig({
+        ...base,
+        ALLOWED_ORIGINS: "https://App.Example.com/path/,https://x.example:8443/",
+      }).allowedOrigins,
+    ).toEqual(["https://app.example.com", "https://x.example:8443"]);
+    expect(() => loadApiConfig({ ...base, ALLOWED_ORIGINS: "app.example.com" })).toThrowError(
+      InvalidConfigError,
+    );
+  });
+
+  it("accepts only an anchored https ALLOWED_ORIGIN_PATTERN", () => {
+    const base = { DATABASE_URL: "postgres://u:p@db.example.com/x" };
+    const preview = "^https://sr-app-[a-z0-9-]+-clay\\.vercel\\.app$";
+    const pattern = loadApiConfig({
+      ...base,
+      ALLOWED_ORIGIN_PATTERN: preview,
+    }).allowedOriginPattern;
+    expect(pattern?.test("https://sr-app-git-feat-x-clay.vercel.app")).toBe(true);
+    expect(pattern?.test("https://sr-app-x-clay.vercel.app.evil.example")).toBe(false);
+    expect(
+      loadApiConfig({ ...base, ALLOWED_ORIGIN_PATTERN: "" }).allowedOriginPattern,
+    ).toBeUndefined();
+    for (const bad of [
+      "https://.*\\.vercel\\.app$",
+      "^https://x\\.example",
+      "^http://x$",
+      "^https://(x$",
+    ]) {
+      expect(() => loadApiConfig({ ...base, ALLOWED_ORIGIN_PATTERN: bad })).toThrowError(
+        /ALLOWED_ORIGIN_PATTERN/,
+      );
+    }
   });
 });

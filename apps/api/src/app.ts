@@ -10,6 +10,7 @@ import { ingestRuns, meta, type Database } from "@sr/db";
 import { desc, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 
 /** Data changes at most hourly; a long CDN cache keeps Neon asleep (P1-6). */
@@ -27,9 +28,29 @@ export interface AppOptions {
   getDb: () => Database;
   /** Exact origins (scheme + host + port) allowed to call the API from a browser. */
   allowedOrigins: readonly string[];
+  /** Optional anchored regex for extra origins, e.g. Vercel preview URLs of the app. */
+  allowedOriginPattern?: RegExp | undefined;
 }
 
-export function createApp({ getDb, allowedOrigins }: AppOptions) {
+export function createApp({ getDb, allowedOrigins, allowedOriginPattern }: AppOptions) {
+  const isAllowedOrigin = (origin: string) =>
+    allowedOrigins.includes(origin) || (allowedOriginPattern?.test(origin) ?? false);
+
+  // These endpoints take no parameters. Rejecting stray query strings stops
+  // anyone from busting the CDN cache (and waking the database) with ?x=random.
+  const rejectQueryParams = createMiddleware(async (c, next) => {
+    if (new URL(c.req.url).search !== "") {
+      return c.json(
+        errorResponseSchema.parse({
+          error: "Unexpected query parameters",
+          attribution: ATTRIBUTION,
+        }),
+        400,
+      );
+    }
+    await next();
+  });
+
   return (
     new Hono()
       // Cache only successful /v1 reads; everything else (errors, health, CORS
@@ -42,7 +63,7 @@ export function createApp({ getDb, allowedOrigins }: AppOptions) {
       .use(
         "*",
         cors({
-          origin: (origin) => (allowedOrigins.includes(origin) ? origin : null),
+          origin: (origin) => (isAllowedOrigin(origin) ? origin : null),
           allowMethods: ["GET", "HEAD", "OPTIONS"],
           maxAge: 86_400,
         }),
@@ -56,7 +77,7 @@ export function createApp({ getDb, allowedOrigins }: AppOptions) {
           }),
         ),
       )
-      .get("/v1/meta", async (c) => {
+      .get("/v1/meta", rejectQueryParams, async (c) => {
         const rows = await getDb()
           .select({ key: meta.key, value: meta.value })
           .from(meta)
@@ -72,7 +93,7 @@ export function createApp({ getDb, allowedOrigins }: AppOptions) {
           }),
         );
       })
-      .get("/v1/status", async (c) => {
+      .get("/v1/status", rejectQueryParams, async (c) => {
         // Latest run per job; only the columns we are willing to show publicly.
         const latest = await getDb()
           .selectDistinctOn([ingestRuns.job], {

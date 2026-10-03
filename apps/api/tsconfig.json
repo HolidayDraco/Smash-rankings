@@ -1,4 +1,4 @@
 {
   "extends": "@sr/config/tsconfig.base.json",
-  "include": ["src", "api"]
+  "include": ["src"]
 }

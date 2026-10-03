@@ -7,12 +7,15 @@ import {
 import { createDb, type Database } from "@sr/db";
 import { runMigrations } from "@sr/db/migrate";
 import { seedSynthetic } from "@sr/db/seed";
-import { sql } from "drizzle-orm";
+import { meta } from "@sr/db";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CACHE_CONTROL_NO_STORE, CACHE_CONTROL_PUBLIC, createApp } from "./app";
 
 // A throwaway Postgres server. This suite uses its own sibling database
 // (`<name>_api`) because @sr/db's tests drop the main one's schema in parallel.
+// That sibling database is created on first run and deliberately left behind
+// (its schema is rebuilt each run); it disappears with the throwaway server.
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 
 // CI must always run this suite; a silent skip would hide a broken database setup.
@@ -21,6 +24,7 @@ if (process.env.CI && !testDatabaseUrl) {
 }
 
 const APP_ORIGIN = "https://app.example.test";
+const PREVIEW_PATTERN = /^https:\/\/sr-app-[a-z0-9-]+\.example\.test$/;
 const NOW = new Date("2026-10-03T12:00:00Z");
 
 describe.skipIf(!testDatabaseUrl)(
@@ -56,9 +60,13 @@ describe.skipIf(!testDatabaseUrl)(
       await db.execute(sql`drop schema if exists public cascade`);
       await db.execute(sql`create schema public`);
       await runMigrations(db);
-      await seedSynthetic(db, NOW);
-      await seedSynthetic(db, NOW); // re-seeding must be idempotent
-      app = createApp({ getDb: () => db, allowedOrigins: [APP_ORIGIN] });
+      await seedSynthetic(db, { now: NOW });
+      await seedSynthetic(db, { now: NOW }); // re-seeding must be idempotent
+      app = createApp({
+        getDb: () => db,
+        allowedOrigins: [APP_ORIGIN],
+        allowedOriginPattern: PREVIEW_PATTERN,
+      });
     }, 30_000);
 
     afterAll(async () => {
@@ -105,7 +113,29 @@ describe.skipIf(!testDatabaseUrl)(
           ok: null,
         });
       } finally {
-        await seedSynthetic(db, NOW);
+        await seedSynthetic(db, { now: NOW });
+      }
+    });
+
+    it("rejects unexpected query parameters with 400 and no-store (no CDN cache busting)", async () => {
+      for (const path of ["/v1/meta?x=1", "/v1/status?cachebust=abc"]) {
+        const response = await app.request(path);
+        expect(response.status).toBe(400);
+        expect(response.headers.get("Cache-Control")).toBe(CACHE_CONTROL_NO_STORE);
+        expect(errorResponseSchema.parse(await response.json()).error).toBe(
+          "Unexpected query parameters",
+        );
+      }
+    });
+
+    it("keepExistingMeta leaves existing meta values untouched", async () => {
+      await db.update(meta).set({ value: "42" }).where(eq(meta.key, "data_version"));
+      try {
+        await seedSynthetic(db, { now: NOW, keepExistingMeta: true });
+        const body = metaResponseSchema.parse(await (await app.request("/v1/meta")).json());
+        expect(body.dataVersion).toBe(42);
+      } finally {
+        await seedSynthetic(db, { now: NOW });
       }
     });
 
@@ -151,6 +181,14 @@ describe.skipIf(!testDatabaseUrl)(
         headers: { Origin: "https://evil.example" },
       });
       expect(unknown.headers.get("Access-Control-Allow-Origin")).toBeNull();
+
+      const preview = "https://sr-app-git-feat-x.example.test";
+      const fromPreview = await app.request("/v1/meta", { headers: { Origin: preview } });
+      expect(fromPreview.headers.get("Access-Control-Allow-Origin")).toBe(preview);
+      const lookalike = await app.request("/v1/meta", {
+        headers: { Origin: "https://sr-app-x.example.test.evil.example" },
+      });
+      expect(lookalike.headers.get("Access-Control-Allow-Origin")).toBeNull();
 
       const preflight = await app.request("/v1/meta", {
         method: "OPTIONS",

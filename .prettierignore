@@ -11,3 +11,5 @@ apps/app/dist
 .expo
 playwright-report
 test-results
+# apps/api esbuild bundle (generated, gitignored)
+apps/api/api/index.js
