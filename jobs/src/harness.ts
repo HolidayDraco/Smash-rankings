@@ -189,10 +189,12 @@ async function execute(
       };
     } else env = loadEnv(["STARTGG_TOKEN", "DATABASE_URL"], deps.env);
     // Error reports and cron check-ins; a no-op unless SENTRY_DSN is set.
-    monitor = startJobMonitor(job, deps.env ?? process.env, [
-      env.STARTGG_TOKEN ?? "",
-      env.DATABASE_URL ?? "",
-    ]);
+    monitor = startJobMonitor(
+      job,
+      deps.env ?? process.env,
+      [env.STARTGG_TOKEN ?? "", env.DATABASE_URL ?? ""],
+      { dryRun: args.dryRun },
+    );
   } catch (error) {
     if (error instanceof UsageError || error instanceof MissingEnvError) {
       process.stderr.write(`${job}: ${error.message}\n`);

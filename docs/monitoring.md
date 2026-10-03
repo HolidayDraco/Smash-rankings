@@ -10,6 +10,13 @@ Sentry is a service that emails us when something breaks, with enough detail to 
 | Vercel env vars (API project)    | `SENTRY_DSN`             | API crashes                       |
 | Vercel env vars (app project)    | `EXPO_PUBLIC_SENTRY_DSN` | Website crashes (DSNs are public) |
 
+Notes:
+
+- **Jobs:** the GitHub secret only takes effect once the scheduled-jobs workflow (`.github/workflows/ingest.yml`, PR #16) passes `SENTRY_DSN` and `SENTRY_CRONS` to the sync and rate steps. That is a follow-up after #16 merges.
+- **Typos break the deploy:** a `SENTRY_DSN` that isn't a valid web address stops the API (and the jobs) from starting, with an error naming `SENTRY_DSN`. This is deliberate ("fail fast"), so a bad value is noticed instead of silently turning alerts off.
+- **Missed-run monitors only count real scheduled runs.** Test runs (`--dry-run`) and runs on your own computer report errors but never check in, so they can't create stray monitors.
+- In Sentry's project settings for the website, also turn on **"Prevent Storing of IP Addresses"** as a second safety net.
+
 ## Alerts Clay will get
 
 - **Failed sync** or **failed rate**: the job's error, tagged `job:sync` or `job:rate`.

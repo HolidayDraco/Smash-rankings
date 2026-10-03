@@ -9,7 +9,8 @@ export const STARTGG_AUTH_MESSAGE = "start.gg token rejected (expired?)";
 const FLUSH_TIMEOUT_MS = 5000;
 
 /**
- * Sentry cron monitors, matching .github/workflows/ingest.yml. Sentry raises "missed check-in" when a
+ * Sentry cron monitors. They must match the sync schedule and timeout-minutes in
+ * .github/workflows/ingest.yml (added by the scheduled-jobs PR, #16). Sentry raises "missed check-in" when a
  * run doesn't start within the margin, and "timeout" past maxRuntime (the workflow's timeout-minutes).
  * Extra Fri-Mon runs at odd hours are simply extra check-ins.
  */
@@ -45,8 +46,13 @@ const OFF: JobMonitor = { succeeded: async () => undefined, failed: async () => 
 
 /** SENTRY_CRONS: unset or "1" = all monitors, "0" = none, or a list like "sync" (free-plan quota). */
 function monitoredJobs(value: string | undefined): (job: JobName) => boolean {
-  if (!value || value === "1") return () => true;
-  const names = value.split(",").map((name) => name.trim());
+  if (!value || value.trim() === "1") return () => true;
+  if (value.trim() === "0") return () => false;
+  const names = value.split(",").map((name) => name.trim().toLowerCase());
+  const unknown = names.filter((name) => !(name in CRON_MONITORS));
+  if (unknown.length > 0) {
+    process.stderr.write(`SENTRY_CRONS: ignoring unknown monitor(s): ${unknown.join(", ")}\n`);
+  }
   return (job) => names.includes(job);
 }
 
@@ -64,11 +70,16 @@ function scrubbedError(error: unknown, message: string): Error {
 /**
  * Starts Sentry for one job run when SENTRY_DSN is set (otherwise a no-op), and opens its cron
  * check-in. Throws MissingEnvError (by name) if SENTRY_DSN is set but malformed.
+ *
+ * Check-ins are sent only for real scheduled runs (not --dry-run, and only inside GitHub Actions):
+ * Sentry tracks a monitor per environment, so one local run would create a "local" monitor that then
+ * alerts on every missed check-in forever. Errors are still reported from any run.
  */
 export function startJobMonitor(
   job: JobName,
   env: Record<string, string | undefined>,
   secrets: readonly string[],
+  { dryRun }: { dryRun: boolean },
 ): JobMonitor {
   const { SENTRY_DSN } = loadOptionalEnv(["SENTRY_DSN"], env);
   if (!SENTRY_DSN) return OFF;
@@ -84,7 +95,9 @@ export function startJobMonitor(
     initialScope: { tags: { job } },
     ...createSentryScrubber(secrets),
   });
-  const monitorConfig = monitoredJobs(env.SENTRY_CRONS)(job) ? CRON_MONITORS[job] : undefined;
+  const scheduledRun = !dryRun && env.GITHUB_ACTIONS === "true";
+  const monitorConfig =
+    scheduledRun && monitoredJobs(env.SENTRY_CRONS)(job) ? CRON_MONITORS[job] : undefined;
   const checkInId = monitorConfig
     ? Sentry.captureCheckIn({ monitorSlug: job, status: "in_progress" }, monitorConfig)
     : undefined;

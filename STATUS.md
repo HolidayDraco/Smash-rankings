@@ -394,7 +394,7 @@ Because the website is built ahead of time, one shared player page loads each pl
 
 Details are in `docs/monitoring.md`.
 
-**What's next:** Methodology and status pages (built, PR next). The scheduled data workflow (#16) is on hold for the Texas scope question.
+**What's next:** Methodology and status pages (built, PR next). The scheduled data workflow (#16) is on hold for the Texas scope question. Once #16 merges, a small follow-up passes `SENTRY_DSN` to the sync and rate steps, so job alerts actually turn on.
 
 **Questions for Clay:**
 1. To turn on alerts:
