@@ -142,3 +142,28 @@ Also includes the weekly rating-period helper, the eligibility rule (10+ sets, 3
 **Questions for Clay:** Claude updated the worked-example rule in `CLAUDE.md` to note the paper's rounding (the numbers you listed, 1464.06 / 151.52 / 0.05999, are still checked). Under your auto-merge rule this merged without waiting. If you'd rather that rule stay word-for-word, say so and Claude will revert just that line.
 
 **Questions for Genghis:** Does the worked-example test approach (exact values asserted tightly, plus the paper's printed figures within 0.01 and σ within 0.00001) look right to you?
+
+---
+
+## 2026-10-03 — Phase 0: start.gg client
+
+**Date:** October 3, 2026
+
+**What changed:** Added `packages/startgg`, the only code allowed to talk to start.gg. It:
+
+- **Paces itself** to at most 60 requests a minute (start.gg's hard limit is 80), and a test proves it never goes over in any 60-second window.
+- **Backs off and retries** when start.gg says "slow down" or has a server hiccup, and **asks for smaller pages** when start.gg says a request is too big.
+- **Stops immediately on a bad or expired token** (no pointless retries), so the alert is loud.
+- **Never writes the token into logs** (tested).
+- **Asks only for the fields we store** (start.gg's "minimum data" rule): tournaments, events, sets, and placements, with player tags and ids. No emails, no locations yet.
+- **Turns DQs into a flag** so the ranking math can skip them.
+
+Because this environment can't reach start.gg, the list of start.gg fields our code can use (the "schema") is a hand-trimmed copy, and the test data is made up (fake player tags, clearly labeled "synthetic"). Scripts to refresh both from the real API are included for when a token and network access exist. What still needs checking against live start.gg is listed in `docs/startgg-notes.md`.
+
+**Rough cost:** a 2,000-player event is about 120 requests, roughly 2 minutes at our pace.
+
+**What's next:** App shell + style guide PR, then Phase 1: the discover job.
+
+**Questions for Clay:** To let Claude check against the real start.gg, add both `api.start.gg` and `developer.start.gg` to this cloud environment's network allowlist, and provide the token (see the setup list in `docs/plans/phase-0.md`).
+
+**Questions for Genghis:** None.
