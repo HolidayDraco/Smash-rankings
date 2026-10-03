@@ -69,6 +69,10 @@ export interface PageResult<T> {
   page: number;
   perPage: number;
   totalPages: number;
+  /** start.gg's pageInfo.total (all rows, not just this page); null when it did not say. */
+  total: number | null;
+  /** Rows on this page that normalization dropped (byes, teams, entrants without a player). */
+  skipped: number;
   /** Save this as the checkpoint (events.sync_cursor); null when finished. */
   nextCursor: Cursor | null;
 }
@@ -231,7 +235,11 @@ export function createStartggClient(options: StartggClientOptions) {
     variables: Record<string, unknown>,
     defaultPerPage: number,
     pageOptions: PageOptions,
-    select: (data: TData) => { totalPages: number | null; nodes: (TNode | null)[] } | null,
+    select: (data: TData) => {
+      totalPages: number | null;
+      total?: number | null;
+      nodes: (TNode | null)[];
+    } | null,
     toItem: (node: TNode) => TItem | null,
     keyOf: (node: TNode) => number,
   ): AsyncGenerator<PageResult<TItem>> {
@@ -258,11 +266,14 @@ export function createStartggClient(options: StartggClientOptions) {
       const totalPages = connection.totalPages ?? (nodes.length < perPage ? page : page + 1);
       const nextCursor = page < totalPages ? { page: page + 1, perPage } : null;
       log({ event: "startgg.page", queryName, page, perPage, objects: nodes.length, totalPages });
+      const items = fresh.map(toItem).filter((i): i is TItem => i !== null);
       yield {
-        items: fresh.map(toItem).filter((i): i is TItem => i !== null),
+        items,
+        skipped: fresh.length - items.length,
         page,
         perPage,
         totalPages,
+        total: connection.total ?? null,
         nextCursor,
       };
       if (!nextCursor) return;
@@ -314,7 +325,11 @@ export function createStartggClient(options: StartggClientOptions) {
         pageOptions,
         (d) =>
           d.event?.sets
-            ? { totalPages: d.event.sets.pageInfo?.totalPages ?? null, nodes: d.event.sets.nodes }
+            ? {
+                totalPages: d.event.sets.pageInfo?.totalPages ?? null,
+                total: d.event.sets.pageInfo?.total ?? null,
+                nodes: d.event.sets.nodes,
+              }
             : null,
         (s): NormalizedSet | null => normalizeSet(s, eventId),
         (s) => s.id,
@@ -334,6 +349,7 @@ export function createStartggClient(options: StartggClientOptions) {
           d.event?.standings
             ? {
                 totalPages: d.event.standings.pageInfo?.totalPages ?? null,
+                total: d.event.standings.pageInfo?.total ?? null,
                 nodes: d.event.standings.nodes,
               }
             : null,

@@ -1,0 +1,49 @@
+{
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "data": {
+    "event": {
+      "id": 9002,
+      "standings": {
+        "pageInfo": {
+          "total": 3,
+          "totalPages": 1
+        },
+        "nodes": [
+          {
+            "placement": 1,
+            "entrant": {
+              "id": 201,
+              "participants": [
+                {
+                  "player": {
+                    "id": 5
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "placement": 2,
+            "entrant": {
+              "id": 202,
+              "participants": [
+                {
+                  "player": {
+                    "id": 6
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "placement": 3,
+            "entrant": {
+              "id": 203,
+              "participants": []
+            }
+          }
+        ]
+      }
+    }
+  }
+}

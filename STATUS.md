@@ -255,3 +255,26 @@ ADR-0001's cache time was corrected to 15 minutes to match the plan.
 **Questions for Clay:** When you connect Vercel, the API is a **second** Vercel project from the same repo: Root Directory `apps/api`, Framework "Other", plus `DATABASE_URL` and `ALLOWED_ORIGINS` (the app's web address) as environment variables.
 
 **Questions for Genghis:** In `/v1/status`, a run that hit its time limit and will resume next time ("partial") counts as ok. Agree?
+
+---
+
+## 2026-10-03 — Phase 1: sync job
+
+**Date:** October 3, 2026
+
+**What changed:** Added the `sync` job (`pnpm job:sync`). For each event that counts, it pulls the sets (who beat whom and the game score), the final placings, and the players (tag, sponsor prefix, start.gg profile link). In plain terms:
+
+- **Picks up where it left off.** It saves its place after every page, so a stopped run resumes without missing or doubling anything.
+- **Catches bracket fixes.** About three days after an event starts, it re-checks it once. Events still in progress are re-read from the start each run so they stay fresh.
+- **Never fetches online events**, per Genghis: they're stored as names and dates only.
+- **DQs** are saved with a "DQ" flag and no score, so the ranking math skips them.
+- **One bad event doesn't stop the rest.** It's marked "error" and retried next time. A bad or expired token stops everything loudly.
+- **Budget:** about 4 start.gg requests for a 64-player event and about 16 for a 256-player one. One run handles up to 25 events, which takes roughly 2–7 minutes at our pace.
+
+Each set is tagged with its week number (week 2960 is the week of Oct 3, 2026), which is what the weekly ratings use.
+
+**What's next:** The backfill (12 months of history) and the scheduled workflow, then the rate job.
+
+**Questions for Clay:** None.
+
+**Questions for Genghis:** None open. Genghis decided that an event that keeps failing stays uncapped for now. After the live check (P1-12), if such events show up, the sync job will stop after 3 consecutive errors and "park" the event until someone re-runs it by hand with `--event`. Genghis also caught that per-event error messages weren't scrubbed of secrets, and that's fixed in this PR.

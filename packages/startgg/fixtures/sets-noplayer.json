@@ -1,0 +1,119 @@
+{
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "data": {
+    "event": {
+      "id": 9002,
+      "sets": {
+        "pageInfo": {
+          "total": 2,
+          "totalPages": 1
+        },
+        "nodes": [
+          {
+            "id": 7101,
+            "completedAt": 1760100000,
+            "winnerId": 201,
+            "displayScore": "FakeEcho 3 - FakeFoxtrot 0",
+            "fullRoundText": "Grand Final",
+            "slots": [
+              {
+                "entrant": {
+                  "id": 201,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 5,
+                        "gamerTag": "FakeEcho",
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fake5"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 3
+                    }
+                  }
+                }
+              },
+              {
+                "entrant": {
+                  "id": 202,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 6,
+                        "gamerTag": "FakeFoxtrot",
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fake6"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 0
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": 7102,
+            "completedAt": 1760100100,
+            "winnerId": 201,
+            "displayScore": "FakeEcho 3 - 0",
+            "fullRoundText": "Winners Round 1",
+            "slots": [
+              {
+                "entrant": {
+                  "id": 201,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 5,
+                        "gamerTag": "FakeEcho",
+                        "prefix": null,
+                        "user": {
+                          "slug": "user/fake5"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 3
+                    }
+                  }
+                }
+              },
+              {
+                "entrant": {
+                  "id": 203,
+                  "participants": []
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 0
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

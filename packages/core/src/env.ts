@@ -37,3 +37,15 @@ export function loadEnv<const K extends EnvKey>(
   if (badKeys.length > 0) throw new MissingEnvError(badKeys);
   return values as Pick<Env, K>;
 }
+
+/**
+ * Like loadEnv, but a variable that is not set is simply left out. One that is
+ * set and malformed still fails fast (by name only).
+ */
+export function loadOptionalEnv<const K extends EnvKey>(
+  keys: readonly K[],
+  source: Record<string, string | undefined> = process.env,
+): Partial<Pick<Env, K>> {
+  const present = keys.filter((key) => source[key] !== undefined && source[key] !== "");
+  return loadEnv(present, source) as Partial<Pick<Env, K>>;
+}

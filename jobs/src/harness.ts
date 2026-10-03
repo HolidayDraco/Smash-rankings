@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { eq } from "drizzle-orm";
-import { loadEnv, MissingEnvError } from "@sr/core";
+import { loadEnv, loadOptionalEnv, MissingEnvError } from "@sr/core";
 import { createDb, ingestRuns, type Database } from "@sr/db";
 import { createStartggClient, type StartggClient, type StartggClientOptions } from "@sr/startgg";
 
@@ -18,6 +18,8 @@ export interface JobArgs {
   timeBudgetMinutes: number;
   from?: Date;
   to?: Date;
+  /** Sync only this start.gg event id (manual use). Ignores start_at and the done status. */
+  event?: number;
 }
 
 export class UsageError extends Error {
@@ -43,6 +45,7 @@ export function parseJobArgs(argv: string[]): JobArgs {
         "time-budget-minutes": { type: "string", default: "20" },
         from: { type: "string" },
         to: { type: "string" },
+        event: { type: "string" },
       },
     }));
   } catch (error) {
@@ -53,7 +56,11 @@ export function parseJobArgs(argv: string[]): JobArgs {
   const from = parseDate("--from", values.from);
   const to = parseDate("--to", values.to);
   if (from && to && from >= to) throw new UsageError("--from must be earlier than --to");
-  return { dryRun: values["dry-run"], timeBudgetMinutes, from, to };
+  const event = values.event === undefined ? undefined : Number(values.event);
+  if (event !== undefined && !(Number.isInteger(event) && event > 0)) {
+    throw new UsageError("--event must be a start.gg event id (a positive whole number)");
+  }
+  return { dryRun: values["dry-run"], timeBudgetMinutes, from, to, event };
 }
 
 export interface Deadline {
@@ -81,10 +88,14 @@ export interface JobContext {
   client: StartggClient;
   /** Null in a dry run (the job must not need the database to preview). */
   db: Database | null;
+  /** Read-only access (SELECTs only, by type): the real database in a run, or in a dry run when DATABASE_URL happens to be set. */
+  readDb: Pick<Database, "select"> | null;
   deadline: Deadline;
   now: () => number;
   /** Running totals, so a failed run still records how far it got. */
   progress: { eventsTouched: number };
+  /** Error text with the token and database URL scrubbed. Use this for any log line. */
+  redact: (error: unknown) => string;
 }
 
 export interface JobResult {
@@ -120,7 +131,7 @@ export async function runJob(
   try {
     args = parseJobArgs(argv);
     env = args.dryRun
-      ? loadEnv(["STARTGG_TOKEN"], deps.env)
+      ? { ...loadEnv(["STARTGG_TOKEN"], deps.env), ...loadOptionalEnv(["DATABASE_URL"], deps.env) }
       : loadEnv(["STARTGG_TOKEN", "DATABASE_URL"], deps.env);
   } catch (error) {
     if (error instanceof UsageError || error instanceof MissingEnvError) {
@@ -130,6 +141,7 @@ export async function runJob(
     throw error;
   }
   const secrets = [env.STARTGG_TOKEN, env.DATABASE_URL ?? ""];
+  // A dry run never requires the database, but uses it (read-only) when one is configured.
   const database = env.DATABASE_URL ? createDb(env.DATABASE_URL, { maxConnections: 2 }) : null;
   const client = createStartggClient({
     ...deps.clientOptions,
@@ -138,7 +150,7 @@ export async function runJob(
   let runId: number | null = null;
   const progress = { eventsTouched: 0 };
   try {
-    if (database) {
+    if (database && !args.dryRun) {
       const [row] = await database.db
         .insert(ingestRuns)
         .values({ job, status: "running" })
@@ -148,10 +160,12 @@ export async function runJob(
     const ctx: JobContext = {
       args,
       client,
-      db: database?.db ?? null,
+      db: args.dryRun ? null : (database?.db ?? null),
+      readDb: database?.db ?? null,
       deadline: createDeadline(args.timeBudgetMinutes, now),
       now,
       progress,
+      redact: (error) => redactError(error, secrets),
     };
     const result = await body(ctx);
     out(
@@ -166,13 +180,14 @@ export async function runJob(
   } catch (error) {
     const message = redactError(error, secrets);
     process.stderr.write(`${job} failed: ${message}\n`);
+    const usage = error instanceof UsageError;
     await finishRun(database?.db, runId, {
       status: "error",
       requestsUsed: client.requestsUsed,
       eventsTouched: progress.eventsTouched,
       error: message,
     }).catch(() => undefined);
-    return EXIT_JOB_FAILED;
+    return usage ? EXIT_USAGE : EXIT_JOB_FAILED;
   } finally {
     await database?.close();
   }
