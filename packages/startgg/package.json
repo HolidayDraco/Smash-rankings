@@ -11,7 +11,8 @@
     "schema:pull": "tsx scripts/pull-schema.ts",
     "fixtures:record": "tsx scripts/record-fixtures.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "live:check": "tsx scripts/live-check.ts"
   },
   "dependencies": {
     "@graphql-typed-document-node/core": "3.2.0",

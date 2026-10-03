@@ -21,6 +21,19 @@ and has no token. Replace it with the real schema:
 - Tournaments query by `videogameIds` with `afterDate`/`beforeDate`, `sortBy: "startAt asc"`.
 - Per-slot score is `slots.standing.stats.score.value`.
 
+## How to run the live check
+
+Needs `STARTGG_TOKEN` and network access to `api.start.gg`. It uses about 4 to 5 requests, at most 25 (hard stop).
+
+```
+STARTGG_TOKEN=... pnpm live:check -- --out live-check.md
+```
+
+- It prints a plain-English report: whether `TournamentPageFilter` has `addrState` / `countryCode` filters, whether `SetFilters` has `updatedAfter` and `state`, the `Event.type` description, the real `addrState` / `countryCode` values (and how many our region rule accepts), whether ids are numbers or strings, and, for one completed Texas 16+ singles event, sets and standings totals, DQ signals, `Player.user.slug` visibility, and rough objects per page.
+- `--record` also saves scrubbed raw responses to `packages/startgg/fixtures/live/` (`pnpm --filter @sr/startgg fixtures:record` does the same). Gamer tags become `Player N`, prefixes and slugs are blanked. Check the files before committing.
+- `--max-requests N` changes the cap. Exit code 2 means some step errored (the report lists them).
+- Afterwards, move each answered item below out of "Pending live check" and fix any code it contradicts.
+
 ## Pending live check
 
 - **Error shapes.** We match on message text (`rate limit exceeded`, `complexity`, `invalid authentication token`) and HTTP 429/401/403/5xx. Real bodies may differ slightly. Fixtures `error-*.json` are guesses.

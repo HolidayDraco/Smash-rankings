@@ -37,6 +37,7 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 - `pnpm job:discover -- --dry-run`: find events in the last 14 / next 30 days without writing to the DB (`--from` / `--to` override the window)
 - `pnpm job:sync -- --dry-run`: fetch sets/standings for qualifying events without writing (`--event <id>` for one event). Needs `DATABASE_URL` even in dry runs. A real run first runs discover if none succeeded in 24 h (`--skip-discover` to skip)
 - `pnpm job:backfill`: walk back month by month (`-- --months 12`, max 24; default time budget 75 min), resuming from `meta.backfill_cursor`. `-- --dry-run` prints the plan and a rough request estimate
+- `pnpm live:check`: one-off first check against start.gg (needs `STARTGG_TOKEN` and network; about 5 requests, hard cap 25). `-- --out report.md` saves the report, `-- --record` saves scrubbed fixtures to `packages/startgg/fixtures/live/`
 - `pnpm job:rate`: recompute ratings and rebuild the leaderboard. Needs only `DATABASE_URL`. `-- --dry-run` prints the top 20 without writing; `-- --as-of 2026-09-01` previews ratings as of a past date (always a dry run; never writes)
 
 ## start.gg rules (IMPORTANT: Terms of Use and rate limits)

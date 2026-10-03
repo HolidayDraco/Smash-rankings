@@ -22,6 +22,7 @@
     "job:sync": "pnpm --filter @sr/jobs sync",
     "job:rate": "pnpm --filter @sr/jobs rate",
     "job:backfill": "pnpm --filter @sr/jobs backfill",
+    "live:check": "pnpm --filter @sr/startgg live:check",
     "db:seed": "pnpm --filter @sr/db db:seed"
   },
   "devDependencies": {
