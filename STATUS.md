@@ -105,3 +105,17 @@ This follows the auto-merge rule from PR #2: Claude merges its own PRs once chec
 **Review fixes (code-reviewer):** The worked-example test tolerance now matches the paper's real precision (see ADR-0002 item 9). The data-job schedule no longer lets a long backfill starve the 2-hourly sync or silently drop the daily discover: backfill is capped at ~75 minutes a night, and discover runs inside sync. Weekend hourly sync no longer double-fires on even hours. The player URL is `/player/1234-tagname` (a valid route). API caching is longer (15 min), so the free Neon database sleeps more. Extra history beyond 12 months is display-only unless Clay decides otherwise. The leaderboard API returns only the top 100, with no paging, so it can't be used to bulk-copy data. Clay's branch-protection step now says to set required approvals to 0, or Claude couldn't self-merge.
 
 **Questions for Genghis:** None open. Genghis confirmed on PR #4 that re-rating the current, unfinished week on every run is right for the "live" feel. Genghis also said not to wait on Clay for the seven defaults above, so Claude uses them unless Clay says otherwise.
+
+---
+
+## 2026-10-03 — Phase 0: database schema
+
+**Date:** October 3, 2026
+
+**What changed:** Added `packages/db`, the layout of our database ("schema") and the first "migration" (the script that creates the tables). There are nine tables: tournaments, events, players, sets, standings, rating history, the leaderboard, a log of every data-job run, and a small settings table. The database itself enforces some rules: a set can't have the same winner and loser, a score can't be negative, and nothing can point at a player who doesn't exist. An automatic test builds the whole database from scratch in a throwaway Postgres on every PR, runs the setup twice to prove re-running is safe, and checks each table. Only fields the app shows or needs are stored (start.gg's "minimum data" rule).
+
+**What's next:** Ranking engine, start.gg client, and app shell PRs, then Phase 1's data jobs.
+
+**Questions for Clay:** None new. The Neon setup ask above still stands; the app can't save real data until it exists.
+
+**Questions for Genghis:** The leaderboard is rebuilt by deleting and re-inserting it in one database transaction, instead of the blueprint's "build a new table and swap" approach, because a swap would drop the safety links (foreign keys) to the players table. Readers never see a half-built leaderboard either way. OK?
