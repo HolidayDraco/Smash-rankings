@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { createStartggClient } from "./client";
-import { renderReport, runLiveCheck, scrubRecorded } from "./live-check";
+import { parseLiveCheckArgs, renderReport, runLiveCheck, scrubRecorded } from "./live-check";
 
 const TOKEN = ["fake", "tok", "en123"].join("-");
 
@@ -24,10 +24,14 @@ interface World {
   idsAsStrings?: boolean;
   noTexasEvent?: boolean;
   rateLimitFirst?: boolean;
+  complexityAbove?: number;
+  setPages?: number;
+  weirdSets?: boolean;
 }
 
 function fakeClient(world: World = {}) {
   const queries: string[] = [];
+  const sent: { query: string; variables?: { page?: number; perPage?: number } }[] = [];
   const id = (n: number) => (world.idsAsStrings ? String(n) : n);
   let limited = world.rateLimitFirst ?? false;
   const tournament = (n: number, state: string) => ({
@@ -64,8 +68,12 @@ function fakeClient(world: World = {}) {
     },
     standing: { stats: { score: { value: n === 2 ? -1 : 3 } } },
   });
-  const respond = (body: { query: string }): { status?: number; json: Json } => {
+  const respond = (body: {
+    query: string;
+    variables?: { page?: number; perPage?: number };
+  }): { status?: number; json: Json } => {
     queries.push(body.query);
+    sent.push(body);
     if (body.query.includes("LiveCheckSchema")) {
       const field = (name: string, ofType: string) => ({
         name,
@@ -88,7 +96,7 @@ function fakeClient(world: World = {}) {
         },
       };
     }
-    if (body.query.includes("LiveCheckTexas")) {
+    if (body.query.includes("LiveCheckState")) {
       return {
         json: {
           data: {
@@ -98,6 +106,9 @@ function fakeClient(world: World = {}) {
       };
     }
     if (body.query.includes("TournamentsPage")) {
+      if (world.complexityAbove && (body.variables?.perPage ?? 0) > world.complexityAbove) {
+        return { json: { errors: [{ message: "Query complexity too high" }] } };
+      }
       if (limited) {
         limited = false;
         return { status: 200, json: { errors: [{ message: "Rate limit exceeded - api-token" }] } };
@@ -113,14 +124,19 @@ function fakeClient(world: World = {}) {
         },
       };
     }
+    if (body.query.includes("LiveCheckAllSets")) {
+      return { json: { data: { event: { sets: { pageInfo: { total: 33 } } } } } };
+    }
     if (body.query.includes("EventSetsPage")) {
+      if (world.weirdSets)
+        return { json: { data: { event: { id: id(1), sets: { pageInfo: null, nodes: null } } } } };
       return {
         json: {
           data: {
             event: {
               id: id(1),
               sets: {
-                pageInfo: { total: 31, totalPages: 1 },
+                pageInfo: { total: 31, totalPages: world.setPages ?? 1 },
                 nodes: [
                   {
                     id: id(100),
@@ -167,11 +183,16 @@ function fakeClient(world: World = {}) {
     logger: () => undefined,
     random: () => 0,
     fetch: async (_url, init) => {
-      const { status = 200, json } = respond(JSON.parse(String(init.body)) as { query: string });
+      const { status = 200, json } = respond(
+        JSON.parse(String(init.body)) as {
+          query: string;
+          variables?: { page?: number; perPage?: number };
+        },
+      );
       return new Response(JSON.stringify(json), { status });
     },
   });
-  return { client, queries };
+  return { client, queries, sent };
 }
 
 describe("live check report", () => {
@@ -184,8 +205,8 @@ describe("live check report", () => {
       hasSetStateFilter: true,
     });
     expect(result.schema?.eventTypeDescription).toContain("Type of event");
-    expect(result.texasFilterProbe).toMatchObject({ total: 120, accepted: 1 });
-    expect(queries.some((q) => q.includes("LiveCheckTexas"))).toBe(true);
+    expect(result.stateFilterProbe).toMatchObject({ total: 120, requestsPerRun: 6, accepted: 1 });
+    expect(queries.some((q) => q.includes("LiveCheckState"))).toBe(true);
     expect(renderReport(result)).toContain("addrState (filter by state on start.gg's side): YES");
   });
 
@@ -193,7 +214,7 @@ describe("live check report", () => {
     const { client, queries } = fakeClient({ addrStateFilter: false });
     const result = await runLiveCheck(client);
     expect(result.schema?.hasAddrStateFilter).toBe(false);
-    expect(queries.some((q) => q.includes("LiveCheckTexas"))).toBe(false);
+    expect(queries.some((q) => q.includes("LiveCheckState"))).toBe(false);
     expect(renderReport(result)).toContain("addrState (filter by state on start.gg's side): no");
   });
 
@@ -206,7 +227,7 @@ describe("live check report", () => {
     expect(full.tournaments?.acceptedByLaunchRegion).toBe(1);
     const odd = await runLiveCheck(fakeClient({ addrState: "TEX." }).client);
     expect(odd.tournaments?.acceptedByLaunchRegion).toBe(0);
-    expect(odd.tournaments?.texasLookingRejected).toEqual(["TEX."]);
+    expect(odd.tournaments?.regionLookingRejected).toEqual(["TEX."]);
     expect(renderReport(odd)).toContain("WARNING");
     const usa = await runLiveCheck(fakeClient({ countryCode: "USA" }).client);
     expect(usa.tournaments?.countryCodes).toEqual({ USA: 12 });
@@ -224,42 +245,92 @@ describe("live check report", () => {
     expect(renderReport(strings)).toContain("tournament id: string");
   });
 
-  it("summarises the sample event: totals, slug visibility, DQ signals", async () => {
+  it("summarises the sample event: totals, slug visibility, DQ signals, type tally", async () => {
     const result = await runLiveCheck(fakeClient().client);
-    expect(result.event).toMatchObject({
-      eventType: 1,
-      completedSetsTotal: 31,
-      standingsTotal: 32,
-      setsOnPage: 2,
+    expect(result.event?.sets).toMatchObject({
+      completedTotal: 31,
+      firstPageSets: 2,
+      lastPageSets: null,
       userSlugVisible: { visible: 3, players: 3 },
     });
-    expect(result.event?.objectsPerSetsPage).toBeGreaterThan(10);
-    expect(result.event?.dq).toMatchObject({
+    expect(result.event?.allSetsTotal).toBe(33);
+    expect(result.event?.standings).toMatchObject({ total: 32, onPage: 1 });
+    expect(result.event?.sets?.objectsPerPage).toBeGreaterThan(10);
+    expect(result.event?.sets?.dq).toMatchObject({
       displayScoreDq: 1,
       scoreMinusOne: 1,
       completedAtNull: 0,
       winnerIdNull: 0,
     });
-    expect(result.event?.dq.examples[0]).toMatchObject({ id: 101, displayScore: "DQ" });
+    expect(result.event?.sets?.dq.examples[0]).toMatchObject({ id: 101, displayScore: "DQ" });
+    expect(result.eventTypes).toEqual({ "type 1 / max players null": 2 });
+    expect(result.tournaments).toMatchObject({ totalInWindow: 700, discoverRequestsPerRun: 35 });
     expect(result.steps.map((s) => s.step)).toEqual([
       "LiveCheckSchema",
       "TournamentsPage",
       "EventSetsPage",
+      "LiveCheckAllSets",
       "EventStandingsPage",
     ]);
-    expect(result.requestsUsed).toBe(4);
+    expect(result.requestsUsed).toBe(5);
+    const text = renderReport(result);
+    expect(text).toContain("discover requests per run: 35");
+    expect(text).toContain("differs");
+  });
+
+  it("uses the discover window: 14 days back to 30 days ahead", async () => {
+    const { client, sent } = fakeClient();
+    const now = Date.UTC(2026, 9, 3);
+    await runLiveCheck(client, { now });
+    const vars = sent.find((r) => r.query.includes("TournamentsPage"))?.variables as Record<
+      string,
+      number
+    >;
+    expect(vars["afterDate"]).toBe(now / 1000 - 14 * 86_400);
+    expect(vars["beforeDate"]).toBe(now / 1000 + 30 * 86_400);
+  });
+
+  it("reads the last sets page too, and honours --event", async () => {
+    const { client, sent } = fakeClient({ setPages: 3 });
+    const result = await runLiveCheck(client, { eventId: 777 });
+    const pages = sent
+      .filter((r) => r.query.includes("EventSetsPage"))
+      .map((r) => r.variables?.page);
+    expect(pages).toEqual([1, 3]);
+    expect(result.event).toMatchObject({ id: 777 });
+    expect(result.event?.sets).toMatchObject({ totalPages: 3, lastPageSets: 2 });
+  });
+
+  it("keeps the reduced page size for later tournament pages", async () => {
+    const { client, sent } = fakeClient({ complexityAbove: 10, noTexasEvent: true });
+    await runLiveCheck(client);
+    const sizes = sent
+      .filter((r) => r.query.includes("TournamentsPage"))
+      .map((r) => r.variables?.perPage);
+    expect(sizes.slice(0, 3)).toEqual([20, 10, 10]);
+    expect(new Set(sizes.slice(1))).toEqual(new Set([10]));
+  });
+
+  it("turns an odd response shape into a finding and keeps the other results", async () => {
+    const result = await runLiveCheck(fakeClient({ weirdSets: true }).client);
+    expect(result.errors.map((e) => [e.step, e.name])).toEqual([["sets", "ParseError"]]);
+    expect(result.event?.sets).toBeNull();
+    expect(result.event?.standings).toMatchObject({ total: 32 });
+    const text = renderReport(result);
+    expect(text).toContain("Sets: failed");
+    expect(text).not.toContain("page size 0");
   });
 
   it("explains when no Texas event is found, within the page cap", async () => {
     const result = await runLiveCheck(fakeClient({ noTexasEvent: true }).client);
     expect(result.event).toBeNull();
-    expect(result.noEventReason).toContain("No completed in-person Texas");
+    expect(result.noEventReason).toContain("No completed in-person TX");
     expect(result.requestsUsed).toBe(7); // schema + page cap, not the 35 pages that exist
   });
 
   it("counts retries toward the request total", async () => {
     const result = await runLiveCheck(fakeClient({ rateLimitFirst: true }).client);
-    expect(result.requestsUsed).toBe(5); // includes the retry
+    expect(result.requestsUsed).toBe(6); // includes the retry
     expect(result.errors).toEqual([]);
   });
 });
@@ -307,26 +378,64 @@ describe("secrets", () => {
 });
 
 describe("scrubRecorded", () => {
-  it("anonymises tags, prefixes and slugs", () => {
-    expect(
-      scrubRecorded({ player: { gamerTag: "Real", prefix: "TSM", user: { slug: "user/abc" } } }),
-    ).toEqual({
-      player: { gamerTag: "Player 1", prefix: "scrubbed", user: { slug: "scrubbed" } },
+  it("anonymises tags by player id, blanks prefixes and user slugs, keeps tournament slugs", () => {
+    const player = { id: 7, gamerTag: "Real", prefix: "TSM", user: { slug: "user/abc" } };
+    const scrubbed = {
+      id: 7,
+      gamerTag: "Player 7",
+      prefix: "scrubbed",
+      user: { slug: "scrubbed" },
+    };
+    expect(scrubRecorded({ a: player, b: player, tournament: { slug: "tournament/x" } })).toEqual({
+      a: scrubbed,
+      b: scrubbed,
+      tournament: { slug: "tournament/x" },
     });
   });
 });
 
 describe("live-check script", () => {
-  it("fails fast with a clear message when STARTGG_TOKEN is missing, before any request", () => {
+  const runScript = (args: string[]) => {
     const env = { ...process.env };
     delete env["STARTGG_TOKEN"];
-    const run = spawnSync("pnpm", ["exec", "tsx", "scripts/live-check.ts"], {
+    return spawnSync("pnpm", ["exec", "tsx", "scripts/live-check.ts", ...args], {
       cwd: new URL("..", import.meta.url),
       env,
       encoding: "utf8",
     });
+  };
+  it("fails fast with a clear message when STARTGG_TOKEN is missing, before any request", () => {
+    const run = runScript([]);
     expect(run.status).toBe(1);
     expect(run.stderr).toContain("STARTGG_TOKEN");
     expect(run.stdout).toBe("");
   }, 30_000);
+
+  it("accepts the literal -- that pnpm passes, with --out", () => {
+    const run = runScript(["--", "--out", "report.md"]);
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("STARTGG_TOKEN");
+    expect(run.stderr).not.toContain("Bad arguments");
+  }, 30_000);
+});
+
+describe("parseLiveCheckArgs", () => {
+  it("defaults, strips a leading --, and reads the flags", () => {
+    expect(parseLiveCheckArgs([])).toMatchObject({ maxRequests: 25, record: false });
+    expect(parseLiveCheckArgs(["--", "--out", "x.md", "--record", "--event", "42"])).toEqual({
+      out: "x.md",
+      record: true,
+      maxRequests: 25,
+      event: 42,
+    });
+  });
+  it("rejects a bad --max-requests instead of disabling the cap", () => {
+    for (const bad of ["abc", "0", "-3", "1.5", "51", ""]) {
+      expect(() => parseLiveCheckArgs(["--max-requests", bad])).toThrow();
+    }
+    expect(parseLiveCheckArgs(["--max-requests", "50"]).maxRequests).toBe(50);
+  });
+  it("rejects a bad --event", () => {
+    expect(() => parseLiveCheckArgs(["--event", "x"])).toThrow();
+  });
 });

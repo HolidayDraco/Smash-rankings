@@ -23,15 +23,15 @@ and has no token. Replace it with the real schema:
 
 ## How to run the live check
 
-Needs `STARTGG_TOKEN` and network access to `api.start.gg`. It uses about 4 to 5 requests, at most 25 (hard stop).
+Needs `STARTGG_TOKEN` and network access to `api.start.gg`. It uses about 7 requests. The cap is 25 (`--max-requests`, 1 to 50), plus at most 2 retries of the last call (the script allows 3 attempts per call). A typical run: 1 introspection, 1 tournaments page, 1 state-filter probe (only if the filter exists), 2 sets pages (first and last), 1 unfiltered set count, 1 standings page. If no Texas event is on the first page it reads up to 5 more tournament pages.
 
 ```
 STARTGG_TOKEN=... pnpm live:check -- --out live-check.md
 ```
 
-- It prints a plain-English report: whether `TournamentPageFilter` has `addrState` / `countryCode` filters, whether `SetFilters` has `updatedAfter` and `state`, the `Event.type` description, the real `addrState` / `countryCode` values (and how many our region rule accepts), whether ids are numbers or strings, and, for one completed Texas 16+ singles event, sets and standings totals, DQ signals, `Player.user.slug` visibility, and rough objects per page.
-- `--record` also saves scrubbed raw responses to `packages/startgg/fixtures/live/` (`pnpm --filter @sr/startgg fixtures:record` does the same). Gamer tags become `Player N`, prefixes and slugs are blanked. Check the files before committing.
-- `--max-requests N` changes the cap. Exit code 2 means some step errored (the report lists them).
+- `--out` is relative to the folder you typed the command in. `--event <id>` checks a specific event instead of picking one. `--record` saves scrubbed raw responses to `packages/startgg/fixtures/live/` (`pnpm --filter @sr/startgg fixtures:record` is the same thing). Gamer tags become `Player <id>`, prefixes and user slugs are blanked; check the files before committing. Exit code 2 means some step errored (the report lists them); 1 means bad arguments or no token.
+- **It answers:** whether `TournamentPageFilter` has `addrState` / `countryCode` filters (and the Texas count and request cost if so); `SetFilters` `updatedAfter` and `state`; the real `addrState` / `countryCode` values and how many our region rule accepts; the discover request count for the real window (14 days back, 30 ahead), which answers (d); a tally of `Event.type` with team roster size; number vs string ids; for one completed Texas 16+ singles event, completed vs unfiltered set totals (a), DQ signals on the first and last sets pages (b), `Player.user.slug` visibility (c), standings total, and rough objects per page.
+- **It does NOT answer:** player location (`Player.user.location`), the real error shapes (they only appear if an error happens; the report shows any that do), the Event `sets` sort behaviour during a live event, and (e) the 7-day cap for never-COMPLETED events.
 - Afterwards, move each answered item below out of "Pending live check" and fix any code it contradicts.
 
 ## Pending live check

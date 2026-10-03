@@ -9,7 +9,7 @@
   "scripts": {
     "codegen": "graphql-codegen --config codegen.ts",
     "schema:pull": "tsx scripts/pull-schema.ts",
-    "fixtures:record": "tsx scripts/record-fixtures.ts",
+    "fixtures:record": "tsx scripts/live-check.ts --record",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "live:check": "tsx scripts/live-check.ts"
