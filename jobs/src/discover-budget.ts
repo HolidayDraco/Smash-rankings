@@ -40,6 +40,21 @@ export const setMeta = (db: Pick<Database, "insert">, key: string, value: string
     .onConflictDoUpdate({ target: meta.key, set: { value: sql`excluded.value` } });
 export const deleteMeta = (db: Database, key: string) => db.delete(meta).where(eq(meta.key, key));
 
+/** Reads a JSON meta value. A corrupt value counts as "nothing saved": it is deleted and a warning goes to stderr, so it cannot break every run. */
+export async function readJsonMeta(db: Database, key: string): Promise<unknown> {
+  const text = await getMeta(db, key);
+  if (text === undefined || text === null) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    process.stderr.write(
+      `warning: saved value for "${key}" is not valid JSON; ignoring and deleting it\n`,
+    );
+    await deleteMeta(db, key);
+    return null;
+  }
+}
+
 async function spentToday(db: Pick<Database, "select">, nowMs: number) {
   if ((await getMeta(db, DISCOVER_DAY_KEY)) !== today(nowMs)) return { sync: 0, backfill: 0 };
   return {

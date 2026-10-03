@@ -7,8 +7,10 @@ name: Ingest
 on:
   schedule:
     # Sync: even hours every day, plus odd hours Fri-Mon (so weekends are hourly, no double runs).
-    # The odd hours next to the 07:41 backfill (07:23) are left out, so a sync never queues behind it
-    # and gets dropped (GitHub keeps only one waiting run per concurrency group).
+    # The odd-hour sync at 07:23 is left out to protect the backfill: a running 07:23 sync would make the
+    # 07:41 backfill wait, and the 08:23 sync would then replace the waiting backfill (GitHub keeps only
+    # one waiting run per concurrency group). Once the discover cap is raised and backfill runs long, the
+    # 08:23/09:23 syncs can queue behind it and one may be replaced (see docs/startgg-notes.md).
     # Keep in step with CRON_MONITORS in jobs/src/sentry.ts (schedule, and timeout-minutes as maxRuntime).
     - cron: "23 */2 * * *"
     - cron: "23 1-5/2,9-23/2 * * 5,6,0,1"

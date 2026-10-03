@@ -2,7 +2,13 @@ import { eq } from "drizzle-orm";
 import { meta, type Database } from "@sr/db";
 import { z } from "zod";
 import { DAY_MS } from "./discover";
-import { deleteMeta, discoverBudgeted, getMeta, setMeta } from "./discover-budget";
+import {
+  BACKFILL_DISCOVER_SHARE,
+  deleteMeta,
+  discoverBudgeted,
+  readJsonMeta,
+  setMeta,
+} from "./discover-budget";
 import { isMain, runJob, type JobContext, type JobResult } from "./harness";
 import { MAX_EVENTS_PER_RUN, selectEvents, syncCandidates } from "./sync";
 
@@ -15,8 +21,8 @@ export const BACKFILL_CURSOR_KEY = "backfill_cursor";
 export const BACKFILL_DISCOVER_CURSOR_KEY = "backfill_discover_cursor";
 /** meta key: when the backfill last reached its target (ISO). */
 export const BACKFILL_DONE_KEY = "backfill_done_at";
-/** Rough guesses, NOT measured (see docs/startgg-notes.md): used only for the dry-run estimate. */
-export const ESTIMATE = { discoverPerMonth: 125, qualifyingEventsPerMonth: 150, perEvent: 9 };
+/** Rough Texas guesses, NOT measured (see docs/startgg-notes.md): used only for the dry-run estimate. */
+export const ESTIMATE = { discoverPerMonth: 125, qualifyingEventsPerMonth: 60, perEvent: 3 };
 
 /** First day of the UTC month, `offset` months from `date`. */
 export function monthStart(date: Date, offset: number): Date {
@@ -61,6 +67,10 @@ export async function backfill(ctx: JobContext): Promise<JobResult> {
     const requests =
       windows.length *
       (ESTIMATE.discoverPerMonth + ESTIMATE.qualifyingEventsPerMonth * ESTIMATE.perEvent);
+    // Discover is the bottleneck: backfill may spend only its share of the daily discover budget.
+    const nights = Math.ceil(
+      (windows.length * ESTIMATE.discoverPerMonth) / BACKFILL_DISCOVER_SHARE,
+    );
     out(
       `plan: ${windows.length} month(s), newest first: ${windows.map((w) => day(w.from)).join(", ")}`,
     );
@@ -68,15 +78,13 @@ export async function backfill(ctx: JobContext): Promise<JobResult> {
       eventsTouched: 0,
       summary:
         `would cover ${windows.length} month(s) back to ${day(oldest)}; roughly ${requests} requests ` +
-        `(a guess, about ${Math.round(requests / 60)} minutes at 60 a minute) in nightly runs of ${args.timeBudgetMinutes} minutes`,
+        `(a guess), about ${nights} night(s) because backfill may use ${BACKFILL_DISCOVER_SHARE} discover requests a day`,
     };
   }
 
   let finished = 0;
   let partial = false;
-  const saved = monthProgressSchema.safeParse(
-    JSON.parse((await getMeta(db, BACKFILL_DISCOVER_CURSOR_KEY)) ?? "null"),
-  );
+  const saved = monthProgressSchema.safeParse(await readJsonMeta(db, BACKFILL_DISCOVER_CURSOR_KEY));
   for (const { from, to } of windows) {
     const resumeHere = saved.success && saved.data.from === from.toISOString() ? saved.data : null;
     if (!resumeHere?.done) {

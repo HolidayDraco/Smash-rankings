@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { eq, sql } from "drizzle-orm";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createDb,
   events,
@@ -22,7 +22,14 @@ import {
 import { DISCOVER_DAY_KEY, DISCOVER_SPENT_KEYS } from "./discover-budget";
 import { parseJobArgs, runJob, UsageError } from "./harness";
 import { databaseSizeLine } from "./rate";
-import { SYNC_DISCOVER_CURSOR_KEY, selectEvents, sync } from "./sync";
+import {
+  DISCOVER_MAX_DAYS_BACK,
+  DISCOVER_OVERLAP_MS,
+  SYNC_DISCOVER_CURSOR_KEY,
+  discoverPassStart,
+  selectEvents,
+  sync,
+} from "./sync";
 
 const TOKEN = "SECRET-TOKEN-abc123";
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
@@ -47,6 +54,24 @@ describe("monthsToCover", () => {
     ]);
     expect(all.oldest.toISOString().slice(0, 10)).toBe("2025-09-01");
     expect(monthsToCover(now, 2, new Date("2025-10-01T00:00:00Z")).windows).toHaveLength(1);
+  });
+});
+
+describe("discoverPassStart", () => {
+  const now = Date.parse("2025-11-20T12:00:00Z");
+  const day = 86_400_000;
+  it("uses the usual 3 days back when there was no earlier pass or it was recent", () => {
+    expect(discoverPassStart(now, null).getTime()).toBe(now - 3 * day);
+    expect(discoverPassStart(now, now - 1 * day).getTime()).toBe(now - 3 * day);
+  });
+  it("starts before the previous pass's start after a long gap (outage)", () => {
+    const last = now - 10 * day;
+    expect(discoverPassStart(now, last).getTime()).toBe(last - DISCOVER_OVERLAP_MS);
+  });
+  it("never looks back more than 14 days", () => {
+    expect(discoverPassStart(now, now - 20 * day).getTime()).toBe(
+      now - DISCOVER_MAX_DAYS_BACK * day,
+    );
   });
 });
 
@@ -396,6 +421,78 @@ describe.skipIf(!testDatabaseUrl)(
       expect((await spent()).backfill).toBe(2 + tournamentPages.length);
     });
 
+    const savedFrom = async () =>
+      Date.parse(
+        (JSON.parse((await metaValue(SYNC_DISCOVER_CURSOR_KEY)) ?? "null") as { from: string })
+          .from,
+      );
+
+    it("every new daily discover window starts before the previous pass began, so no start time falls in a gap", async () => {
+      let previousStart: number | null = null;
+      for (let pass = 0; pass < 4; pass++) {
+        nowMs = NOW + pass * 27 * 3_600_000; // the 24 h gate delays each pass
+        const passStart = nowMs;
+        failTournamentsPage = 2; // page 1 saves the window, then the pass is cut short
+        await run("sync", []);
+        const from = await savedFrom();
+        expect(from).toBeLessThanOrEqual(passStart - 3 * 86_400_000);
+        if (previousStart !== null) {
+          expect(from).toBeLessThanOrEqual(previousStart - DISCOVER_OVERLAP_MS);
+        }
+        failTournamentsPage = null;
+        nowMs += 3_600_000; // the pass resumes an hour later and keeps its window
+        await run("sync", []);
+        expect(await metaValue(SYNC_DISCOVER_CURSOR_KEY)).toBeUndefined();
+        previousStart = passStart;
+      }
+    });
+
+    it("after a 10 day outage the new window reaches 10 days back, and after 20 days it stops at 14", async () => {
+      const day = 86_400_000;
+      for (const [daysAgo, expectedBack] of [
+        [10, 10],
+        [20, 14],
+      ] as const) {
+        await db.delete(meta);
+        await db.delete(ingestRuns);
+        await db.insert(meta).values({
+          key: "sync_discover_last_start",
+          value: new Date(NOW - daysAgo * day).toISOString(),
+        });
+        failTournamentsPage = 2;
+        await run("sync", []);
+        const back = (NOW - (await savedFrom())) / day;
+        expect(back).toBeGreaterThanOrEqual(expectedBack);
+        expect(back).toBeLessThanOrEqual(expectedBack + 0.25);
+      }
+    });
+
+    it("a corrupt saved sync discover cursor is ignored, deleted and warned about", async () => {
+      await db.insert(meta).values({ key: SYNC_DISCOVER_CURSOR_KEY, value: "{not json" });
+      const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      try {
+        await run("sync", []);
+        expect(write.mock.calls.join("")).toContain(SYNC_DISCOVER_CURSOR_KEY);
+      } finally {
+        write.mockRestore();
+      }
+      expect(tournamentPages[0]).toBe(1);
+      expect(await metaValue(SYNC_DISCOVER_CURSOR_KEY)).toBeUndefined();
+    });
+
+    it("a corrupt saved backfill cursor is ignored, deleted and warned about", async () => {
+      await db.insert(meta).values({ key: BACKFILL_DISCOVER_CURSOR_KEY, value: "oops" });
+      const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      try {
+        expect(await run("backfill", ["--months", "1"])).toBe(0);
+        expect(write.mock.calls.join("")).toContain(BACKFILL_DISCOVER_CURSOR_KEY);
+      } finally {
+        write.mockRestore();
+      }
+      expect(tournamentPages[0]).toBe(1);
+      expect(await cursor()).toBe("2025-10-01T00:00:00.000Z");
+    });
+
     it("sync discover that throws mid-window resumes at the failed page", async () => {
       failTournamentsPage = 2;
       await run("sync", []);
@@ -477,7 +574,9 @@ describe.skipIf(!testDatabaseUrl)(
       const out: string[] = [];
       expect(await run("backfill", ["--months", "1", "--dry-run"], out)).toBe(0);
       expect(sent).toEqual([]);
-      expect(out.join("\n")).toMatch(/plan: 2 month\(s\)[\s\S]*would cover 2 month\(s\).*requests/);
+      expect(out.join("\n")).toMatch(
+        /plan: 2 month\(s\)[\s\S]*would cover 2 month\(s\).*requests.*about 9 night\(s\)/,
+      );
       expect(await runs()).toHaveLength(0);
       expect(await db.select().from(meta)).toHaveLength(0);
       expect(await db.select().from(events)).toHaveLength(0);

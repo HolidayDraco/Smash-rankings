@@ -24,6 +24,7 @@ import {
   deleteMeta,
   discoverBudgeted,
   getMeta,
+  readJsonMeta,
   remainingDiscoverBudget,
   setMeta,
 } from "./discover-budget";
@@ -448,9 +449,25 @@ export const DISCOVER_EVERY_MS = 24 * HOUR_MS;
 /** meta key: where a budget-limited daily discover stopped, JSON {from, to, cursor}; the next one continues there. */
 export const SYNC_DISCOVER_CURSOR_KEY = "sync_discover_cursor";
 
+/** meta key: when the last completed pass started (ISO). The next pass looks back past it, so no start time falls in a gap. */
+export const SYNC_DISCOVER_LAST_START_KEY = "sync_discover_last_start";
+/** A new pass starts this long before the previous one did. */
+export const DISCOVER_OVERLAP_MS = 6 * HOUR_MS;
+/** Longest look-back after an outage. */
+export const DISCOVER_MAX_DAYS_BACK = 14;
+
+/** Where a new pass starts: the usual 3 days back, or earlier so it overlaps the previous pass's start. */
+export function discoverPassStart(nowMs: number, lastPassStartMs: number | null): Date {
+  const usual = nowMs - DAILY_DISCOVER_DAYS_BACK * DAY_MS;
+  const overlapping = lastPassStartMs === null ? usual : lastPassStartMs - DISCOVER_OVERLAP_MS;
+  return new Date(Math.max(Math.min(usual, overlapping), nowMs - DISCOVER_MAX_DAYS_BACK * DAY_MS));
+}
+
 const syncDiscoverCursorSchema = z.object({
   from: z.string(),
   to: z.string(),
+  /** When this pass began (older saved cursors have none). */
+  startedAt: z.string().optional(),
   cursor: z.object({ page: z.number().int(), perPage: z.number().int() }),
 });
 
@@ -493,14 +510,23 @@ async function discoverIfStale(ctx: JobContext, db: Database): Promise<void> {
       : Promise.resolve();
   try {
     // A window cut short by the budget continues where it stopped (same window, next page).
-    const savedText = await getMeta(db, SYNC_DISCOVER_CURSOR_KEY);
-    const saved = syncDiscoverCursorSchema.safeParse(JSON.parse(savedText ?? "null"));
-    const from = saved.success
-      ? new Date(saved.data.from)
-      : new Date(ctx.now() - DAILY_DISCOVER_DAYS_BACK * DAY_MS);
-    const to = saved.success
-      ? new Date(saved.data.to)
-      : new Date(ctx.now() + DAILY_DISCOVER_DAYS_AHEAD * DAY_MS);
+    const saved = syncDiscoverCursorSchema.safeParse(
+      await readJsonMeta(db, SYNC_DISCOVER_CURSOR_KEY),
+    );
+    const startedAt = saved.success
+      ? (saved.data.startedAt ?? null)
+      : new Date(ctx.now()).toISOString();
+    let from: Date;
+    let to: Date;
+    if (saved.success) {
+      from = new Date(saved.data.from);
+      to = new Date(saved.data.to);
+    } else {
+      const lastText = await getMeta(db, SYNC_DISCOVER_LAST_START_KEY);
+      const last = lastText ? Date.parse(lastText) : Number.NaN;
+      from = discoverPassStart(ctx.now(), Number.isNaN(last) ? null : last);
+      to = new Date(ctx.now() + DAILY_DISCOVER_DAYS_AHEAD * DAY_MS);
+    }
     const result = await discoverBudgeted(ctx, db, "sync", from, to, {
       cursor: saved.success ? saved.data.cursor : undefined,
       // Saved after every page, so an error resumes at the page that failed.
@@ -508,11 +534,20 @@ async function discoverIfStale(ctx: JobContext, db: Database): Promise<void> {
         setMeta(
           db,
           SYNC_DISCOVER_CURSOR_KEY,
-          JSON.stringify({ from: from.toISOString(), to: to.toISOString(), cursor: next }),
+          JSON.stringify({
+            from: from.toISOString(),
+            to: to.toISOString(),
+            ...(startedAt ? { startedAt } : {}),
+            cursor: next,
+          }),
         ).then(() => undefined),
     });
     ctx.out(`discover (first sync of the day): ${result?.summary ?? "no budget left"}`);
-    if (result && !result.partial) await deleteMeta(db, SYNC_DISCOVER_CURSOR_KEY);
+    if (result && !result.partial) {
+      await deleteMeta(db, SYNC_DISCOVER_CURSOR_KEY);
+      // A resumed pass without a recorded start keeps the window's own `from` as the best guess.
+      await setMeta(db, SYNC_DISCOVER_LAST_START_KEY, startedAt ?? from.toISOString());
+    }
     await finish({ status: result && !result.partial ? "success" : "partial" });
   } catch (error) {
     await finish({ status: "error", error: ctx.redact(error) });
