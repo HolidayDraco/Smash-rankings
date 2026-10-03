@@ -1,0 +1,164 @@
+# TRIMMED, HAND-WRITTEN SCHEMA -- NOT the real start.gg schema.
+#
+# Source: written from memory of the public start.gg API reference
+# (developer.start.gg/reference) and its official example queries. No public
+# GitHub copy of the schema could be found, and api.start.gg / developer.start.gg
+# are blocked in the build sandbox, so nothing here was checked against the live API.
+# It contains only the types and fields our queries use.
+#
+# MUST be replaced with the real schema via introspection:
+#   STARTGG_TOKEN=... pnpm --filter @sr/startgg schema:pull && pnpm codegen
+# See docs/startgg-notes.md for what is verified vs pending.
+
+scalar Timestamp
+
+type Query {
+  tournaments(query: TournamentQuery): TournamentConnection
+  event(id: ID, slug: String): Event
+}
+
+input TournamentQuery {
+  page: Int
+  perPage: Int
+  sortBy: String
+  filter: TournamentPageFilter
+}
+
+input TournamentPageFilter {
+  videogameIds: [ID]
+  afterDate: Timestamp
+  beforeDate: Timestamp
+}
+
+type PageInfo {
+  total: Int
+  totalPages: Int
+}
+
+type TournamentConnection {
+  pageInfo: PageInfo
+  nodes: [Tournament]
+}
+
+type Tournament {
+  id: ID
+  name: String
+  slug: String
+  countryCode: String
+  addrState: String
+  isOnline: Boolean
+  numAttendees: Int
+  startAt: Timestamp
+  endAt: Timestamp
+  events(limit: Int, filter: EventFilter): [Event]
+}
+
+input EventFilter {
+  videogameId: [ID]
+}
+
+enum ActivityState {
+  CREATED
+  ACTIVE
+  COMPLETED
+  READY
+  INVALID
+  CALLED
+  QUEUED
+}
+
+type Videogame {
+  id: ID
+  name: String
+}
+
+type TeamRosterSize {
+  minPlayers: Int
+  maxPlayers: Int
+}
+
+type Event {
+  id: ID
+  name: String
+  slug: String
+  numEntrants: Int
+  isOnline: Boolean
+  state: ActivityState
+  startAt: Timestamp
+  type: Int
+  teamRosterSize: TeamRosterSize
+  videogame: Videogame
+  sets(page: Int, perPage: Int, sortType: SetSortType, filters: SetFilters): SetConnection
+  standings(query: StandingPaginationQuery): StandingConnection
+}
+
+enum SetSortType {
+  NONE
+  CALL_ORDER
+  MAGIC
+  RECENT
+  STANDARD
+  ROUND
+}
+
+input SetFilters {
+  state: [Int]
+}
+
+input StandingPaginationQuery {
+  page: Int
+  perPage: Int
+}
+
+type SetConnection {
+  pageInfo: PageInfo
+  nodes: [Set]
+}
+
+type StandingConnection {
+  pageInfo: PageInfo
+  nodes: [Standing]
+}
+
+type Set {
+  id: ID
+  completedAt: Timestamp
+  winnerId: Int
+  displayScore: String
+  fullRoundText: String
+  slots: [SetSlot]
+}
+
+type SetSlot {
+  entrant: Entrant
+  standing: Standing
+}
+
+type Standing {
+  placement: Int
+  entrant: Entrant
+  stats: StandingStats
+}
+
+type StandingStats {
+  score: Score
+}
+
+type Score {
+  value: Float
+}
+
+type Entrant {
+  id: ID
+  participants: [Participant]
+}
+
+type Participant {
+  player: Player
+}
+
+type Player {
+  id: ID
+  gamerTag: String
+  prefix: String
+}

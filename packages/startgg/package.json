@@ -1,0 +1,33 @@
+{
+  "name": "@sr/startgg",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "codegen": "graphql-codegen --config codegen.ts",
+    "schema:pull": "tsx scripts/pull-schema.ts",
+    "fixtures:record": "tsx scripts/record-fixtures.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@graphql-typed-document-node/core": "3.2.0",
+    "@sr/core": "workspace:*",
+    "graphql": "17.0.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": "7.4.3",
+    "@graphql-codegen/typed-document-node": "7.1.1",
+    "@graphql-codegen/typescript": "6.1.0",
+    "@graphql-codegen/typescript-operations": "6.1.9",
+    "@sr/config": "workspace:*",
+    "@types/node": "22.20.5",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  }
+}

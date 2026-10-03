@@ -6,3 +6,4 @@ coverage
 *.md
 # drizzle-kit output, committed verbatim
 packages/db/migrations
+**/generated/**

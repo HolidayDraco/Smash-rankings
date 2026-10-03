@@ -1,0 +1,49 @@
+query TournamentsPage(
+  $page: Int!
+  $perPage: Int!
+  $videogameIds: [ID]
+  $afterDate: Timestamp
+  $beforeDate: Timestamp
+) {
+  tournaments(
+    query: {
+      page: $page
+      perPage: $perPage
+      sortBy: "startAt asc"
+      filter: { videogameIds: $videogameIds, afterDate: $afterDate, beforeDate: $beforeDate }
+    }
+  ) {
+    pageInfo {
+      total
+      totalPages
+    }
+    nodes {
+      id
+      name
+      slug
+      countryCode
+      addrState
+      isOnline
+      numAttendees
+      startAt
+      endAt
+      events(filter: { videogameId: $videogameIds }) {
+        id
+        name
+        slug
+        numEntrants
+        isOnline
+        state
+        startAt
+        type
+        teamRosterSize {
+          minPlayers
+          maxPlayers
+        }
+        videogame {
+          id
+        }
+      }
+    }
+  }
+}

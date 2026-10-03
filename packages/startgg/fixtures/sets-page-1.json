@@ -1,0 +1,118 @@
+{
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "data": {
+    "event": {
+      "id": 9001,
+      "sets": {
+        "pageInfo": {
+          "total": 3,
+          "totalPages": 2
+        },
+        "nodes": [
+          {
+            "id": 7001,
+            "completedAt": 1760000000,
+            "winnerId": 101,
+            "displayScore": "FakeAlpha 3 - FakeBravo 1",
+            "fullRoundText": "Winners Round 1",
+            "slots": [
+              {
+                "entrant": {
+                  "id": 101,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 1,
+                        "gamerTag": "FakeAlpha",
+                        "prefix": "FAKE"
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 3
+                    }
+                  }
+                }
+              },
+              {
+                "entrant": {
+                  "id": 102,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 2,
+                        "gamerTag": "FakeBravo",
+                        "prefix": null
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 1
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "id": 7002,
+            "completedAt": 1760000100,
+            "winnerId": 103,
+            "displayScore": "DQ",
+            "fullRoundText": "Winners Round 1",
+            "slots": [
+              {
+                "entrant": {
+                  "id": 103,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 3,
+                        "gamerTag": "FakeCharlie",
+                        "prefix": null
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": 0
+                    }
+                  }
+                }
+              },
+              {
+                "entrant": {
+                  "id": 104,
+                  "participants": [
+                    {
+                      "player": {
+                        "id": 4,
+                        "gamerTag": "FakeDelta",
+                        "prefix": null
+                      }
+                    }
+                  ]
+                },
+                "standing": {
+                  "stats": {
+                    "score": {
+                      "value": -1
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

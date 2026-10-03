@@ -1,0 +1,40 @@
+{
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "data": {
+    "tournaments": {
+      "pageInfo": {
+        "total": 3,
+        "totalPages": 2
+      },
+      "nodes": [
+        {
+          "id": 5003,
+          "name": "Fake Weekly",
+          "slug": "tournament/fake-5003",
+          "countryCode": "US",
+          "addrState": "CA",
+          "isOnline": false,
+          "numAttendees": 300,
+          "startAt": 1760000000,
+          "endAt": 1760086400,
+          "events": [
+            {
+              "id": 9004,
+              "name": "Ultimate Singles",
+              "slug": "tournament/fake-major/event/ultimate-singles",
+              "numEntrants": 20,
+              "isOnline": false,
+              "state": "COMPLETED",
+              "startAt": 1760000000,
+              "type": 1,
+              "teamRosterSize": null,
+              "videogame": {
+                "id": 1386
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

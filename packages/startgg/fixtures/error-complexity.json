@@ -1,0 +1,9 @@
+{
+  "_note": "SYNTHETIC fixture shaped like a real start.gg response; fake gamer tags and ids. Re-record with `pnpm --filter @sr/startgg fixtures:record`.",
+  "success": false,
+  "errors": [
+    {
+      "message": "Your query complexity is too high. A maximum of 1000 objects may be returned by each request. (actual: 1500)"
+    }
+  ]
+}
