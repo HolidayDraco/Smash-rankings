@@ -74,6 +74,7 @@ const looseTournaments = z.object({
             id: looseId,
             countryCode: z.string().nullish(),
             addrState: z.string().nullish(),
+            city: z.string().nullish(),
             events: z
               .array(
                 z
@@ -211,6 +212,10 @@ export interface LiveCheckResult {
     /** ceil(total / page size): what one discover run costs. */
     discoverRequestsPerRun: number | null;
     addrStates: Record<string, number>;
+    /** Up to 10 distinct `city` values from launch-region tournaments (is Tournament.city filled in, and how is it spelled?). */
+    citySamples: string[];
+    /** Launch-region tournaments whose city came back empty. */
+    cityMissing: number;
     countryCodes: Record<string, number>;
     acceptedByLaunchRegion: number;
     regionLookingRejected: string[];
@@ -500,6 +505,8 @@ export async function runLiveCheck(
         discoverRequestsPerRun:
           total === null ? null : Math.ceil(total / DEFAULT_TOURNAMENTS_PER_PAGE),
         addrStates: {},
+        citySamples: [],
+        cityMissing: 0,
         countryCodes: {},
         acceptedByLaunchRegion: 0,
         regionLookingRejected: [],
@@ -551,8 +558,13 @@ export async function runLiveCheck(
         const country = n.countryCode ?? "(none)";
         t.addrStates[state] = (t.addrStates[state] ?? 0) + 1;
         t.countryCodes[country] = (t.countryCodes[country] ?? 0) + 1;
-        if (isInLaunchRegion(location(n))) t.acceptedByLaunchRegion++;
-        else if (
+        if (isInLaunchRegion(location(n))) {
+          t.acceptedByLaunchRegion++;
+          const city = n.city?.trim();
+          if (!city) t.cityMissing++;
+          else if (t.citySamples.length < 10 && !t.citySamples.includes(city))
+            t.citySamples.push(city);
+        } else if (
           n.addrState &&
           looksLikeRegion(n.addrState) &&
           !t.regionLookingRejected.includes(n.addrState)
@@ -739,6 +751,7 @@ export function renderReport(r: LiveCheckResult): string {
       `- Sampled: ${t.sampled}`,
       `- addrState values seen: ${list(t.addrStates)}`,
       `- countryCode values seen: ${list(t.countryCodes)}`,
+      `- city values seen in launch-region tournaments (sample): ${t.citySamples.map((c) => `"${c}"`).join(", ") || "none"}; empty city: ${t.cityMissing}`,
       `- Accepted by isInLaunchRegion: ${t.acceptedByLaunchRegion} of ${t.sampled}`,
     );
     if (t.regionLookingRejected.length) {

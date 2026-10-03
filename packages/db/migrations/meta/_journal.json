@@ -8,6 +8,13 @@
       "when": 1791040997854,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791068399950,
+      "tag": "0001_fast_white_tiger",
+      "breakpoints": true
     }
   ]
 }

@@ -565,3 +565,27 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** Same as above: tell me when setup items 1, 2 and 5 are done and I'll run it.
 
 **Questions for Genghis:** None open.
+
+---
+
+## 2026-10-03 — tournaments now remember their city
+
+**Date:** 2026-10-03
+
+**What changed:**
+
+- We now save the city of each tournament (for example "Austin" or "Houston"). This is groundwork for the Dashboard's "This week's events" list (issue #24), which shows name, city, date, entrants, winner and a start.gg link.
+- Discover asks start.gg for the city along with the other tournament details, saves it, and refreshes it if the organizer changes it. Tournaments with no city are saved with it blank.
+- The database got one new, empty-by-default "city" column (migration `0001_fast_white_tiger.sql`). It only adds a column, so nothing existing changes. The scheduled job runs migrations first, so the live database picks it up on its own.
+- The practice data and test fixtures now have Texas cities. The live check also prints a sample of the cities it sees.
+- The start.gg email draft now says "city, state and country".
+- Not yet confirmed: that start.gg really offers `city` and fills it in. The name comes from its public documentation, but nobody has tried it against the real service (no network or token here). It is noted as unverified in `docs/startgg-notes.md`.
+
+**What's next:**
+
+- Run `pnpm live:check` once the token is available, to confirm the city field exists and see how it is spelled.
+- Build the "This week's events" Dashboard section (issue #24), showing a blank city gracefully.
+
+**Questions for Clay:** None new.
+
+**Questions for Genghis:** If start.gg rejects the `city` field on the first live run, should we drop it or derive the city another way? Default: drop it and show only the state.

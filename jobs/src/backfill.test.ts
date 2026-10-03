@@ -515,6 +515,7 @@ describe.skipIf(!testDatabaseUrl)(
                 slug: "tournament/border",
                 countryCode: "US",
                 addrState: "TX", // in the launch region (ADR-0003); this test is about month boundaries
+                city: "Austin",
                 isOnline: false,
                 numAttendees: 300,
                 startAt: seconds("2025-09-30T20:00:00Z"),

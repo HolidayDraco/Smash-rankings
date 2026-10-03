@@ -21,6 +21,7 @@ interface World {
   addrStateFilter?: boolean;
   addrState?: string;
   countryCode?: string;
+  city?: string | null;
   idsAsStrings?: boolean;
   noTexasEvent?: boolean;
   rateLimitFirst?: boolean;
@@ -42,6 +43,7 @@ function fakeClient(world: World = {}) {
     slug: "t",
     countryCode: world.countryCode ?? "US",
     addrState: state,
+    city: world.city === undefined ? "Austin" : world.city,
     isOnline: false,
     numAttendees: 40,
     startAt: 1,
@@ -240,6 +242,16 @@ describe("live check report", () => {
     expect(result.schema?.hasAddrStateFilter).toBe(false);
     expect(queries.some((q) => q.includes("LiveCheckState"))).toBe(false);
     expect(renderReport(result)).toContain("addrState (filter by state on start.gg's side): no");
+  });
+
+  it("reports a sample of city values, and counts empty ones", async () => {
+    const seen = await runLiveCheck(fakeClient({ addrState: "TX" }).client);
+    expect(seen.tournaments?.citySamples).toEqual(["Austin"]);
+    expect(seen.tournaments?.cityMissing).toBe(0);
+    expect(renderReport(seen)).toContain('"Austin"');
+    const empty = await runLiveCheck(fakeClient({ addrState: "TX", city: null }).client);
+    expect(empty.tournaments?.citySamples).toEqual([]);
+    expect(empty.tournaments?.cityMissing).toBe(1);
   });
 
   it("reports TX vs Texas and warns about values the region rule rejects", async () => {

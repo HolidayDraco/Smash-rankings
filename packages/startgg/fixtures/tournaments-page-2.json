@@ -13,6 +13,7 @@
           "slug": "tournament/fake-5003",
           "countryCode": "US",
           "addrState": "TX",
+          "city": "Dallas",
           "isOnline": false,
           "numAttendees": 300,
           "startAt": 1760000000,
