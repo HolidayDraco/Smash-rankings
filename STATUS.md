@@ -438,6 +438,6 @@ Updated: `docs/blueprint.md` (decision 2 changed, decision 9 added), `CLAUDE.md`
 1. The code change: a `LAUNCH_REGIONS` setting, a Texas filter when finding events, the 16+ cutoff in the rate job, and the methodology page.
 2. Then the scheduled data jobs (#16), with the request budget re-checked for many more, smaller events.
 
-**Questions for Clay:** None. One stated default: everyone who plays at Texas events gets rated, including out-of-state visitors who meet the leaderboard rules. Say if you'd rather show Texas residents only.
+**Questions for Clay:** One yes/no, no rush: should out-of-state visitors who play enough Texas events appear on the leaderboard? The default is **yes**, so everyone who plays at Texas events is rated.
 
 **Questions for Genghis:** None. Your scope comment on #16 is now on `main`.

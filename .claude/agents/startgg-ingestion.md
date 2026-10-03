@@ -19,7 +19,7 @@ How you work:
 1. Generate types with GraphQL Code Generator from schema introspection (`pnpm codegen`). Never hand-write response types. Validate parsed results with Zod in `packages/core`.
 2. All requests go through one client with: a token-bucket limiter at ≤ 60 req/min, exponential backoff with jitter on rate-limit/5xx, automatic page-size reduction on complexity errors, and structured logs (query name, page, duration, objects). Never log the token.
 3. Jobs must be idempotent and resumable: upsert by start.gg id, checkpoint `events.sync_cursor`, write one `ingest_runs` row (requests_used, events_touched, status, error), and stop cleanly before the time budget runs out.
-4. Only ingest singles Ultimate events that meet the qualification rules in `packages/core` (default: ≥ 64 entrants, offline). Store only the columns in the Drizzle schema.
+4. Only ingest singles Ultimate events that meet the qualification rules in `packages/core` (≥ 16 entrants, in person, tournaments in `LAUNCH_REGIONS`, Texas at launch; see ADR-0003). Store only the columns in the Drizzle schema.
 5. Record fixtures for every query (`packages/startgg/fixtures/*.json`, scrubbed of personal data you don't store). Unit tests use the fixtures. Write a test for pagination, a rate-limit retry, a complexity-error shrink, a DQ set, and a resumed run.
 6. For field details you aren't sure of (user location, set filters like updated-after, DQ encoding), check by introspection or one manual query, then note the finding in `docs/startgg-notes.md`.
 7. Workflows: use cron minute offsets (not :00), `concurrency` groups so runs never overlap, `timeout-minutes`, secrets from GitHub Actions secrets only, and `workflow_dispatch` inputs for manual backfills.
