@@ -44,5 +44,10 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // The web app and the browser-driven e2e scripts may use browser globals. packages/ui must not.
+    files: ["apps/app/**", "e2e/**"],
+    languageOptions: { globals: { ...globals.browser } },
+  },
   prettier,
 );

@@ -1,0 +1,29 @@
+{
+  "name": "@sr/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sr/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@sr/config": "workspace:*",
+    "@types/react": "19.2.18",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
+  },
+  "peerDependencies": {
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  }
+}

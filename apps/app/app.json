@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Bracket Index",
+    "slug": "smash-rankings",
+    "scheme": "smashrankings",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FFFFFF",
+    "plugins": ["expo-router"],
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    }
+  }
+}
