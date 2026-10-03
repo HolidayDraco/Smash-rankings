@@ -3,6 +3,7 @@ import { createApiClient } from "@sr/api/client";
 import {
   leaderboardResponseSchema,
   metaResponseSchema,
+  playerResponseSchema,
   searchResponseSchema,
   SEARCH_MAX_QUERY_LENGTH,
   SEARCH_MIN_QUERY_LENGTH,
@@ -82,4 +83,17 @@ export const useSearch = (query: string) =>
       searchResponseSchema.parse(
         await readJson(await api().v1.search.$get({ query: { q: query } })),
       ),
+  });
+
+/** Resolves to null when the API says the player does not exist (404), so the page can say so. */
+export const usePlayer = (playerId: string | null) =>
+  useQuery({
+    ...queryDefaults,
+    queryKey: ["player", playerId],
+    enabled: playerId !== null,
+    queryFn: async () => {
+      const response = await api().v1.players[":id"].$get({ param: { id: playerId ?? "" } });
+      if (response.status === 404) return null;
+      return playerResponseSchema.parse(await readJson(response));
+    },
   });

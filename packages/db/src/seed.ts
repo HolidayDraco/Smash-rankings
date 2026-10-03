@@ -93,6 +93,7 @@ export async function seedSynthetic(
     id: id(index + 1),
     gamerTag: `Sample_${word}`,
     countryCode: COUNTRIES[index % COUNTRIES.length] ?? null,
+    userSlug: word === "Dash" ? "user/sample-dash" : null, // one ranked player has a start.gg link for e2e
   }));
   const tournamentRows = TOURNAMENT_NAMES.map((name, index) => ({
     id: id(index + 1),

@@ -100,7 +100,8 @@ export const playerResponseSchema = z.strictObject({
   gamerTag: z.string(),
   prefix: z.string().nullable(),
   countryCode: z.string().nullable(),
-  startggUrl: z.url().nullable(),
+  /** Only https links on www.start.gg, because the app opens this URL. */
+  startggUrl: z.url({ protocol: /^https$/, hostname: /^www\.start\.gg$/ }).nullable(),
   rank: z.number().int().positive().nullable(),
   eligible: z.boolean(),
   notRankedReason: notRankedReasonSchema.nullable(),

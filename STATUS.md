@@ -351,3 +351,28 @@ Automatic browser tests now run against a real temporary database filled with th
 **Questions for Clay:** Look at the phone screenshot in the PR. Does it look like the leaderboard you pictured? Any feedback becomes a follow-up PR. Before the Vercel preview can show real data, one setup step in Vercel: on the **app** project, add a setting named `EXPO_PUBLIC_API_URL` set to the API's public address (not a secret). On the **API** project, add `ALLOWED_ORIGINS` (the app's address) and, for preview links, `ALLOWED_ORIGIN_PATTERN`, so the API lets the app's pages talk to it.
 
 **Questions for Genghis:** This PR is about 675 hand-written lines (two row/list components are most of it), over the ~400 target. OK, or split?
+
+---
+
+## 2026-10-03 — Phase 1: player page
+
+**Date:** October 3, 2026
+
+**What changed:** Tapping a player on the leaderboard now opens their **player page** (`/player/1234-sample-dash`):
+
+- Their tag and country, and a big angled panel with their **rank** (or **"Not yet ranked"**).
+- **Score**, and **rating ± uncertainty** with a plain-English explanation for screen readers.
+- A compact stats row: sets rated, events, and 12-month win–loss.
+- If they aren't ranked yet, **why**, in plain words. For example: "Needs 1 more rated set" or "Rating still uncertain".
+- **Recent results**: event, tournament, date, and placing ("4th of 128").
+- A **"View on start.gg"** link when we know their start.gg profile.
+- Grey placeholders while loading, a friendly **"Player not found"** with a link back, and **Try again** on errors.
+- "Data from start.gg" at the bottom, as on every page.
+
+Because the website is built ahead of time, one shared player page loads each player's data in the browser. A small hosting rule (`apps/app/vercel.json`) sends every `/player/...` address to it.
+
+**What's next:** Methodology and status pages (built, PR next), then Sentry error alerts.
+
+**Questions for Clay:** None. Check the phone screenshots in the PR.
+
+**Questions for Genghis:** The hosting rule for `/player/...` can only be confirmed on the first Vercel preview. If it fails there, it's a one-line fix.
