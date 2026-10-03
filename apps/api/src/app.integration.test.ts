@@ -1,16 +1,20 @@
 import {
   ATTRIBUTION,
   errorResponseSchema,
+  leaderboardResponseSchema,
   metaResponseSchema,
+  playerResponseSchema,
+  searchResponseSchema,
   statusResponseSchema,
 } from "@sr/core";
 import { createDb, type Database } from "@sr/db";
 import { runMigrations } from "@sr/db/migrate";
-import { seedSynthetic } from "@sr/db/seed";
-import { meta } from "@sr/db";
+import { SYNTHETIC_ID_MIN, seedSynthetic } from "@sr/db/seed";
+import { meta, players, sets } from "@sr/db";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { CACHE_CONTROL_NO_STORE, CACHE_CONTROL_PUBLIC, createApp } from "./app";
+import { createApiClient } from "./client";
 
 // A throwaway Postgres server. This suite uses its own sibling database
 // (`<name>_api`) because @sr/db's tests drop the main one's schema in parallel.
@@ -196,6 +200,216 @@ describe.skipIf(!testDatabaseUrl)(
       });
       expect(preflight.headers.get("Access-Control-Allow-Origin")).toBeNull();
       expect(preflight.headers.get("Cache-Control")).toBe(CACHE_CONTROL_NO_STORE);
+    });
+
+    describe("leaderboard, players, search", () => {
+      const dash = SYNTHETIC_ID_MIN + 4; // Sample_Dash, rank 1 in the seed
+      const ace = SYNTHETIC_ID_MIN + 1; // Sample_Ace, unranked: 9 of 10 sets
+      const ember = SYNTHETIC_ID_MIN + 30; // Sample_Ember, RD 118: never eligible
+      const alias = SYNTHETIC_ID_MIN + 900_001;
+      const json = async (path: string) => (await app.request(path)).json();
+
+      beforeAll(async () => {
+        // Extra rows live in the synthetic id range, so the next seed removes them.
+        await db
+          .update(players)
+          .set({ prefix: "SMP", userSlug: "user/sample-dash" })
+          .where(eq(players.id, dash));
+        await db.insert(players).values([
+          { id: alias, gamerTag: "Sample_Dash_Alt", mergedInto: dash },
+          { id: alias + 1, gamerTag: "Sample_Dash_Old", mergedInto: alias },
+        ]);
+      });
+
+      it("lists only eligible players, in rank order, with asOf and dataVersion", async () => {
+        const body = leaderboardResponseSchema.parse(await json("/v1/leaderboard"));
+        const eligible = await db.execute(
+          sql`select count(*)::int as n from leaderboard where rank is not null`,
+        );
+        expect(body.entries.length).toBe(eligible[0]?.n);
+        expect(body.entries.map((entry) => entry.rank)).toEqual(
+          body.entries.map((_, index) => index + 1),
+        );
+        expect(body.entries[0]).toMatchObject({
+          playerId: String(dash),
+          gamerTag: "Sample_Dash",
+          prefix: "SMP",
+          conservativeScore: 1808,
+        });
+        expect(body).toMatchObject({ asOf: "2026-10-03T11:06:00.000Z", dataVersion: 1 });
+        expect(body.entries.some((entry) => entry.playerId === String(ember))).toBe(false);
+      });
+
+      it("caps limit at 100 and rejects a non-numeric limit", async () => {
+        expect(
+          leaderboardResponseSchema.parse(await json("/v1/leaderboard?limit=1")).entries,
+        ).toHaveLength(1);
+        const capped = await app.request("/v1/leaderboard?limit=1000");
+        expect(capped.status).toBe(200);
+        expect(
+          leaderboardResponseSchema.parse(await capped.json()).entries.length,
+        ).toBeLessThanOrEqual(100);
+        for (const limit of ["abc", "0", "-1", "1.5", "5&limit=6"]) {
+          expect((await app.request(`/v1/leaderboard?limit=${limit}`)).status).toBe(400);
+        }
+      });
+
+      it("returns a ranked player with record, recent results, and start.gg link", async () => {
+        const body = playerResponseSchema.parse(await json(`/v1/players/${dash}`));
+        expect(body).toMatchObject({
+          gamerTag: "Sample_Dash",
+          startggUrl: "https://www.start.gg/user/sample-dash",
+          rank: 1,
+          eligible: true,
+          notRankedReason: null,
+          conservativeScore: 1808,
+          qualifyingEvents: 3,
+        });
+        expect(body.setRecord.wins + body.setRecord.losses).toBe(body.ratedSets);
+        expect(
+          body.recentResults.map((result) => [result.tournamentName, result.entrants]),
+        ).toEqual([
+          ["Sample Regional", 128],
+          ["Sample Invitational", 96],
+          ["Sample Showdown", 64],
+        ]);
+      });
+
+      it("explains why an unranked player is not ranked", async () => {
+        const short = playerResponseSchema.parse(await json(`/v1/players/${ace}`));
+        expect(short).toMatchObject({ rank: null, eligible: false, startggUrl: null });
+        expect(short.notRankedReason).toEqual({
+          setsNeeded: 1,
+          eventsNeeded: 0,
+          uncertaintyTooHigh: false,
+        });
+        const uncertain = playerResponseSchema.parse(await json(`/v1/players/${ember}`));
+        expect(uncertain.notRankedReason?.uncertaintyTooHigh).toBe(true);
+      });
+
+      it("leaves DQs and sets older than 52 weeks out of the set record", async () => {
+        const before = playerResponseSchema.parse(await json(`/v1/players/${dash}`)).setRecord;
+        const base = { eventId: SYNTHETIC_ID_MIN + 1, winnerId: dash, loserId: ember };
+        await db.insert(sets).values([
+          {
+            ...base,
+            id: SYNTHETIC_ID_MIN + 900_001,
+            isDq: true,
+            completedAt: new Date("2026-10-01"),
+          },
+          { ...base, id: SYNTHETIC_ID_MIN + 900_002, completedAt: new Date("2025-09-01") },
+          { ...base, id: SYNTHETIC_ID_MIN + 900_003, completedAt: new Date("2026-10-02") },
+        ]);
+        const after = playerResponseSchema.parse(await json(`/v1/players/${dash}`)).setRecord;
+        expect(after).toEqual({ wins: before.wins + 1, losses: before.losses });
+      });
+
+      it("redirects merged aliases (even chains) to the main player with 301", async () => {
+        for (const id of [alias, alias + 1]) {
+          const response = await app.request(`/v1/players/${id}`);
+          expect(response.status).toBe(301);
+          expect(response.headers.get("Location")).toBe(`/v1/players/${dash}`);
+        }
+      });
+
+      it("returns 404 for an unknown player and 400 for a malformed id", async () => {
+        expect((await app.request(`/v1/players/${SYNTHETIC_ID_MIN + 999_999}`)).status).toBe(404);
+        for (const id of ["abc", "12a", "-5", "1234567890123456"]) {
+          const response = await app.request(`/v1/players/${id}`);
+          expect(response.status).toBe(400);
+          expect(errorResponseSchema.parse(await response.json()).error).toBe("Invalid player id");
+        }
+      });
+
+      it("searches tags case-insensitively, ranked first, without merged aliases", async () => {
+        const body = searchResponseSchema.parse(await json("/v1/search?q=sample_dash"));
+        expect(body.results).toEqual([
+          { playerId: String(dash), gamerTag: "Sample_Dash", prefix: "SMP", rank: 1 },
+        ]);
+        const many = searchResponseSchema.parse(await json("/v1/search?q=le_"));
+        // 12 ranked players in rank order, then unranked ones by tag.
+        expect(many.results).toHaveLength(20);
+        expect(many.results.map((result) => result.rank)).toEqual([
+          ...Array.from({ length: 12 }, (_, index) => index + 1),
+          ...Array<null>(8).fill(null),
+        ]);
+        expect(many.results[12]?.gamerTag).toBe("Sample_Ace");
+        const unranked = searchResponseSchema.parse(await json("/v1/search?q=er"));
+        expect(unranked.results.map((result) => [result.gamerTag, result.rank])).toEqual([
+          ["Sample_Cinder", null],
+          ["Sample_Ember", null],
+        ]);
+      });
+
+      it("treats %, _ and backslash in a search as plain characters", async () => {
+        for (const q of ["%a", "p_e", "\\_"]) {
+          const response = await app.request(`/v1/search?q=${encodeURIComponent(q)}`);
+          expect(searchResponseSchema.parse(await response.json()).results).toEqual([]);
+        }
+      });
+
+      it("rejects short searches and redirects un-normalized ones to one cache key", async () => {
+        for (const q of ["a", "%20%20b%20", ""]) {
+          expect((await app.request(`/v1/search?q=${q}`)).status).toBe(400);
+        }
+        for (const q of ["%20%20ACE%20", "Ace", "a%63e"]) {
+          const response = await app.request(`/v1/search?q=${q}`);
+          expect(response.status).toBe(301);
+          expect(response.headers.get("Location")).toBe("/v1/search?q=ace");
+        }
+        expect((await app.request("/v1/search?q=o'neil")).status).toBe(200);
+      });
+
+      it("rejects unexpected query parameters on every read endpoint", async () => {
+        for (const path of [
+          "/v1/leaderboard?x=1",
+          "/v1/leaderboard?limit=5&page=2",
+          "/v1/search?q=ace&x=1",
+          "/v1/search",
+          `/v1/players/${ace}?x=1`,
+        ]) {
+          const response = await app.request(path);
+          expect(response.status, path).toBe(400);
+          expect(response.headers.get("Cache-Control")).toBe(CACHE_CONTROL_NO_STORE);
+        }
+      });
+
+      it("every response carries attribution; only 200s get the CDN cache header", async () => {
+        const paths = [
+          "/v1/leaderboard",
+          `/v1/players/${ace}`,
+          `/v1/players/${ember}`,
+          "/v1/search?q=ace",
+        ];
+        for (const path of [
+          ...paths,
+          "/v1/leaderboard?limit=x",
+          "/v1/players/1",
+          "/v1/search?q=a",
+        ]) {
+          const response = await app.request(path);
+          const cacheable = paths.includes(path);
+          expect(response.status === 200, path).toBe(cacheable);
+          expect(response.headers.get("Cache-Control")).toBe(
+            cacheable ? CACHE_CONTROL_PUBLIC : CACHE_CONTROL_NO_STORE,
+          );
+          expect(await response.json()).toMatchObject({ attribution: ATTRIBUTION });
+        }
+      });
+
+      it("the typed client reaches every route", async () => {
+        const client = createApiClient("http://localhost", {
+          fetch: (...args: Parameters<typeof fetch>) => app.request(...args),
+        });
+        const board = await client.v1.leaderboard.$get({ query: { limit: 2 } });
+        expect(leaderboardResponseSchema.parse(await board.json()).entries).toHaveLength(2);
+        const player = await client.v1.players[":id"].$get({ param: { id: String(dash) } });
+        expect(player.status).toBe(200);
+        const search = await client.v1.search.$get({ query: { q: "ace" } });
+        expect(searchResponseSchema.parse(await search.json()).results[0]?.gamerTag).toBe(
+          "Sample_Ace",
+        );
+      });
     });
   },
 );
