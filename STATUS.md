@@ -800,7 +800,7 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **How to run the first backfill (about 5 minutes of clicking, then about an hour of waiting):**
 
 1. On GitHub, open the repo's **Actions** tab, pick **Ingest** on the left, then **Run workflow** (top right).
-2. Set **job** to **backfill** and **months** to **6**. Press **Run workflow**.
+2. Set **job** to **backfill** and **months** to **6**. Press **Run workflow**. Start it when nothing else is running on the Actions tab (a Sync takes a few minutes). If it later shows **cancelled**, a scheduled Sync took its place in the queue: just run it again.
 3. It runs for up to 75 minutes. When it finishes, **Rate** runs by itself. Open the Rate step's summary to see the top 20.
 4. If the Backfill summary says "stopped early: resumes next run", run it again the same way. It continues where it left off. The nightly backfill also continues it.
 5. Later, if you want more history, run backfill again with a larger months value (up to 24). Months already done are skipped.

@@ -485,7 +485,7 @@ async function discoverIfStale(ctx: JobContext, db: Database): Promise<void> {
     )
     .limit(1);
   if (recent) return;
-  // The 50 a day discover budget is shared with backfill (UTC day).
+  // Sync's own daily discover cap (SYNC_DISCOVER_PER_DAY, UTC day); never shared with backfill.
   if ((await remainingDiscoverBudget(db, ctx.now(), "sync")) <= 0) {
     ctx.out("sync: skipping discover, today's discover budget is used up (it continues tomorrow)");
     return;

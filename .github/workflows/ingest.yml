@@ -66,7 +66,7 @@ jobs:
             echo "Ingest: $message Nothing ran." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
-          if [ -n "$MONTHS" ] && ! [[ "$MONTHS" =~ ^[0-9]+$ && "$MONTHS" -ge 1 && "$MONTHS" -le 24 ]]; then
+          if [ -n "$MONTHS" ] && ! [[ "$MONTHS" =~ ^([1-9]|1[0-9]|2[0-4])$ ]]; then
             message="\"months\" must be a whole number from 1 to 24 (got \"$MONTHS\")."
             echo "::error::$message"
             echo "Ingest: $message Nothing ran." >> "$GITHUB_STEP_SUMMARY"
