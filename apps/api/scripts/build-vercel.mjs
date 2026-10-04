@@ -9,16 +9,19 @@
 // Node runtime transpile src/) because our workspace packages export raw .ts files.
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 
-const outputDir = ".vercel/output";
+// Paths are relative to apps/api, wherever the script is run from.
+const apiDir = fileURLToPath(new URL("..", import.meta.url));
+const outputDir = join(apiDir, ".vercel/output");
 const functionDir = join(outputDir, "functions", "api.func");
 
 rmSync(outputDir, { recursive: true, force: true });
 mkdirSync(functionDir, { recursive: true });
 
 await build({
-  entryPoints: ["src/vercel.ts"],
+  entryPoints: [join(apiDir, "src/vercel.ts")],
   outfile: join(functionDir, "index.mjs"),
   bundle: true,
   platform: "node",
@@ -42,4 +45,4 @@ writeJson(join(outputDir, "config.json"), {
   routes: [{ src: "/(.*)", dest: "/api" }],
 });
 
-console.log(`Wrote ${outputDir} (one function: /api)`);
+console.log("Wrote .vercel/output (one function: /api)");
