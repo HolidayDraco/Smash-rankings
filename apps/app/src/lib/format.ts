@@ -1,3 +1,4 @@
+import { REGION_TIME_ZONE } from "@sr/core";
 /** URL-safe lowercase slug from a gamer tag ("Sample_Ace" becomes "sample-ace"). */
 export function slugify(tag: string): string {
   return (
@@ -71,3 +72,69 @@ export const formatDate = (iso: string | null) =>
         timeZone: "UTC",
       })
     : "Date unknown";
+
+/** Week change for the Dashboard: "▲2", "▼1", "—" for no change, "NEW" when there is no last-week rank. */
+export function weekDeltaText(delta: number | null): string {
+  if (delta === null) return "NEW";
+  if (delta === 0) return "—";
+  return `${delta > 0 ? "▲" : "▼"}${Math.abs(delta)}`;
+}
+
+/** Same change, spoken: "up 2", "down 1", "no change", "new". */
+export function weekDeltaSpoken(delta: number | null): string {
+  if (delta === null) return "new";
+  if (delta === 0) return "no change";
+  return `${delta > 0 ? "up" : "down"} ${Math.abs(delta)}`;
+}
+
+const utcDay = (isoDate: string) => new Date(`${isoDate.slice(0, 10)}T00:00:00Z`);
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+/** "Mon Sep 28", built by hand so every platform prints it the same way (no commas). */
+const dayText = (date: Date) =>
+  `${WEEKDAYS[date.getUTCDay()]} ${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}`;
+
+/** "Week of Mon Sep 28 – Sun Oct 4" from two YYYY-MM-DD dates. */
+export const formatWeekRange = (weekStart: string, weekEnd: string) =>
+  `Week of ${dayText(utcDay(weekStart))} – ${dayText(utcDay(weekEnd))}`;
+
+/** "Sat Oct 3" (UTC, like the rest of the app). */
+/**
+ * "Tue Sep 29" in the launch region's time zone, so an 8 pm Tuesday weekly (01:00 UTC Wednesday)
+ * still reads as Tuesday. Same output on every machine, so it is safe for the static export.
+ */
+export function formatEventDay(iso: string, timeZone: string = REGION_TIME_ZONE): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).formatToParts(new Date(iso));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? "";
+  return `${part("weekday")} ${part("month")} ${part("day")}`;
+}
+
+/** "and 3 more" when the API matched more events than it listed; null otherwise. */
+export const moreEventsText = (total: number, shown: number): string | null =>
+  total > shown ? `and ${total - shown} more` : null;
+
+/** "3-1" becomes "3–1" (a real en dash); anything else passes through. */
+export const formatSetScore = (score: string) => score.replace(/^(\d+)-(\d+)$/, "$1–$2");
+
+/** "Sample_Halo beat Sample_Kite 3–1", the plain-language form of an upset. */
+export const describeUpset = (winner: string, loser: string, score: string | null) =>
+  `${winner} beat ${loser}${score ? ` ${formatSetScore(score)}` : ""}`;

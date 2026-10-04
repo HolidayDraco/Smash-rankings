@@ -36,7 +36,7 @@ test.beforeEach(({ page }) => {
 
 test("opens a player from a leaderboard row", async ({ page, request }) => {
   const top = await findPlayer(request, true);
-  await page.goto("/");
+  await page.goto("/leaderboard");
   await page
     .getByRole("list", { name: /top 100 leaderboard/ })
     .getByRole("link", { name: new RegExp(`^Rank ${top.rank}, ${top.gamerTag},`) })
@@ -63,7 +63,7 @@ test("a ranked player shows rank, score, rating, stats, results and attribution"
   await expect(page.getByRole("link", { name: /Data from start\.gg/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to leaderboard" })).toHaveAttribute(
     "href",
-    "/",
+    "/leaderboard",
   );
   await expectNoSeriousViolations(page);
 });

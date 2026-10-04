@@ -81,7 +81,7 @@ test("keyboard focus shows an accent-colored outline", async ({ page }) => {
   expect(outline.color).toBe(`rgb(${accent >> 16}, ${(accent >> 8) & 255}, ${accent & 255})`);
 });
 
-for (const path of ["/", "/texas", "/style-guide"]) {
+for (const path of ["/", "/leaderboard", "/texas", "/style-guide"]) {
   test(`touch targets on ${path} are at least 44px`, async ({ page }) => {
     await page.goto(path);
     const targets = await page.getByRole("link").or(page.getByRole("button")).all();
