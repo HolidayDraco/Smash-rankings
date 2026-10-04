@@ -10,7 +10,7 @@ import {
   typeScale,
   useFocusRing,
 } from "@sr/ui";
-import { playerHref } from "../lib/format";
+import { playerHref, weekDeltaSpoken, weekDeltaText } from "../lib/format";
 
 export interface PlayerRowProps {
   playerId: string;
@@ -22,6 +22,8 @@ export interface PlayerRowProps {
   score?: number;
   /** Rank places gained (positive) or lost (negative) in 7 days. Null means no data yet. */
   delta?: number | null;
+  /** "week" is the Dashboard style: "▲2", "▼1", "—", "NEW" (read aloud as "up 2", "new"). */
+  deltaFormat?: "week";
 }
 
 export const COLS = { rank: 44, score: 56, delta: 64 } as const;
@@ -34,7 +36,16 @@ const describeDelta = (delta: number | null | undefined) =>
       : `${delta > 0 ? "up" : "down"} ${Math.abs(delta)} places`;
 
 /** One tappable leaderboard or search row. The change uses an arrow and a signed number, not color alone. */
-export function PlayerRow({ playerId, rank, tag, prefix, country, score, delta }: PlayerRowProps) {
+export function PlayerRow({
+  playerId,
+  rank,
+  tag,
+  prefix,
+  country,
+  score,
+  delta,
+  deltaFormat,
+}: PlayerRowProps) {
   const ring = useFocusRing();
   const up = delta != null && delta > 0;
   const down = delta != null && delta < 0;
@@ -44,7 +55,11 @@ export function PlayerRow({ playerId, rank, tag, prefix, country, score, delta }
     prefix ? `${prefix} ${tag}` : tag,
     country,
     score === undefined ? null : `score ${score}`,
-    score === undefined ? null : describeDelta(delta),
+    delta === undefined
+      ? null
+      : deltaFormat === "week"
+        ? weekDeltaSpoken(delta)
+        : describeDelta(delta),
   ]
     .filter(Boolean)
     .join(", ");
@@ -85,12 +100,14 @@ export function PlayerRow({ playerId, rank, tag, prefix, country, score, delta }
             ) : null}
           </View>
           {score === undefined ? null : (
+            <View style={[styles.right, { width: COLS.score }]}>
+              <BodyText variant="stat">{score}</BodyText>
+            </View>
+          )}
+          {delta === undefined ? null : (
             <>
-              <View style={[styles.right, { width: COLS.score }]}>
-                <BodyText variant="stat">{score}</BodyText>
-              </View>
               <View style={[styles.deltaCol, { width: COLS.delta }]}>
-                {up || down ? (
+                {deltaFormat !== "week" && (up || down) ? (
                   <View
                     aria-hidden
                     style={[
@@ -102,7 +119,13 @@ export function PlayerRow({ playerId, rank, tag, prefix, country, score, delta }
                   />
                 ) : null}
                 <BodyText variant="stat" color={deltaColor}>
-                  {delta == null ? "–" : delta === 0 ? "0" : `${up ? "+" : "−"}${Math.abs(delta)}`}
+                  {deltaFormat === "week"
+                    ? weekDeltaText(delta)
+                    : delta == null
+                      ? "–"
+                      : delta === 0
+                        ? "0"
+                        : `${up ? "+" : "−"}${Math.abs(delta)}`}
                 </BodyText>
               </View>
             </>

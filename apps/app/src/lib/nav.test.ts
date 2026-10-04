@@ -4,6 +4,7 @@ import { activeTab } from "./nav";
 describe("activeTab", () => {
   it("marks Dashboard for the home page and every player page", () => {
     expect(activeTab("/")).toBe("/");
+    expect(activeTab("/leaderboard")).toBe("/");
     expect(activeTab("/player/123-sample-dash")).toBe("/");
   });
 

@@ -677,3 +677,26 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None new. Two stated defaults you can overrule: (1) "this year" ignores events that haven't started yet; (2) a set doesn't count as an upset if either player had no rating before the week.
 
 **Questions for Genghis:** Upsets use each player's rating at the start of the week (their most recent saved rating from an earlier week). Is that the right "before" rating, or should it be the rating right before the event? The weekly version is simpler and matches how the ratings themselves are worked out.
+
+---
+
+## 2026-10-04 — Dashboard tab (issue #24, part 5 of 5)
+
+**Date:** 2026-10-04
+
+**What changed:**
+
+- The Dashboard tab (the home page, `/`) is built. Top to bottom: a "Texas Smash, 2026" header with the week dates and the "Last updated" badge; the Texas Top 10 (rank, player, score, and change since last week as "▲2", "▼1", "—" or "NEW", read aloud as "up 2", "down 1", "no change", "new"); this week's climbers and fallers; up to 5 upset cards ("Sample_Halo beat Sample_Kite 3–1", the event, and the rating gap); this week's events (with "Winner TBD", a start.gg link that opens in a new tab, and "and N more" if the list was cut off); and "Year at a glance" tiles plus the biggest event and the most event wins.
+- Every section has a short friendly message when empty (for example "No upsets yet this week."). While loading it shows grey skeleton bars; if the data cannot load it says so with a "Try again" button.
+- There is no main-character icon or text, as agreed (we have no such data).
+- **Where the full leaderboard went:** it now lives at its own page, `/leaderboard` (with the player search), reached from "Full leaderboard" under the Top 10. We moved it rather than stacking it under the Dashboard so the Dashboard stays short and quick on phones, and search keeps its own clear page. The Dashboard tab stays highlighted on that page. The existing leaderboard tests now visit `/leaderboard`; nothing in them was loosened.
+- New tests: wording helpers (change labels, week range, "and N more", upset sentence) and a full set of browser tests for the Dashboard (sections, links, new tab, empty states, loading, error, no sideways scrolling, accessibility checks).
+- Screenshots are in `docs/screenshots/p2-5/` (phone and desktop width).
+
+**What's next:**
+
+- The Texas tab (city power rankings) is still a placeholder.
+
+**Questions for Clay:** None new. Stated default: the page title stays "Dashboard | Smash Ultimate Rankings | Bracket Index".
+
+**Questions for Genghis:** None open.

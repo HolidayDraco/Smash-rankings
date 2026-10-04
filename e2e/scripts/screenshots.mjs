@@ -1,5 +1,5 @@
 // Saves PR screenshots at 390 and 1280 px wide: `node screenshots.mjs` (P1-8 leaderboard scenes)
-// `node screenshots.mjs p1-9` (player page scenes), `p1-10` (methodology and status), `p2-1` (two-tab shell: / and /texas), or `p2-2` (Texas scenes).
+// `node screenshots.mjs p1-9` (player page scenes), `p1-10` (methodology and status), `p2-1` (two-tab shell: / and /texas), `p2-2` (Texas scenes), or `p2-5` (Dashboard).
 // Needs the API on API_PORT (default 8787) against a seeded database, and `pnpm e2e`'s web build in apps/app/dist.
 import { chromium } from "@playwright/test";
 import { spawn } from "node:child_process";
@@ -91,19 +91,28 @@ const texasScenes = {
     await page.getByRole("list", { name: "Dallas-Fort Worth ranking" }).waitFor();
   },
 };
+const dashboardScenes = {
+  async dashboard(page) {
+    await page.goto(`http://localhost:${port}/`);
+    await page.getByRole("list", { name: "Year totals" }).waitFor();
+  },
+};
 const sceneSets = {
   "p1-8": scenes,
   "p1-9": playerScenes,
   "p1-10": infoScenes,
   "p2-1": shellScenes,
   "p2-2": texasScenes,
+  "p2-5": dashboardScenes,
 };
 
 try {
   for (const [name, scene] of Object.entries(sceneSets[set] ?? scenes)) {
+    // The Dashboard scrolls inside the page frame, so use tall windows to capture all of it.
+    const tall = set === "p2-5";
     for (const [width, height] of [
-      [390, 1100],
-      [1280, 900],
+      [390, tall ? 4200 : 1100],
+      [1280, tall ? 2600 : 900],
     ]) {
       const page = await browser.newPage({ viewport: { width, height } });
       await scene(page);

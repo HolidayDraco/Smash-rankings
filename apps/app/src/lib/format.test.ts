@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   describeNotRanked,
+  describeUpset,
+  formatEventDay,
+  formatSetScore,
+  formatWeekRange,
+  moreEventsText,
+  weekDeltaSpoken,
+  weekDeltaText,
   formatPlacement,
   ordinal,
   parsePlayerId,
@@ -62,5 +69,41 @@ describe("player page helpers", () => {
     expect(describeNotRanked({ setsNeeded: 0, eventsNeeded: 0, uncertaintyTooHigh: true })).toBe(
       "Needs more sets for the rating to settle.",
     );
+  });
+});
+
+describe("week delta", () => {
+  it("shows arrows, a dash for no change, and NEW", () => {
+    expect(weekDeltaText(2)).toBe("▲2");
+    expect(weekDeltaText(-1)).toBe("▼1");
+    expect(weekDeltaText(0)).toBe("—");
+    expect(weekDeltaText(null)).toBe("NEW");
+  });
+  it("speaks them in words", () => {
+    expect(weekDeltaSpoken(2)).toBe("up 2");
+    expect(weekDeltaSpoken(-1)).toBe("down 1");
+    expect(weekDeltaSpoken(0)).toBe("no change");
+    expect(weekDeltaSpoken(null)).toBe("new");
+  });
+});
+
+describe("dashboard text", () => {
+  it("formats the week range in UTC", () =>
+    expect(formatWeekRange("2026-09-28", "2026-10-04")).toBe("Week of Mon Sep 28 – Sun Oct 4"));
+  it("crosses a year boundary", () =>
+    expect(formatWeekRange("2026-12-28", "2027-01-03")).toBe("Week of Mon Dec 28 – Sun Jan 3"));
+  it("formats an event day in UTC", () =>
+    expect(formatEventDay("2026-10-03T23:30:00.000Z")).toBe("Sat Oct 3"));
+  it("says 'and N more' only when events were cut off", () => {
+    expect(moreEventsText(23, 20)).toBe("and 3 more");
+    expect(moreEventsText(20, 20)).toBeNull();
+    expect(moreEventsText(0, 0)).toBeNull();
+  });
+  it("uses an en dash in scores", () => expect(formatSetScore("3-1")).toBe("3–1"));
+  it("writes an upset as a sentence", () => {
+    expect(describeUpset("Sample_Halo", "Sample_Kite", "3-1")).toBe(
+      "Sample_Halo beat Sample_Kite 3–1",
+    );
+    expect(describeUpset("A", "B", null)).toBe("A beat B");
   });
 });

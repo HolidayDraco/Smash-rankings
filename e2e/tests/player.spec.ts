@@ -36,7 +36,7 @@ test.beforeEach(({ page }) => {
 
 test("opens a player from a leaderboard row", async ({ page, request }) => {
   const top = await findPlayer(request, true);
-  await page.goto("/");
+  await page.goto("/leaderboard");
   await page
     .getByRole("list", { name: /top 100 leaderboard/ })
     .getByRole("link", { name: new RegExp(`^Rank ${top.rank}, ${top.gamerTag},`) })

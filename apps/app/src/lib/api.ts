@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createApiClient } from "@sr/api/client";
 import {
+  dashboardResponseSchema,
   leaderboardResponseSchema,
   metaResponseSchema,
   playerResponseSchema,
@@ -107,4 +108,13 @@ export const usePlayer = (playerId: string | null) =>
       if (response.status === 404) return null;
       return playerResponseSchema.parse(await readJson(response));
     },
+  });
+
+/** Everything on the Dashboard tab comes from one call (the API caches it at the edge). */
+export const useDashboard = () =>
+  useQuery({
+    ...queryDefaults,
+    queryKey: ["dashboard"],
+    queryFn: async () =>
+      dashboardResponseSchema.parse(await readJson(await api().v1.dashboard.$get())),
   });

@@ -29,7 +29,7 @@ test("shows the seeded ranked players in rank order, each linking to a player pa
     entries: { rank: number; playerId: string; gamerTag: string }[];
   };
   expect(entries.length).toBeGreaterThan(5);
-  await page.goto("/");
+  await page.goto("/leaderboard");
   const links = board(page).getByRole("link");
   await expect(links).toHaveCount(entries.length);
   for (const [index, entry] of entries.entries()) {
@@ -44,14 +44,14 @@ test("shows the seeded ranked players in rank order, each linking to a player pa
 });
 
 test("shows the last-updated badge and the attribution", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/leaderboard");
   await expect(page.getByRole("status", { name: /^Last updated .* ago, at / })).toBeVisible();
   await expect(page.getByText(/^Last updated /)).toBeVisible();
   await expect(page.getByRole("link", { name: /Data from start\.gg/ })).toBeVisible();
 });
 
 test("search finds a player, replaces the leaderboard, and Escape clears it", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/leaderboard");
   const box = page.getByRole("searchbox", { name: "Search players" });
   await expect(board(page).getByRole("link").first()).toBeVisible();
   await box.fill("sample_d");
@@ -70,14 +70,14 @@ test("search finds a player, replaces the leaderboard, and Escape clears it", as
 });
 
 test("search shows an empty message when nothing matches", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/leaderboard");
   await page.getByRole("searchbox", { name: "Search players" }).fill("zzzzqq");
   await expect(page.getByTestId("search-status")).toHaveText("No players match that search.");
   await expect(page.getByText("No players match that search.")).toHaveCount(2);
 });
 
 test("announces the 2-letter hint, and Clear returns focus to the search box", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/leaderboard");
   const box = page.getByRole("searchbox", { name: "Search players" });
   await box.fill("s");
   await expect(page.getByTestId("search-status")).toHaveText(/at least 2 letters/);
@@ -94,7 +94,7 @@ test("shows grey skeleton rows while loading", async ({ page }) => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     await route.continue();
   });
-  await page.goto("/");
+  await page.goto("/leaderboard");
   await expect(page.getByTestId("skeleton-row").first()).toBeVisible();
   await expect(board(page)).toHaveCount(0);
   await expect(board(page)).toBeVisible();
@@ -103,7 +103,7 @@ test("shows grey skeleton rows while loading", async ({ page }) => {
 
 test("shows an error with a working retry when the API is down", async ({ page }) => {
   await page.route("**/v1/leaderboard*", (route) => route.abort());
-  await page.goto("/");
+  await page.goto("/leaderboard");
   await expect(page.getByRole("alert")).toContainText("We could not load");
   await expectNoSeriousViolations(page);
   await page.unroute("**/v1/leaderboard*");
@@ -112,7 +112,7 @@ test("shows an error with a working retry when the API is down", async ({ page }
 });
 
 test("leaderboard has no serious or critical axe violations once loaded", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/leaderboard");
   await expect(board(page)).toBeVisible();
   await expectNoSeriousViolations(page);
 });
