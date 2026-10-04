@@ -730,3 +730,24 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None. Stated default: the tag text is "Demo data".
 
 **Questions for Genghis:** None.
+
+---
+
+## 2026-10-04 — Refresh button (issue #30, part 2)
+
+**Date:** 2026-10-04
+
+**What changed:**
+
+- **A Refresh button (a small circular arrow) now sits at the top right of the header on every page.** Tapping it reloads the app, which fetches fresh data and the newest version. This matters most on an iPhone with the site added to the Home Screen: there is no browser reload button there, so before this you could not easily pick up a new deploy. On the web it reloads the page. On the phone apps later it will only refetch data, with no reload. Double taps are ignored while a refresh is running. The button is 44 px, has a visible focus ring, and is read aloud as "Refresh". The site has no service worker, so a plain reload always fetches the latest files.
+- **A small blue dot appears on the button when a newer version of the site has been deployed**, and its spoken label becomes "Refresh, new version available". Each build gets an id (the Vercel commit id when building on Vercel, otherwise the local git commit, otherwise a timestamp). The build writes it into the app and into a tiny file, `/build-id.json`. When you come back to the page, the app checks that file (at most once every 5 minutes) and shows the dot if the id is different. If the check fails, nothing is shown. In local dev (no build id) it never checks.
+- **Build command:** `pnpm --filter @sr/app build:web` now runs `apps/app/scripts/build-web.mjs`, which wraps the same Expo export. It needs no settings, so the Vercel build command is unchanged.
+- **Tests:** unit tests for the id comparison and the 5-minute limit. New browser tests check the button at 390 and 1280 px (in the header, 44 px, no sideways scrolling, accessibility clean), that pressing it reloads, and that the dot shows only when the id differs. The demo run also checks the button sits beside the "Demo data" tag without overlap. Screenshots are in `docs/screenshots/p3-refresh/`.
+
+**What's next:**
+
+- Clay: after this merges and deploys, open the site, deploy again, switch back to the tab and look for the dot. Tap Refresh to load the new version.
+
+**Questions for Clay:** None. Stated default: the icon is the text arrow, since no icon library is installed.
+
+**Questions for Genghis:** None.
