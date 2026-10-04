@@ -122,10 +122,12 @@ test.describe("two-tab navigation", () => {
     }
   });
 
-  test("texas placeholder has the right copy and no serious axe issues", async ({ page }) => {
+  test("texas page has the right copy and no serious axe issues", async ({ page }) => {
     await page.goto("/texas");
-    await expect(page).toHaveTitle("Texas | Bracket Index");
-    await expect(page.getByText("City power rankings are coming soon.")).toBeVisible();
+    await expect(page).toHaveTitle("Texas local power rankings | Bracket Index");
+    await expect(
+      page.getByText("Local power rankings, as posted by each scene's organizers."),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: /Data from start\.gg/ })).toBeVisible();
     for (const viewport of [PHONE, DESKTOP]) {
       await page.setViewportSize(viewport);

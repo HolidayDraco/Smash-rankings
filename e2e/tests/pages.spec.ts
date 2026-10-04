@@ -8,7 +8,7 @@ const routes = [
     title: "Dashboard | Smash Ultimate Rankings | Bracket Index",
     heading: "Dashboard",
   },
-  { path: "/texas", title: "Texas | Bracket Index", heading: "Texas" },
+  { path: "/texas", title: "Texas local power rankings | Bracket Index", heading: "Texas" },
   { path: "/style-guide", title: "Style guide | Bracket Index", heading: "Style guide" },
 ] as const;
 
