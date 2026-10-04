@@ -2,25 +2,24 @@ import { Link, usePathname } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LAUNCH_REGIONS, STATE_NAMES } from "@sr/core";
+import { activeTab, type TabHref } from "../lib/nav";
 import { BodyText, colors, minTouchTarget, spacing, useFocusRing } from "@sr/ui";
 
 /** At or above this width the tabs sit in the header; below it they become a bottom bar. */
 export const DESKTOP_BREAKPOINT = 768;
 
-type TabHref = "/" | "/texas";
 type TabShape = "slash" | "diamond";
 
 const TABS: readonly { href: TabHref; label: string; shape: TabShape }[] = [
   { href: "/", label: "Dashboard", shape: "slash" },
-  { href: "/texas", label: "Texas", shape: "diamond" },
+  // The region tab's label comes from the launch region (config, not hard-coded; ADR-0003).
+  {
+    href: "/texas",
+    label: STATE_NAMES[LAUNCH_REGIONS.states[0]] ?? LAUNCH_REGIONS.states[0],
+    shape: "diamond",
+  },
 ];
-
-/** Dashboard owns "/" and every player page; Texas owns "/texas". Other pages mark no tab. */
-export function activeTab(pathname: string): TabHref | null {
-  if (pathname === "/" || pathname.startsWith("/player/")) return "/";
-  if (pathname === "/texas" || pathname.startsWith("/texas/")) return "/texas";
-  return null;
-}
 
 /** Small original geometric marks (no icon font). Decorative: hidden from screen readers. */
 function Mark({ shape, color }: { shape: TabShape; color: string }) {
