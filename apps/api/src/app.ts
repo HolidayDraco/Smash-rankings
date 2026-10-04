@@ -274,7 +274,7 @@ export function createApp({
               ratingGap: Math.round(row.gap),
               completedAt: isoFromMs(row.completed_at_ms),
             })),
-            weekEvents: weekEvents.map((row) => ({
+            weekEvents: weekEvents.rows.map((row) => ({
               eventId: row.event_id,
               eventName: row.event_name,
               tournamentName: row.tournament_name,
@@ -291,6 +291,7 @@ export function createApp({
                     }),
               startggUrl: startggUrlFor(row.slug),
             })),
+            weekEventCount: weekEvents.total,
             year: {
               eventCount: year.totals.event_count,
               totalEntrants: year.totals.total_entrants,

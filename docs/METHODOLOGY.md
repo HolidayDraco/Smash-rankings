@@ -52,7 +52,7 @@ The Dashboard uses the same counting rules as the rankings: qualifying Texas eve
 
 - **This week** is the current rating week, Monday 00:00 to Sunday 23:59 UTC.
 - **Biggest movers** are the ranked players whose rank changed the most over 7 days, up to 3 climbers and 3 fallers. New players aren't included.
-- **Upsets** are sets this week where the winner's rating at the start of the week was lower than the loser's. The bigger the gap, the bigger the upset. A set is skipped if either player had no rating before this week.
+- **Upsets** are sets this week where the winner's rating at the start of the week was lower than the loser's. The bigger the gap, the bigger the upset. A set is skipped if either player had no rating before this week, or if the gap is less than 1 point after rounding.
 - **This year** counts qualifying events that have started since January 1 (UTC). "Players" counts everyone who played at least one counted set at them, and "most wins" counts 1st-place finishes.
 
 ## When the numbers update

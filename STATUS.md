@@ -660,10 +660,19 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 - The practice data now fills every Dashboard section. It is always placed relative to the day it is loaded: two fake events this week ("Sample Weekly" in San Antonio, and "Sample Arcadian" with no city), four upsets, one disqualification that is correctly ignored, and last week's ratings. That keeps automatic tests and screenshots meaningful on any day.
 - The "How rankings work" page has a short new "Dashboard numbers" section.
 - No database change was needed. The new lookups use indexes that already exist.
+- Review follow-ups (same PR):
+  - The feed now also says how many events this week matched in total (`weekEventCount`). The list still stops at 20, so the tab can say "and N more".
+  - An upset now needs a rating gap of at least 1 after rounding, so the tab never shows "gap 0".
+  - If one start.gg account was merged into another more than 5 times in a row (or the links loop), that player is left out of the Dashboard. The player page already answers "not found" for them, so the Dashboard never links to a missing page.
+  - New tests load the practice data at two awkward moments (30 seconds after midnight on a Monday, and on New Year's Day 2027, whose week began in 2026) and check that every section still has something in it.
+  - The API tests now use a fixed test clock for the Dashboard instead of the real date, so they keep passing after this week ends.
+- **Two things to know about "this week":**
+  - A preview database is loaded with practice data for the week it was loaded in. From the next Monday on, its "this week" sections (upsets and this week's events) are empty until the practice data is loaded again.
+  - Answers are cached for up to about 15 minutes. So for up to about 15 minutes after Monday 00:00 UTC, someone may still see last week's view. (On a quiet page, the first visitor after that can get the old view one more time while the cache refreshes in the background.) Every answer carries its own week dates, so it is never labeled as the wrong week.
 
 **What's next:**
 
-- PR 5 of 5: build the Dashboard tab on top of this feed, with screenshots.
+- PR 5 of 5: build the Dashboard tab on top of this feed, with screenshots. Show "and N more" when `weekEventCount` is bigger than the list.
 
 **Questions for Clay:** None new. Two stated defaults you can overrule: (1) "this year" ignores events that haven't started yet; (2) a set doesn't count as an upset if either player had no rating before the week.
 

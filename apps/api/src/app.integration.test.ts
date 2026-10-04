@@ -72,6 +72,7 @@ describe.skipIf(!testDatabaseUrl)(
         getDb: () => db,
         allowedOrigins: [APP_ORIGIN],
         allowedOriginPattern: PREVIEW_PATTERN,
+        now: () => NOW, // the seed's clock; the wall clock would leave NOW's week next Monday
       });
     }, 30_000);
 
@@ -549,6 +550,7 @@ describe.skipIf(!testDatabaseUrl)(
           ["Sample Weekly", "San Antonio", 24, "Sample_Halo"],
           ["Sample Arcadian", null, 16, "Sample_Wisp"],
         ]);
+        expect(body.weekEventCount).toBe(2);
         expect(body.weekEvents[0]).toMatchObject({
           startAt: "2026-09-29T09:00:00.000Z",
           startggUrl: "https://www.start.gg/tournament/synthetic-4/event/ultimate-singles",
@@ -709,7 +711,8 @@ describe.skipIf(!testDatabaseUrl)(
             { eventId: monday, playerId: lumen, placement: 1 }, // shared 1st: lowest id shown
           ]);
 
-          const { weekEvents, year } = await dashboard();
+          const { weekEvents, weekEventCount, year } = await dashboard();
+          expect(weekEventCount).toBe(4);
           expect(weekEvents.map((row) => [row.eventId, row.winner?.gamerTag ?? null])).toEqual([
             [String(monday), "Sample_Halo"],
             [String(syn(4)), "Sample_Halo"],
@@ -752,6 +755,7 @@ describe.skipIf(!testDatabaseUrl)(
             movers: { climbers: [], fallers: [] },
             upsets: [],
             weekEvents: [],
+            weekEventCount: 0,
             year: {
               eventCount: 0,
               totalEntrants: 0,
@@ -778,7 +782,182 @@ describe.skipIf(!testDatabaseUrl)(
         expect(body.header).toMatchObject({ weekStart: "2026-10-05", weekEnd: "2026-10-11" });
         // Last week's seeded events and sets now belong to the previous week.
         expect(body.weekEvents).toEqual([]);
+        expect(body.weekEventCount).toBe(0);
         expect(body.upsets).toEqual([]);
+      });
+
+      it("caps the week's events at 20 and reports the full count", async () => {
+        try {
+          for (let index = 0; index < 19; index++) {
+            await addEvent(800_200 + index, new Date(Date.UTC(2026, 8, 30, 10, index)));
+          }
+          await addEvent(800_250, new Date("2026-09-30T11:00:00Z"), { qualifies: false });
+          const { weekEvents, weekEventCount } = await dashboard();
+          expect(weekEvents).toHaveLength(20);
+          expect(weekEventCount).toBe(21); // 2 seeded + 19 added; the non-qualifying one is out
+        } finally {
+          await reseed();
+        }
+      });
+
+      it("an upset needs a gap that rounds to at least 1", async () => {
+        try {
+          const ids = [1, 2, 3, 4].map((offset) => syn(800_300 + offset));
+          const [lowA, highA, lowB, highB] = ids as [number, number, number, number];
+          await db
+            .insert(players)
+            .values(ids.map((id, index) => ({ id, gamerTag: `Sample_Close${index}` })));
+          const rating = (playerId: number, value: number) => ({
+            playerId,
+            period: period - 1,
+            rating: value,
+            rd: 80,
+            volatility: 0.06,
+          });
+          await db
+            .insert(ratingHistory)
+            .values([
+              rating(lowA, 1500),
+              rating(highA, 1500.4),
+              rating(lowB, 1500),
+              rating(highB, 1500.5),
+            ]);
+          const eventId = await addEvent(800_310, new Date("2026-09-29T10:00:00Z"));
+          const base = {
+            eventId,
+            completedAt: new Date("2026-09-29T12:00:00Z"),
+            ratingPeriod: period,
+            winnerGames: 2,
+            loserGames: 1,
+          };
+          // Alone, the 0.4 gap would be the 5th upset (the seed has 4); it must not show as "gap 0".
+          await db
+            .insert(sets)
+            .values({ ...base, id: syn(800_311), winnerId: lowA, loserId: highA });
+          const before = await dashboard();
+          expect(before.upsets.map((row) => row.ratingGap)).toEqual([220, 180, 140, 40]);
+          // A 0.5 gap rounds to 1 and counts.
+          await db
+            .insert(sets)
+            .values({ ...base, id: syn(800_312), winnerId: lowB, loserId: highB });
+          const { upsets } = await dashboard();
+          expect(upsets.map((row) => [row.setId, row.ratingGap])).toEqual([
+            ["9000000000146", 220],
+            ["9000000000142", 180],
+            ["9000000000137", 140],
+            ["9000000000141", 40],
+            [String(syn(800_312)), 1],
+          ]);
+        } finally {
+          await reseed();
+        }
+      });
+
+      it("leaves out players whose merge chain is longer than 5 hops, as the player page does", async () => {
+        try {
+          // chain[k] is an alias k hops from Wisp: chain[5] still resolves, chain[6] does not.
+          const chain = [wisp, 1, 2, 3, 4, 5, 6].map((k) => (k === wisp ? wisp : syn(800_400 + k)));
+          for (let k = 1; k <= 6; k++) {
+            await db.insert(players).values({
+              id: chain[k] as number,
+              gamerTag: `Sample_Hop${k}`,
+              mergedInto: chain[k - 1] as number,
+            });
+          }
+          const [hop1, hop5, hop6] = [chain[1], chain[5], chain[6]] as [number, number, number];
+          // Without the check, hop6 would end on hop1 (still an alias) with this low rating.
+          await db.insert(ratingHistory).values(
+            [hop1, hop6].map((playerId) => ({
+              playerId,
+              period: period - 1,
+              rating: 1000,
+              rd: 80,
+              volatility: 0.06,
+            })),
+          );
+          const thisWeek = await addEvent(800_410, new Date("2026-09-29T10:00:00Z"));
+          const tuesday = new Date("2026-09-29T12:00:00Z");
+          const base = { eventId: thisWeek, completedAt: tuesday, ratingPeriod: period };
+          await db.insert(sets).values([
+            {
+              ...base,
+              id: syn(800_411),
+              winnerId: hop6,
+              loserId: halo,
+              winnerGames: 2,
+              loserGames: 0,
+            },
+            {
+              ...base,
+              id: syn(800_412),
+              winnerId: hop5,
+              loserId: halo,
+              winnerGames: 2,
+              loserGames: 1,
+            },
+          ]);
+          // hop6 "wins" four events this year: more than Ace's 3, if it counted.
+          const earlier = await Promise.all(
+            [1, 2, 3].map((index) =>
+              addEvent(800_420 + index, new Date(Date.UTC(2026, 5, index, 12))),
+            ),
+          );
+          await db
+            .insert(standings)
+            .values(
+              [thisWeek, ...earlier].map((eventId) => ({ eventId, playerId: hop6, placement: 1 })),
+            );
+
+          expect((await app.request(`/v1/players/${hop6}`)).status).toBe(404);
+          expect((await app.request(`/v1/players/${hop5}`)).status).not.toBe(404);
+
+          const { upsets, weekEvents, year } = await dashboard();
+          // hop5 counts as Wisp (gap 1860 - 1560 = 300); hop6's set is left out.
+          expect(upsets[0]).toMatchObject({
+            setId: String(syn(800_412)),
+            winner: { playerId: String(wisp), gamerTag: "Sample_Wisp" },
+            ratingGap: 300,
+          });
+          const shownIds = upsets.flatMap((row) => [row.winner.playerId, row.loser.playerId]);
+          expect(shownIds).not.toContain(String(hop1));
+          expect(shownIds).not.toContain(String(hop6));
+          expect(weekEvents.find((row) => row.eventId === String(thisWeek))?.winner).toBeNull();
+          expect(year.mostWins).toEqual({
+            player: { playerId: String(player(0)), gamerTag: "Sample_Ace", prefix: null },
+            wins: 3,
+          });
+          expect(year.uniquePlayers).toBe(30); // hop5 is Wisp and Halo is seeded: no one new
+        } finally {
+          await reseed();
+        }
+      });
+
+      describe("the seed fills every section whenever it runs", () => {
+        it.each([
+          ["a Monday just after midnight", "2026-09-28T00:00:30Z", 2026, "2026-09-28"],
+          ["a Friday whose week began last year", "2027-01-01T00:00:30Z", 2027, "2026-12-28"],
+        ])("%s (%s)", async (_label, seedTime, year, weekStart) => {
+          const seedNow = new Date(seedTime);
+          try {
+            await seedSynthetic(db, { now: seedNow });
+            const seeded = createApp({ getDb: () => db, allowedOrigins: [], now: () => seedNow });
+            const response = await seeded.request("/v1/dashboard");
+            expect(response.status).toBe(200);
+            const body = dashboardResponseSchema.parse(await response.json());
+            expect(body.header).toMatchObject({ year, weekStart });
+            expect(body.upsets.length).toBeGreaterThan(0);
+            expect(body.weekEvents.length).toBeGreaterThan(0);
+            expect(body.movers.climbers.length).toBeGreaterThan(0);
+            expect(body.movers.fallers.length).toBeGreaterThan(0);
+            expect(body.year.eventCount).toBeGreaterThan(0);
+            expect(body.year.totalEntrants).toBeGreaterThan(0);
+            expect(body.year.uniquePlayers).toBeGreaterThan(0);
+            expect(body.year.biggestEvent).not.toBeNull();
+            expect(body.year.mostWins).not.toBeNull();
+          } finally {
+            await reseed();
+          }
+        });
       });
 
       it("rejects query parameters and works through the typed client", async () => {

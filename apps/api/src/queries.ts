@@ -230,6 +230,10 @@ export async function readMovers(db: Database) {
  * Maps every merged alias to its main player (following chains up to MAX_MERGE_HOPS),
  * the same way the rating job counts one person as one player. Only alias rows are
  * walked (players_merged_into_idx), so this stays tiny.
+ *
+ * `resolved` is false when the chain is longer than MAX_MERGE_HOPS (or loops), so its last
+ * node is still an alias. Like `GET /v1/players/:id` (which answers 404 for such a chain),
+ * the dashboard then leaves that player out: see `isResolved`.
  */
 const withMainPlayers = sql.raw(`with recursive alias_chain(id, main_id, hops) as (
     select id, merged_into, 1 from players where merged_into is not null
@@ -238,9 +242,14 @@ const withMainPlayers = sql.raw(`with recursive alias_chain(id, main_id, hops) a
     from alias_chain c join players p on p.id = c.main_id
     where p.merged_into is not null and c.hops < ${MAX_MERGE_HOPS}
   ),
-  main_players(id, main_id) as (
-    select distinct on (id) id, main_id from alias_chain order by id, hops desc
+  main_players(id, main_id, resolved) as (
+    select distinct on (c.id) c.id, c.main_id, (p.id is not null and p.merged_into is null)
+    from alias_chain c left join players p on p.id = c.main_id
+    order by c.id, c.hops desc
   )`);
+
+/** True unless the main_players row joined as `alias` is an unresolvable chain. */
+const isResolved = (alias: string) => sql.raw(`(${alias}.id is null or ${alias}.resolved)`);
 
 const eventStart = sql.raw("coalesce(e.start_at, t.start_at)");
 const epochMs = (expression: string) =>
@@ -257,7 +266,7 @@ const upsetRowSchema = z.object({
   completed_at_ms: z.number(),
   event_name: z.string(),
   tournament_name: z.string(),
-  gap: z.number().positive(),
+  gap: z.number().min(0.5),
   winner_id: idText,
   winner_tag: z.string(),
   winner_prefix: z.string().nullable(),
@@ -270,14 +279,15 @@ const upsetRowSchema = z.object({
  * The biggest upsets among this week's sets: non-DQ sets at qualifying events, completed
  * inside the week, where the winner's rating at the start of the week (their latest
  * rating_history row before this period) was lower than the loser's. Players with no
- * earlier rating are skipped. Uses sets_rating_period_idx and the rating_history key.
+ * earlier rating are skipped, and so are gaps that round to 0. Uses sets_rating_period_idx
+ * and the rating_history key.
  */
 export async function readUpsets(db: Database, window: DashboardWindow) {
   const { period, weekStart, weekEnd } = window;
-  const priorRating = (column: string) =>
-    sql.raw(`(select h.rating from rating_history h
-      where h.player_id = ws.${column} and h.period < ${period}
-      order by h.period desc limit 1)`);
+  const priorRating = (column: "winner_id" | "loser_id") =>
+    sql`(select h.rating from rating_history h
+      where h.player_id = ws.${sql.identifier(column)} and h.period < ${period}
+      order by h.period desc limit 1)`;
   const rows = await db.execute(sql`${withMainPlayers},
     week_sets as (
       select s.id, s.winner_games, s.loser_games, s.completed_at,
@@ -294,6 +304,8 @@ export async function readUpsets(db: Database, window: DashboardWindow) {
         and s.completed_at < ${timestampParam(weekEnd)}
         and not s.is_dq
         and e.qualifies
+        and ${isResolved("mw")}
+        and ${isResolved("ml")}
     ),
     gaps as (
       select ws.*, ${priorRating("loser_id")} - ${priorRating("winner_id")} as gap
@@ -307,7 +319,7 @@ export async function readUpsets(db: Database, window: DashboardWindow) {
     from gaps g
     join players pw on pw.id = g.winner_id
     join players pl on pl.id = g.loser_id
-    where g.gap > 0
+    where g.gap >= 0.5 -- shown rounded, so a smaller gap would read "gap 0"
     order by g.gap desc, g.id asc
     limit ${DASHBOARD_UPSETS_COUNT}`);
   return z.array(upsetRowSchema).parse(rows);
@@ -328,11 +340,15 @@ const weekEventRowSchema = z.object({
 
 /**
  * Qualifying events (which are, by definition, in the launch region: discover sets
- * `qualifies` only for them) starting this week, by start then id. The winner is the
- * player placed 1st (lowest id on a shared 1st), or null. Uses standings' primary key.
+ * `qualifies` only for them) starting this week, by start then id, capped at
+ * DASHBOARD_WEEK_EVENTS_MAX; `total` counts them all. The winner is the player placed 1st
+ * (lowest id on a shared 1st), or null. Uses standings' primary key.
  */
 export async function readWeekEvents(db: Database, window: DashboardWindow) {
-  const rows = await db.execute(sql`${withMainPlayers}
+  const weekFilter = sql`e.qualifies
+      and ${eventStart} >= ${timestampParam(window.weekStart)}
+      and ${eventStart} < ${timestampParam(window.weekEnd)}`;
+  const listQuery = db.execute(sql`${withMainPlayers}
     select e.id::text as event_id, e.name as event_name, t.name as tournament_name, t.city,
       ${epochMs("coalesce(e.start_at, t.start_at)")} as start_at_ms, e.num_entrants, e.slug,
       p.id::text as winner_id, p.gamer_tag as winner_tag, p.prefix as winner_prefix
@@ -341,16 +357,22 @@ export async function readWeekEvents(db: Database, window: DashboardWindow) {
     left join lateral (
       select coalesce(m.main_id, st.player_id) as player_id
       from standings st left join main_players m on m.id = st.player_id
-      where st.event_id = e.id and st.placement = 1
+      where st.event_id = e.id and st.placement = 1 and ${isResolved("m")}
       order by st.player_id limit 1
     ) w on true
     left join players p on p.id = w.player_id
-    where e.qualifies
-      and ${eventStart} >= ${timestampParam(window.weekStart)}
-      and ${eventStart} < ${timestampParam(window.weekEnd)}
+    where ${weekFilter}
     order by ${eventStart} asc, e.id asc
     limit ${DASHBOARD_WEEK_EVENTS_MAX}`);
-  return z.array(weekEventRowSchema).parse(rows);
+  const countQuery = db.execute(sql`select count(*)::int as total
+    from events e
+    join tournaments t on t.id = e.tournament_id
+    where ${weekFilter}`);
+  const [rows, totals] = await Promise.all([listQuery, countQuery]);
+  return {
+    rows: z.array(weekEventRowSchema).parse(rows),
+    total: z.object({ total: count }).parse(totals[0]).total,
+  };
 }
 
 const yearTotalsRowSchema = z.object({
@@ -397,7 +419,8 @@ export async function readYear(db: Database, window: DashboardWindow, now: Date)
           join year_events ye on ye.id = s.event_id
           cross join lateral (values (s.winner_id), (s.loser_id)) as x(player_id)
           left join main_players m on m.id = x.player_id
-          where not s.is_dq and s.rating_period is not null)::int as unique_players`),
+          where not s.is_dq and s.rating_period is not null
+            and ${isResolved("m")})::int as unique_players`),
     db.execute(sql`with ${yearEvents}
       select id::text as event_id, name as event_name, tournament_name, num_entrants, slug
       from year_events
@@ -410,7 +433,7 @@ export async function readYear(db: Database, window: DashboardWindow, now: Date)
         from standings st
         join year_events ye on ye.id = st.event_id
         left join main_players m on m.id = st.player_id
-        where st.placement = 1
+        where st.placement = 1 and ${isResolved("m")}
         group by 1
       )
       select f.player_id::text as player_id, p.gamer_tag, p.prefix, f.wins

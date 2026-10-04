@@ -48,7 +48,7 @@ export const errorResponseSchema = z.strictObject({
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 
 /** start.gg ids travel as digit strings so they never lose precision in JS clients. */
-const playerIdField = z.string().regex(/^\d+$/);
+const startggIdField = z.string().regex(/^\d+$/);
 
 /** List caps: nothing may page past the top 100 (start.gg ToS: no bulk export). */
 export const LEADERBOARD_MAX_LIMIT = 100;
@@ -60,7 +60,7 @@ export const PLAYER_RECENT_RESULTS = 10;
 /** `GET /v1/leaderboard?limit=`: the top eligible players, ordered by rank. */
 export const leaderboardEntrySchema = z.strictObject({
   rank: z.number().int().positive(),
-  playerId: playerIdField,
+  playerId: startggIdField,
   gamerTag: z.string(),
   prefix: z.string().nullable(),
   countryCode: z.string().nullable(),
@@ -89,7 +89,7 @@ export const notRankedReasonSchema = z.strictObject({
 export type NotRankedReason = z.infer<typeof notRankedReasonSchema>;
 
 export const playerResultSchema = z.strictObject({
-  eventId: playerIdField,
+  eventId: startggIdField,
   eventName: z.string(),
   tournamentName: z.string(),
   date: isoTimestamp.nullable(),
@@ -99,7 +99,7 @@ export const playerResultSchema = z.strictObject({
 
 /** `GET /v1/players/:id`. Rating fields are null when the player has never been rated. */
 export const playerResponseSchema = z.strictObject({
-  playerId: playerIdField,
+  playerId: startggIdField,
   gamerTag: z.string(),
   prefix: z.string().nullable(),
   countryCode: z.string().nullable(),
@@ -127,7 +127,7 @@ export type PlayerResponse = z.infer<typeof playerResponseSchema>;
 
 /** `GET /v1/search?q=`: ranked players first (by rank), then the rest by tag. */
 export const searchResultSchema = z.strictObject({
-  playerId: playerIdField,
+  playerId: startggIdField,
   gamerTag: z.string(),
   prefix: z.string().nullable(),
   rank: z.number().int().positive().nullable(),
@@ -148,7 +148,7 @@ export const DASHBOARD_WEEK_EVENTS_MAX = 20;
 
 /** Enough to show a player and link to their page (the link is built from id + tag). */
 export const dashboardPlayerSchema = z.strictObject({
-  playerId: playerIdField,
+  playerId: startggIdField,
   gamerTag: z.string(),
   prefix: z.string().nullable(),
 });
@@ -157,7 +157,7 @@ export type DashboardPlayer = z.infer<typeof dashboardPlayerSchema>;
 /** A top-10 row: the leaderboard entry, trimmed. `rankDelta7d` null means new this week. */
 export const dashboardTopEntrySchema = z.strictObject({
   rank: z.number().int().positive(),
-  playerId: playerIdField,
+  playerId: startggIdField,
   gamerTag: z.string(),
   prefix: z.string().nullable(),
   /** Rating minus two times rating deviation, rounded (as on the leaderboard). */
@@ -168,7 +168,7 @@ export const dashboardTopEntrySchema = z.strictObject({
 /** A climber (delta > 0) or faller (delta < 0) among currently ranked players. */
 export const dashboardMoverSchema = z.strictObject({
   rank: z.number().int().positive(),
-  playerId: playerIdField,
+  playerId: startggIdField,
   gamerTag: z.string(),
   prefix: z.string().nullable(),
   rankDelta7d: z
@@ -182,7 +182,7 @@ export const dashboardMoverSchema = z.strictObject({
  * the loser's. `ratingGap` is loser minus winner, rounded; `score` is "3-1" or null.
  */
 export const dashboardUpsetSchema = z.strictObject({
-  setId: playerIdField,
+  setId: startggIdField,
   winner: dashboardPlayerSchema,
   loser: dashboardPlayerSchema,
   score: z
@@ -191,13 +191,14 @@ export const dashboardUpsetSchema = z.strictObject({
     .nullable(),
   eventName: z.string(),
   tournamentName: z.string(),
-  ratingGap: z.number().int().nonnegative(),
+  /** At least 1: gaps that would round to 0 are not upsets. */
+  ratingGap: z.number().int().positive(),
   completedAt: isoTimestamp,
 });
 
 /** A qualifying event starting this week. `winner` is null until a 1st place is known. */
 export const dashboardWeekEventSchema = z.strictObject({
-  eventId: playerIdField,
+  eventId: startggIdField,
   eventName: z.string(),
   tournamentName: z.string(),
   city: z.string().nullable(),
@@ -214,7 +215,7 @@ export const dashboardYearSchema = z.strictObject({
   uniquePlayers: z.number().int().nonnegative(),
   biggestEvent: z
     .strictObject({
-      eventId: playerIdField,
+      eventId: startggIdField,
       eventName: z.string(),
       tournamentName: z.string(),
       numEntrants: z.number().int().nonnegative(),
@@ -249,6 +250,8 @@ export const dashboardResponseSchema = z.strictObject({
   }),
   upsets: z.array(dashboardUpsetSchema).max(DASHBOARD_UPSETS_COUNT),
   weekEvents: z.array(dashboardWeekEventSchema).max(DASHBOARD_WEEK_EVENTS_MAX),
+  /** How many events match in total; more than `weekEvents.length` means "and N more". */
+  weekEventCount: z.number().int().nonnegative(),
   year: dashboardYearSchema,
   attribution: attributionField,
 });
