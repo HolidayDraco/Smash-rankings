@@ -695,7 +695,8 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 
 **What's next:**
 
-- The Texas tab (city power rankings) is still a placeholder.
+- With this, all 5 parts of issue #24 are in: the two tabs, the Texas city rankings (#26), and the Dashboard.
+- Next: the first live check against start.gg (P1-12), once the token and network access are set up. Until then, the Dashboard shows the fake sample data.
 
 **Questions for Clay:** None new. Stated default: the page title stays "Dashboard | Smash Ultimate Rankings | Bracket Index".
 
