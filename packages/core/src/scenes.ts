@@ -35,9 +35,17 @@ function isCcBySaWikiUrl(url: string): boolean {
 export const sceneCreditSchema = z.strictObject({
   site: z.string().trim().min(1),
   license: z.literal("CC BY-SA"),
+  /**
+   * The Creative Commons license page for the exact version (e.g. by-sa/3.0). Optional until the
+   * version is confirmed from the source site's footer; must be a creativecommons.org https link.
+   */
   licenseUrl: z
     .url()
-    .refine((value) => value.startsWith("https://"), "licenseUrl must start with https://"),
+    .refine(
+      (value) => value.startsWith("https://creativecommons.org/licenses/by-sa/"),
+      "licenseUrl must be a https://creativecommons.org/licenses/by-sa/... link",
+    )
+    .optional(),
 });
 
 export const sceneSchema = z

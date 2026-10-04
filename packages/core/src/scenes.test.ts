@@ -104,7 +104,6 @@ describe("scenesFileSchema", () => {
     const credit = {
       site: "Liquipedia",
       license: "CC BY-SA",
-      licenseUrl: "https://liquipedia.net/smash/Texas_Power_Rankings",
     };
     it("requires credit for liquipedia.net and ssbwiki.com sources", () => {
       for (const sourceUrl of [
@@ -117,8 +116,18 @@ describe("scenesFileSchema", () => {
     });
     it("does not require credit for other sources, and checks the credit shape", () => {
       expect(scenesFileSchema.safeParse(file([scene({ credit })])).success).toBe(true);
-      const bad = { ...credit, licenseUrl: "http://example.com" };
-      expect(scenesFileSchema.safeParse(file([scene({ credit: bad })])).success).toBe(false);
+      for (const licenseUrl of [
+        "http://creativecommons.org/licenses/by-sa/3.0/",
+        "https://liquipedia.net/smash/Texas_Power_Rankings",
+      ]) {
+        const bad = { ...credit, licenseUrl };
+        expect(scenesFileSchema.safeParse(file([scene({ credit: bad })])).success).toBe(false);
+      }
+      const versioned = {
+        ...credit,
+        licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
+      };
+      expect(scenesFileSchema.safeParse(file([scene({ credit: versioned })])).success).toBe(true);
       const wrong = { ...credit, license: "MIT" };
       expect(scenesFileSchema.safeParse(file([scene({ credit: wrong })])).success).toBe(false);
     });

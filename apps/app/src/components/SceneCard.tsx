@@ -83,12 +83,14 @@ export function SceneCard({
                   external
                 />
               ) : null}
-              <ActionLink
-                label={`${scene.credit.license} license for ${scene.city}`}
-                text="License"
-                href={scene.credit.licenseUrl}
-                external
-              />
+              {scene.credit.licenseUrl ? (
+                <ActionLink
+                  label={`${scene.credit.license} license for ${scene.city}`}
+                  text="License"
+                  href={scene.credit.licenseUrl}
+                  external
+                />
+              ) : null}
             </View>
           ) : scene.sourceUrl ? (
             <ActionLink

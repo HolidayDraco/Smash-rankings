@@ -78,9 +78,8 @@ test("expanding Dallas-Fort Worth shows its ranking, HM entries and source", asy
   await expect(items.last()).toContainText("Grapezard X");
   await expect(page.getByText("From Liquipedia · CC BY-SA")).toBeVisible();
   await expect(page.getByLabel("Honorable mention")).toHaveCount(1);
-  await expect(
-    page.getByRole("link", { name: /CC BY-SA license for Dallas-Fort Worth/ }),
-  ).toHaveAttribute("href", /^https:\/\//);
+  // No separate License link until the license version is confirmed (it would repeat Source).
+  await expect(page.getByRole("link", { name: /license for Dallas-Fort Worth/ })).toHaveCount(0);
   const source = page.getByRole("link", { name: /Source for Dallas-Fort Worth/ });
   await expect(source).toHaveAttribute("target", "_blank");
   await expect(source).toHaveAttribute("href", /^https:\/\//);

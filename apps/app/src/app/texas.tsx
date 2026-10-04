@@ -1,6 +1,7 @@
 import Head from "expo-router/head";
 import { useEffect, useMemo, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
+import { LAUNCH_REGIONS, STATE_NAMES } from "@sr/core";
 import { texasScenes } from "@sr/core/texas-scenes";
 import { BodyText, DisplayText, colors, spacing } from "@sr/ui";
 import { Page } from "../components/Page";
@@ -8,7 +9,9 @@ import { SceneCard } from "../components/SceneCard";
 import { SearchBox } from "../components/SearchBox";
 import { PINS_STORAGE_KEY, arrangeScenes, parsePins, togglePin } from "../lib/scenes";
 
-const TITLE = "Texas local power rankings | Bracket Index";
+/** Same name as the tab label, from the launch region config (ADR-0003). */
+const REGION_NAME = STATE_NAMES[LAUNCH_REGIONS.states[0]] ?? LAUNCH_REGIONS.states[0];
+const TITLE = `${REGION_NAME} local power rankings | Bracket Index`;
 const DESCRIPTION =
   "Local Smash Ultimate power rankings for Texas cities, as posted by each scene's organizers. Pin your city and see the full list.";
 
@@ -60,7 +63,7 @@ export default function TexasPage() {
         <meta property="og:description" content={DESCRIPTION} />
       </Head>
       <View style={styles.column}>
-        <DisplayText variant="h1">Texas</DisplayText>
+        <DisplayText variant="h1">{REGION_NAME}</DisplayText>
         <BodyText muted style={styles.lead}>
           Local power rankings, as posted by each scene&apos;s organizers.
         </BodyText>
