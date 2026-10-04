@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Attribution, colors, spacing } from "@sr/ui";
+import { colors, spacing } from "@sr/ui";
 import { ActionLink } from "./ActionLink";
+import { DataCredit } from "./DataCredit";
 
-/** Standard screen frame: scrolling content, centered column, and the attribution footer. */
+/** Standard screen frame: scrolling content, centered column, and the data credit footer. */
 export function Page({ children }: { children: ReactNode }) {
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
@@ -14,7 +15,7 @@ export function Page({ children }: { children: ReactNode }) {
         <View role="navigation" aria-label="Footer" style={styles.links}>
           <ActionLink label="How rankings work" href="/methodology" />
         </View>
-        <Attribution />
+        <DataCredit />
       </View>
     </ScrollView>
   );

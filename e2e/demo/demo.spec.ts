@@ -23,16 +23,20 @@ test("dashboard renders its sections from the bundled sample data", async ({ pag
     10,
   );
   await expect(page.getByRole("status", { name: /^Last updated / })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Data from start\.gg/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Try again/ })).toHaveCount(0);
 });
 
-test("the Demo data tag is visible, named, and on every page", async ({ page }) => {
+test("every page shows the Demo data tag and a sample-data footer", async ({ page }) => {
   for (const path of ["/", "/texas", "/leaderboard", "/status"]) {
     await page.goto(path);
     const tag = page.getByRole("note", { name: "Demo data: sample rankings, not real results" });
     await expect(tag).toBeVisible();
     await expect(tag).toContainText("Demo data");
+    // Sample players are made up, so the footer must not credit start.gg.
+    await expect(
+      page.getByText("Sample data, not from start.gg").filter({ visible: true }),
+    ).toBeVisible();
+    await expect(page.getByText("Data from start.gg", { exact: true })).toHaveCount(0);
   }
 });
 
@@ -63,7 +67,9 @@ test("a player page opens from the leaderboard, and an unknown player says not f
   await first.click();
   await expect(page).toHaveURL(/\/player\/\d+-/);
   await expect(page.getByRole("heading", { level: 1, name: /^Sample_/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Data from start\.gg/ })).toBeVisible();
+  await expect(
+    page.getByText("Sample data, not from start.gg").filter({ visible: true }),
+  ).toBeVisible();
 
   await page.goto("/player/999999-nobody");
   await expect(page.getByText("Player not found")).toBeVisible();
