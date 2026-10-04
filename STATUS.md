@@ -639,3 +639,41 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 2. The source data had no per-city "last updated" date, so none is shown. Do you want one added when you send lists? (Default: no.)
 
 **Questions for Genghis:** None open.
+
+---
+
+## 2026-10-03 — Dashboard data feed (issue #24, part 4 of 5)
+
+**Date:** 2026-10-03
+
+**What changed:**
+
+- Added the data feed for the new **Dashboard** tab: `/v1/dashboard`. Nothing on screen changes yet; the next PR builds the tab itself. It shows "Texas Smash, 2026" plus what happened this week. Every section can be empty, and the tab will show a friendly empty message when it is.
+- **What it shows, and how each number is worked out:**
+  - **Header:** the year, this week's dates, and "last updated" (the same time as the badge on the leaderboard). "This week" is the same week the rankings use: Monday 00:00 to Sunday 23:59, UTC time. It is worked out from the moment someone opens the page.
+  - **Top 10:** the first 10 rows of the leaderboard, with the same score and 7-day change. There is no "main character" because start.gg doesn't give us that.
+  - **Biggest movers:** up to 3 ranked players who climbed the most places over 7 days, and up to 3 who fell the most. If two players moved the same amount, the better-ranked one comes first. New players aren't included.
+  - **Upsets:** up to 5 sets played this week at counted Texas events where the winner's rating at the start of the week was lower than the loser's. They are sorted by the rating gap, biggest first. Disqualifications and non-counted events are left out. A set is skipped if either player had no rating before this week (a stated default). The row shows both players, the score (like "3-1", or blank if start.gg didn't report one), the event, and the gap.
+  - **This week's events:** up to 20 counted Texas events starting this week, in date order, with city (blank if start.gg has none), date, entrants, the winner (blank until there is a 1st place), and a start.gg link.
+  - **This year:** counted events since January 1 (UTC), total entrants, how many different players played at least one counted set, the biggest event, and who won the most events. Events later this year that haven't started yet are left out, because their entrant counts are still growing (a stated default).
+  - If someone has two linked start.gg accounts, the Dashboard counts them as one player, as the rankings do.
+- The practice data now fills every Dashboard section. It is always placed relative to the day it is loaded: two fake events this week ("Sample Weekly" in San Antonio, and "Sample Arcadian" with no city), four upsets, one disqualification that is correctly ignored, and last week's ratings. That keeps automatic tests and screenshots meaningful on any day.
+- The "How rankings work" page has a short new "Dashboard numbers" section.
+- No database change was needed. The new lookups use indexes that already exist.
+- Review follow-ups (same PR):
+  - The feed now also says how many events this week matched in total (`weekEventCount`). The list still stops at 20, so the tab can say "and N more".
+  - An upset now needs a rating gap of at least 1 after rounding, so the tab never shows "gap 0".
+  - If one start.gg account was merged into another more than 5 times in a row (or the links loop), that player is left out of the Dashboard. The player page already answers "not found" for them, so the Dashboard never links to a missing page.
+  - New tests load the practice data at two awkward moments (30 seconds after midnight on a Monday, and on New Year's Day 2027, whose week began in 2026) and check that every section still has something in it.
+  - The API tests now use a fixed test clock for the Dashboard instead of the real date, so they keep passing after this week ends.
+- **Two things to know about "this week":**
+  - A preview database is loaded with practice data for the week it was loaded in. From the next Monday on, its "this week" sections (upsets and this week's events) are empty until the practice data is loaded again.
+  - Answers are cached for up to about 15 minutes. So for up to about 15 minutes after Monday 00:00 UTC, someone may still see last week's view. (On a quiet page, the first visitor after that can get the old view one more time while the cache refreshes in the background.) Every answer carries its own week dates, so it is never labeled as the wrong week.
+
+**What's next:**
+
+- PR 5 of 5: build the Dashboard tab on top of this feed, with screenshots. Show "and N more" when `weekEventCount` is bigger than the list.
+
+**Questions for Clay:** None new. Two stated defaults you can overrule: (1) "this year" ignores events that haven't started yet; (2) a set doesn't count as an upset if either player had no rating before the week.
+
+**Questions for Genghis:** Upsets use each player's rating at the start of the week (their most recent saved rating from an earlier week). Is that the right "before" rating, or should it be the rating right before the event? The weekly version is simpler and matches how the ratings themselves are worked out.

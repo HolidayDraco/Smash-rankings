@@ -1,5 +1,7 @@
 import {
   ATTRIBUTION,
+  DASHBOARD_TOP_COUNT,
+  dashboardResponseSchema,
   errorResponseSchema,
   INGEST_JOBS,
   LEADERBOARD_MAX_LIMIT,
@@ -22,10 +24,21 @@ import { createMiddleware } from "hono/factory";
 import { validator } from "hono/validator";
 import { z } from "zod";
 import {
+  dashboardWindow,
+  isoDate,
+  lastDayOfWeek,
+  formatSetScore,
+  startggUrlFor,
+} from "./dashboard";
+import {
   notRankedReason,
   readLeaderboard,
   readMeta,
+  readMovers,
   readPlayer,
+  readUpsets,
+  readWeekEvents,
+  readYear,
   resolveMainPlayerId,
   searchPlayers,
 } from "./queries";
@@ -86,6 +99,18 @@ function isValidPercentEncoding(search: string) {
 }
 
 const isoOrNull = (date: Date | null) => date?.toISOString() ?? null;
+const isoFromMs = (ms: number) => new Date(ms).toISOString();
+
+/** Player fields shared by every dashboard row that links to a player page. */
+const dashboardPlayer = (row: {
+  playerId: number | string;
+  gamerTag: string;
+  prefix: string | null;
+}) => ({
+  playerId: String(row.playerId),
+  gamerTag: row.gamerTag,
+  prefix: row.prefix,
+});
 
 export interface AppOptions {
   /** Returns the shared Drizzle instance; called per request, so it can be lazy. */
@@ -96,6 +121,8 @@ export interface AppOptions {
   allowedOriginPattern?: RegExp | undefined;
   /** Reports an unexpected (5xx) error, e.g. to Sentry. Never called for 4xx answers. */
   reportError?: ((error: unknown) => Promise<void>) | undefined;
+  /** The request clock, for "this week" / "this year" (tests pass a fixed time). */
+  now?: (() => Date) | undefined;
 }
 
 export function createApp({
@@ -103,6 +130,7 @@ export function createApp({
   allowedOrigins,
   allowedOriginPattern,
   reportError,
+  now = () => new Date(),
 }: AppOptions) {
   const isAllowedOrigin = (origin: string) =>
     allowedOrigins.includes(origin) || (allowedOriginPattern?.test(origin) ?? false);
@@ -192,6 +220,98 @@ export function createApp({
             })),
             asOf: isoOrNull(lastRatedAt),
             dataVersion,
+            attribution: ATTRIBUTION,
+          }),
+        );
+      })
+      .get("/v1/dashboard", rejectQueryParams, async (c) => {
+        const requestTime = now();
+        const window = dashboardWindow(requestTime);
+        const db = getDb();
+        const [{ lastRatedAt }, top, movers, upsets, weekEvents, year] = await Promise.all([
+          readMeta(db),
+          readLeaderboard(db, DASHBOARD_TOP_COUNT),
+          readMovers(db),
+          readUpsets(db, window),
+          readWeekEvents(db, window),
+          readYear(db, window, requestTime),
+        ]);
+        const mover = (row: (typeof movers.climbers)[number]) => ({
+          rank: row.rank,
+          ...dashboardPlayer(row),
+          rankDelta7d: row.rankDelta7d,
+        });
+        return c.json(
+          dashboardResponseSchema.parse({
+            header: {
+              year: window.year,
+              weekStart: isoDate(window.weekStart),
+              weekEnd: lastDayOfWeek(window.weekEnd),
+              lastUpdated: isoOrNull(lastRatedAt),
+            },
+            top10: top.map((row) => ({
+              rank: row.rank,
+              ...dashboardPlayer(row),
+              conservativeScore: Math.round(row.conservativeScore),
+              rankDelta7d: row.rankDelta7d,
+            })),
+            movers: { climbers: movers.climbers.map(mover), fallers: movers.fallers.map(mover) },
+            upsets: upsets.map((row) => ({
+              setId: row.set_id,
+              winner: dashboardPlayer({
+                playerId: row.winner_id,
+                gamerTag: row.winner_tag,
+                prefix: row.winner_prefix,
+              }),
+              loser: dashboardPlayer({
+                playerId: row.loser_id,
+                gamerTag: row.loser_tag,
+                prefix: row.loser_prefix,
+              }),
+              score: formatSetScore(row.winner_games, row.loser_games),
+              eventName: row.event_name,
+              tournamentName: row.tournament_name,
+              ratingGap: Math.round(row.gap),
+              completedAt: isoFromMs(row.completed_at_ms),
+            })),
+            weekEvents: weekEvents.rows.map((row) => ({
+              eventId: row.event_id,
+              eventName: row.event_name,
+              tournamentName: row.tournament_name,
+              city: row.city,
+              startAt: isoFromMs(row.start_at_ms),
+              numEntrants: row.num_entrants,
+              winner:
+                row.winner_id === null || row.winner_tag === null
+                  ? null
+                  : dashboardPlayer({
+                      playerId: row.winner_id,
+                      gamerTag: row.winner_tag,
+                      prefix: row.winner_prefix,
+                    }),
+              startggUrl: startggUrlFor(row.slug),
+            })),
+            weekEventCount: weekEvents.total,
+            year: {
+              eventCount: year.totals.event_count,
+              totalEntrants: year.totals.total_entrants,
+              uniquePlayers: year.totals.unique_players,
+              biggestEvent: year.biggestEvent && {
+                eventId: year.biggestEvent.event_id,
+                eventName: year.biggestEvent.event_name,
+                tournamentName: year.biggestEvent.tournament_name,
+                numEntrants: year.biggestEvent.num_entrants,
+                startggUrl: startggUrlFor(year.biggestEvent.slug),
+              },
+              mostWins: year.mostWins && {
+                player: dashboardPlayer({
+                  playerId: year.mostWins.player_id,
+                  gamerTag: year.mostWins.gamer_tag,
+                  prefix: year.mostWins.prefix,
+                }),
+                wins: year.mostWins.wins,
+              },
+            },
             attribution: ATTRIBUTION,
           }),
         );
