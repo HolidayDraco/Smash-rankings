@@ -589,3 +589,25 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None new.
 
 **Questions for Genghis:** If start.gg rejects the `city` field on the first live run, should we drop it or derive the city another way? Default: drop it and show only the state.
+
+---
+
+## 2026-10-03 — two-tab shell (Phase 2, PR 1 of 5)
+
+**Date:** 2026-10-03
+
+**What changed:**
+
+- The public site now has exactly two tabs: **Dashboard** (the home page, still showing the top-100 leaderboard for now) and **Texas** (a placeholder page saying city power rankings are coming).
+- On phones the tabs are a bar at the bottom of the screen. On wider screens (768 px and up) they sit in the header. Player pages count as part of Dashboard, so Dashboard stays highlighted there.
+- The Style guide link is gone from the header and the Status link is gone from the footer. Those pages, and Methodology, still work at `/style-guide`, `/status` and `/methodology`. The footer keeps one small "How rankings work" link plus the start.gg credit.
+- Added the Phase 2 plan in `docs/plans/phase-2-ui.md` (five PRs, plus the defaults for character icons, upset size and week boundaries).
+- Updated the browser tests for the new menu and added tests for both tabs, the phone and desktop layouts, and the hidden pages.
+
+**What's next:**
+
+- PR 2: the Texas tab with sample (clearly fake) city scenes, search, pinning and expanding.
+
+**Questions for Clay:** None. The defaults for character icons, upset size and weeks are listed in the plan; tell me if you want any changed.
+
+**Questions for Genghis:** None open.

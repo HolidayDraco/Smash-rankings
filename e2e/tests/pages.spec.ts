@@ -3,7 +3,12 @@ import { expect, test, type Page } from "@playwright/test";
 import { colors } from "@sr/ui/tokens";
 
 const routes = [
-  { path: "/", title: "Smash Ultimate Rankings | Bracket Index", heading: "Rankings" },
+  {
+    path: "/",
+    title: "Dashboard | Smash Ultimate Rankings | Bracket Index",
+    heading: "Dashboard",
+  },
+  { path: "/texas", title: "Texas | Bracket Index", heading: "Texas" },
   { path: "/style-guide", title: "Style guide | Bracket Index", heading: "Style guide" },
 ] as const;
 
@@ -48,15 +53,6 @@ for (const route of routes) {
   });
 }
 
-test("header links to the style guide", async ({ page }) => {
-  await page.goto("/");
-  await page
-    .getByRole("navigation", { name: "Primary" })
-    .getByRole("link", { name: "Style guide" })
-    .click();
-  await expect(page).toHaveURL(/\/style-guide$/);
-});
-
 test("style guide shows every required section", async ({ page }) => {
   await page.goto("/style-guide");
   for (const name of ["Display type", "Color", "Angled panel", "Dense stat row", "Motion"]) {
@@ -68,7 +64,11 @@ test("style guide shows every required section", async ({ page }) => {
 
 test("keyboard focus shows an accent-colored outline", async ({ page }) => {
   await page.goto("/");
-  await page.keyboard.press("Tab");
+  // Header tabs are the first stop on desktop. On phones the bar is last, so Shift+Tab from the top wraps to it.
+  const focusedLink = page.getByRole("navigation", { name: "Primary" }).locator("a:focus");
+  const phone = (page.viewportSize()?.width ?? 1280) < 768;
+  await page.keyboard.press(phone ? "Shift+Tab" : "Tab");
+  await expect(focusedLink).toHaveCount(1);
   const outline = await page.evaluate(() => {
     const style = getComputedStyle(document.activeElement as Element);
     return { style: style.outlineStyle, color: style.outlineColor };
@@ -78,7 +78,7 @@ test("keyboard focus shows an accent-colored outline", async ({ page }) => {
   expect(outline.color).toBe(`rgb(${accent >> 16}, ${(accent >> 8) & 255}, ${accent & 255})`);
 });
 
-for (const path of ["/", "/style-guide"]) {
+for (const path of ["/", "/texas", "/style-guide"]) {
   test(`touch targets on ${path} are at least 44px`, async ({ page }) => {
     await page.goto(path);
     const targets = await page.getByRole("link").or(page.getByRole("button")).all();

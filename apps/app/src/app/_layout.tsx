@@ -18,6 +18,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors } from "@sr/ui";
+import { BottomTabBar, useNavVariant } from "../components/PrimaryNav";
 import { AppHeader } from "../components/AppHeader";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { initSentry } from "../lib/sentry";
@@ -26,6 +27,7 @@ import { initSentry } from "../lib/sentry";
 initSentry();
 
 export default function RootLayout() {
+  const bottomBar = useNavVariant() === "bottom";
   // Content renders right away with fallback fonts; the real fonts swap in when loaded (no blank screen).
   useFonts({
     BarlowCondensed_700Bold,
@@ -55,6 +57,7 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: colors.white },
               }}
             />
+            {bottomBar ? <BottomTabBar /> : null}
           </ErrorBoundary>
         </View>
       </SafeAreaProvider>

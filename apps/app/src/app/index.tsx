@@ -10,7 +10,7 @@ import { SearchBox } from "../components/SearchBox";
 import { ApiError, useLeaderboard, useSearch } from "../lib/api";
 import { useDebouncedValue } from "../lib/useDebouncedValue";
 
-const TITLE = "Smash Ultimate Rankings | Bracket Index";
+const TITLE = "Dashboard | Smash Ultimate Rankings | Bracket Index";
 const DESCRIPTION =
   "Live Super Smash Bros. Ultimate player rankings computed from start.gg results. Unofficial fan project.";
 
@@ -54,7 +54,7 @@ export default function Leaderboard() {
         <BodyText variant="label" color={colors.accent}>
           Super Smash Bros. Ultimate
         </BodyText>
-        <DisplayText variant="h1">Rankings</DisplayText>
+        <DisplayText variant="h1">Dashboard</DisplayText>
         <LastUpdated />
         <SearchBox value={text} onChange={setText} />
         <View role="status" aria-live="polite" testID="search-status" style={styles.live}>
