@@ -2,6 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { DisplayText, colors, minTouchTarget, spacing } from "@sr/ui";
 import { isDemoMode } from "../lib/demoMode";
 import { DemoTag } from "./DemoTag";
+import { RefreshButton } from "./RefreshButton";
 import { PrimaryNav, useNavVariant } from "./PrimaryNav";
 
 export function AppHeader() {
@@ -16,7 +17,10 @@ export function AppHeader() {
         </DisplayText>
         {isDemoMode() ? <DemoTag /> : null}
       </View>
-      {showTabs ? <PrimaryNav variant="top" /> : null}
+      <View style={styles.actions}>
+        {showTabs ? <PrimaryNav variant="top" /> : null}
+        <RefreshButton />
+      </View>
     </View>
   );
 }
@@ -33,6 +37,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   brand: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: minTouchTarget },
+  actions: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   mark: {
     width: 14,
     height: 26,

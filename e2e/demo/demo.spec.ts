@@ -92,3 +92,18 @@ test("the dashboard has no serious or critical accessibility violations", async 
     [],
   );
 });
+
+test("the Refresh button is in the header next to the Demo data tag without overlap", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const button = page.getByRole("banner").getByRole("button", { name: "Refresh", exact: true });
+  await expect(button).toBeVisible();
+  const tag = await page.getByRole("note", { name: /^Demo data/ }).boundingBox();
+  const box = await button.boundingBox();
+  expect(tag!.x + tag!.width).toBeLessThanOrEqual(box!.x);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+});
