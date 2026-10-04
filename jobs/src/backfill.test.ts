@@ -19,7 +19,12 @@ import {
   BACKFILL_DISCOVER_CURSOR_KEY,
   monthsToCover,
 } from "./backfill";
-import { DISCOVER_DAY_KEY, DISCOVER_SPENT_KEYS } from "./discover-budget";
+import {
+  BACKFILL_DISCOVER_PER_DAY,
+  DISCOVER_DAY_KEY,
+  DISCOVER_SPENT_KEYS,
+  SYNC_DISCOVER_PER_DAY,
+} from "./discover-budget";
 import { parseJobArgs, runJob, UsageError } from "./harness";
 import { databaseSizeLine } from "./rate";
 import {
@@ -34,7 +39,6 @@ import {
 const TOKEN = "SECRET-TOKEN-abc123";
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 // Fixture events start 2025-10-09, so "now" is early November 2025: windows are Nov, then Oct.
-// Before 12:00 UTC, so each job only has its own share of the day's discover budget.
 const NOW = Date.parse("2025-11-03T00:30:00Z");
 const NOON = Date.parse("2025-11-03T13:00:00Z");
 
@@ -125,11 +129,11 @@ describe.skipIf(!testDatabaseUrl)(
           tournamentsBody ??
           fixture(variables.page === 1 ? "tournaments-page-1" : "tournaments-page-2");
         if (bigWindow) {
-          // A window with far more pages than any day's budget.
+          // A window with far more pages than any day's cap.
           const copy = JSON.parse(JSON.stringify(fixture("tournaments-page-2"))) as {
             data: { tournaments: { pageInfo: { totalPages: number } } };
           };
-          copy.data.tournaments.pageInfo.totalPages = 100;
+          copy.data.tournaments.pageInfo.totalPages = BACKFILL_DISCOVER_PER_DAY + 100;
           body = copy;
         }
         afterFirstTournamentsReply?.();
@@ -277,12 +281,12 @@ describe.skipIf(!testDatabaseUrl)(
     const metaValue = async (key: string) =>
       (await db.select().from(meta).where(eq(meta.key, key)))[0]?.value;
 
-    it("the 50 a day cap stops backfill discover mid-month, and the next run resumes at the saved page", async () => {
-      await spendToday(0, 29);
+    it("backfill's daily cap stops its discover mid-month, and the next run resumes at the saved page", async () => {
+      await spendToday(0, BACKFILL_DISCOVER_PER_DAY - 1);
       await run("backfill", ["--months", "1"]);
       expect(tournamentPages).toEqual([1]);
       expect((await runs())[0]).toMatchObject({ status: "partial", requestsUsed: 1 });
-      expect((await spent()).backfill).toBe(30);
+      expect((await spent()).backfill).toBe(BACKFILL_DISCOVER_PER_DAY);
       expect(JSON.parse((await metaValue(BACKFILL_DISCOVER_CURSOR_KEY)) ?? "null")).toMatchObject({
         from: "2025-11-01T00:00:00.000Z",
         cursor: { page: 2 },
@@ -302,7 +306,7 @@ describe.skipIf(!testDatabaseUrl)(
     });
 
     it("the daily discover in sync draws from the remaining budget and continues the next day", async () => {
-      await spendToday(19, 0);
+      await spendToday(SYNC_DISCOVER_PER_DAY - 1, 0);
       await run("sync", []);
       expect(tournamentPages).toEqual([1]);
       expect((await runs()).find((r) => r.job === "discover")).toMatchObject({ status: "partial" });
@@ -372,38 +376,38 @@ describe.skipIf(!testDatabaseUrl)(
       ]);
     });
 
-    it("sync discover uses at most its 20, and backfill later the same day still gets its 30", async () => {
+    it("each job stops at its own daily cap", async () => {
       bigWindow = true;
       await run("sync", []);
-      expect(tournamentPages).toHaveLength(20);
+      expect(tournamentPages).toHaveLength(SYNC_DISCOVER_PER_DAY);
       tournamentPages = [];
       await run("backfill", ["--months", "1"]);
-      expect(tournamentPages).toHaveLength(30);
-      expect(await spent()).toEqual({ sync: 20, backfill: 30 });
+      expect(tournamentPages).toHaveLength(BACKFILL_DISCOVER_PER_DAY);
+      expect(await spent()).toEqual({
+        sync: SYNC_DISCOVER_PER_DAY,
+        backfill: BACKFILL_DISCOVER_PER_DAY,
+      });
     });
 
-    it("from 12:00 UTC a job may also use what the other left unused", async () => {
+    it("a late backfill is never starved: sync using its whole cap leaves backfill's untouched, at any hour", async () => {
+      // Issue #35: the 07:41 backfill started at 13:27, after the hourly syncs had used the day.
       bigWindow = true;
-      await spendToday(5, 0); // sync left 15 unused
-      await run("backfill", ["--months", "1"]);
-      expect(tournamentPages).toHaveLength(30); // before noon: own share only
-      await spendToday(5, 0);
-      tournamentPages = [];
       nowMs = NOON;
+      await spendToday(SYNC_DISCOVER_PER_DAY, 0);
       await run("backfill", ["--months", "1"]);
-      expect(tournamentPages).toHaveLength(45);
+      expect(tournamentPages).toHaveLength(BACKFILL_DISCOVER_PER_DAY);
     });
 
-    it("the day's total never exceeds 50", async () => {
+    it("sync never uses backfill's cap, even when backfill has spent none of it", async () => {
       bigWindow = true;
       nowMs = NOON;
-      await run("backfill", ["--months", "1"]);
-      expect(tournamentPages).toHaveLength(50); // 30 own + the 20 sync had not used
-      tournamentPages = [];
+      await spendToday(SYNC_DISCOVER_PER_DAY - 5, 0);
       await run("sync", []);
-      expect(tournamentPages).toHaveLength(0);
-      const total = await spent();
-      expect(total.sync + total.backfill).toBe(50);
+      expect(tournamentPages).toHaveLength(5);
+      tournamentPages = [];
+      await spendToday(0, BACKFILL_DISCOVER_PER_DAY);
+      await run("sync", []);
+      expect(tournamentPages).toHaveLength(SYNC_DISCOVER_PER_DAY);
     });
 
     it("discover throwing on page 2 keeps the spend and resumes at page 2 next run", async () => {
@@ -577,7 +581,7 @@ describe.skipIf(!testDatabaseUrl)(
       expect(await run("backfill", ["--months", "1", "--dry-run"], out)).toBe(0);
       expect(sent).toEqual([]);
       expect(out.join("\n")).toMatch(
-        /plan: 2 month\(s\)[\s\S]*would cover 2 month\(s\).*requests.*about 9 night\(s\)/,
+        /plan: 2 month\(s\)[\s\S]*would cover 2 month\(s\).*requests.*about 1 run\(s\)/,
       );
       expect(await runs()).toHaveLength(0);
       expect(await db.select().from(meta)).toHaveLength(0);

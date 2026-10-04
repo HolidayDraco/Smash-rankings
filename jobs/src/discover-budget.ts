@@ -5,20 +5,21 @@ import { discoverWindow } from "./discover";
 import type { JobContext, JobResult } from "./harness";
 
 /**
- * Genghis's rule: at most 50 discover requests per UTC day, shared by the daily discover
- * inside sync and the backfill. The day is reserved so neither starves the other: sync 20,
- * backfill 30. From 12:00 UTC either may also use what the other left unused. Raise after the
- * first live check (P1-12) measures the real numbers.
+ * Daily discover caps (per UTC day), one per job and never shared, so neither job can starve the
+ * other: the hourly sync can't use up a late backfill's requests, and a long backfill can't eat
+ * sync's daily pass (issue #35). Every request still goes through the client's 60 requests a
+ * minute limiter (start.gg allows 80), so a cap only bounds how much one day may do.
+ * - sync: 50 a day for its narrow daily window (about 42 requests a pass; a guess).
+ * - backfill: 2,000 a day, enough to discover about a year of history in one run (about 125
+ *   requests a month, a guess), which takes about 35 minutes at 60 a minute.
  */
-export const DISCOVER_REQUESTS_PER_DAY = 50;
-export const SYNC_DISCOVER_SHARE = 20;
-export const BACKFILL_DISCOVER_SHARE = 30;
-export const SHARE_LEFTOVER_FROM_HOUR_UTC = 12;
+export const SYNC_DISCOVER_PER_DAY = 50;
+export const BACKFILL_DISCOVER_PER_DAY = 2_000;
 
 export type DiscoverUser = "sync" | "backfill";
-const SHARE: Record<DiscoverUser, number> = {
-  sync: SYNC_DISCOVER_SHARE,
-  backfill: BACKFILL_DISCOVER_SHARE,
+export const DISCOVER_CAP_PER_DAY: Record<DiscoverUser, number> = {
+  sync: SYNC_DISCOVER_PER_DAY,
+  backfill: BACKFILL_DISCOVER_PER_DAY,
 };
 /** meta keys: the UTC day (YYYY-MM-DD) requests were last spent, and what each job spent that day. */
 export const DISCOVER_DAY_KEY = "discover_day";
@@ -63,21 +64,14 @@ async function spentToday(db: Pick<Database, "select">, nowMs: number) {
   };
 }
 
-/** Requests `who` may still spend today (UTC): its own share, plus the other's unused share from 12:00 UTC; never past 50 in total. */
+/** Requests `who` may still spend today (UTC): its own cap minus what it already spent today. */
 export async function remainingDiscoverBudget(
   db: Pick<Database, "select">,
   nowMs: number,
   who: DiscoverUser,
 ): Promise<number> {
   const spent = await spentToday(db, nowMs);
-  const other: DiscoverUser = who === "sync" ? "backfill" : "sync";
-  const afterNoon = new Date(nowMs).getUTCHours() >= SHARE_LEFTOVER_FROM_HOUR_UTC;
-  const own = Math.max(0, SHARE[who] - spent[who]);
-  const borrowed = afterNoon ? Math.max(0, SHARE[other] - spent[other]) : 0;
-  return Math.max(
-    0,
-    Math.min(own + borrowed, DISCOVER_REQUESTS_PER_DAY - spent.sync - spent.backfill),
-  );
+  return Math.max(0, DISCOVER_CAP_PER_DAY[who] - spent[who]);
 }
 
 /** One transaction, so the day and the counts never disagree. */

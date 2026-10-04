@@ -3,7 +3,7 @@ import { meta, type Database } from "@sr/db";
 import { z } from "zod";
 import { DAY_MS } from "./discover";
 import {
-  BACKFILL_DISCOVER_SHARE,
+  BACKFILL_DISCOVER_PER_DAY,
   deleteMeta,
   discoverBudgeted,
   readJsonMeta,
@@ -67,9 +67,11 @@ export async function backfill(ctx: JobContext): Promise<JobResult> {
     const requests =
       windows.length *
       (ESTIMATE.discoverPerMonth + ESTIMATE.qualifyingEventsPerMonth * ESTIMATE.perEvent);
-    // Discover is the bottleneck: backfill may spend only its share of the daily discover budget.
-    const nights = Math.ceil(
-      (windows.length * ESTIMATE.discoverPerMonth) / BACKFILL_DISCOVER_SHARE,
+    // Two limits: backfill's own daily discover cap, and the time budget per run at the client's
+    // 60 requests a minute.
+    const nights = Math.max(
+      Math.ceil((windows.length * ESTIMATE.discoverPerMonth) / BACKFILL_DISCOVER_PER_DAY),
+      Math.ceil(requests / (60 * BACKFILL_DEFAULT_BUDGET_MINUTES)),
     );
     out(
       `plan: ${windows.length} month(s), newest first: ${windows.map((w) => day(w.from)).join(", ")}`,
@@ -78,7 +80,8 @@ export async function backfill(ctx: JobContext): Promise<JobResult> {
       eventsTouched: 0,
       summary:
         `would cover ${windows.length} month(s) back to ${day(oldest)}; roughly ${requests} requests ` +
-        `(a guess), about ${nights} night(s) because backfill may use ${BACKFILL_DISCOVER_SHARE} discover requests a day`,
+        `(a guess), about ${nights} run(s): backfill may use ${BACKFILL_DISCOVER_PER_DAY} discover ` +
+        `requests a day and ${BACKFILL_DEFAULT_BUDGET_MINUTES} minutes a run`,
     };
   }
 
@@ -88,7 +91,7 @@ export async function backfill(ctx: JobContext): Promise<JobResult> {
   for (const { from, to } of windows) {
     const resumeHere = saved.success && saved.data.from === from.toISOString() ? saved.data : null;
     if (!resumeHere?.done) {
-      // Discover draws from the shared 50 a day budget and stops mid-month when it runs out.
+      // Discover draws from backfill's own daily cap and stops mid-month when it runs out.
       const found = await discoverBudgeted(ctx, db, "backfill", from, to, {
         cursor: resumeHere?.cursor,
         // Saved after every page, so a crash or error resumes at the page that failed.
