@@ -5,5 +5,5 @@
     "lib": ["ES2023", "DOM"],
     "types": ["node"]
   },
-  "include": ["src", "*.ts", ".expo/types/**/*.ts", "expo-env.d.ts"]
+  "include": ["src", "scripts", "*.ts", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

@@ -1,0 +1,2017 @@
+{
+ "meta": {
+  "dataVersion": 1,
+  "lastRatedAt": "2026-10-04T04:28:43.960Z",
+  "attribution": "Data from start.gg"
+ },
+ "dashboard": {
+  "header": {
+   "year": 2026,
+   "weekStart": "2026-09-28",
+   "weekEnd": "2026-10-04",
+   "lastUpdated": "2026-10-04T04:28:43.960Z"
+  },
+  "top10": [
+   {
+    "rank": 1,
+    "playerId": "9000000000004",
+    "gamerTag": "Sample_Dash",
+    "prefix": null,
+    "conservativeScore": 1808,
+    "rankDelta7d": 1
+   },
+   {
+    "rank": 2,
+    "playerId": "9000000000008",
+    "gamerTag": "Sample_Halo",
+    "prefix": null,
+    "conservativeScore": 1712,
+    "rankDelta7d": 0
+   },
+   {
+    "rank": 3,
+    "playerId": "9000000000011",
+    "gamerTag": "Sample_Kite",
+    "prefix": null,
+    "conservativeScore": 1640,
+    "rankDelta7d": -2
+   },
+   {
+    "rank": 4,
+    "playerId": "9000000000012",
+    "gamerTag": "Sample_Lumen",
+    "prefix": null,
+    "conservativeScore": 1616,
+    "rankDelta7d": -1
+   },
+   {
+    "rank": 5,
+    "playerId": "9000000000013",
+    "gamerTag": "Sample_Mako",
+    "prefix": null,
+    "conservativeScore": 1592,
+    "rankDelta7d": 0
+   },
+   {
+    "rank": 6,
+    "playerId": "9000000000014",
+    "gamerTag": "Sample_Nova",
+    "prefix": null,
+    "conservativeScore": 1568,
+    "rankDelta7d": 1
+   },
+   {
+    "rank": 7,
+    "playerId": "9000000000019",
+    "gamerTag": "Sample_Sage",
+    "prefix": null,
+    "conservativeScore": 1448,
+    "rankDelta7d": 1
+   },
+   {
+    "rank": 8,
+    "playerId": "9000000000020",
+    "gamerTag": "Sample_Tide",
+    "prefix": null,
+    "conservativeScore": 1424,
+    "rankDelta7d": 2
+   },
+   {
+    "rank": 9,
+    "playerId": "9000000000022",
+    "gamerTag": "Sample_Vex",
+    "prefix": null,
+    "conservativeScore": 1376,
+    "rankDelta7d": -1
+   },
+   {
+    "rank": 10,
+    "playerId": "9000000000023",
+    "gamerTag": "Sample_Wisp",
+    "prefix": null,
+    "conservativeScore": 1352,
+    "rankDelta7d": 0
+   }
+  ],
+  "movers": {
+   "climbers": [
+    {
+     "rank": 8,
+     "playerId": "9000000000020",
+     "gamerTag": "Sample_Tide",
+     "prefix": null,
+     "rankDelta7d": 2
+    },
+    {
+     "rank": 12,
+     "playerId": "9000000000025",
+     "gamerTag": "Sample_Yarrow",
+     "prefix": null,
+     "rankDelta7d": 2
+    },
+    {
+     "rank": 1,
+     "playerId": "9000000000004",
+     "gamerTag": "Sample_Dash",
+     "prefix": null,
+     "rankDelta7d": 1
+    }
+   ],
+   "fallers": [
+    {
+     "rank": 3,
+     "playerId": "9000000000011",
+     "gamerTag": "Sample_Kite",
+     "prefix": null,
+     "rankDelta7d": -2
+    },
+    {
+     "rank": 4,
+     "playerId": "9000000000012",
+     "gamerTag": "Sample_Lumen",
+     "prefix": null,
+     "rankDelta7d": -1
+    },
+    {
+     "rank": 9,
+     "playerId": "9000000000022",
+     "gamerTag": "Sample_Vex",
+     "prefix": null,
+     "rankDelta7d": -1
+    }
+   ]
+  },
+  "upsets": [
+   {
+    "setId": "9000000000146",
+    "winner": {
+     "playerId": "9000000000023",
+     "gamerTag": "Sample_Wisp",
+     "prefix": null
+    },
+    "loser": {
+     "playerId": "9000000000012",
+     "gamerTag": "Sample_Lumen",
+     "prefix": null
+    },
+    "score": "3-2",
+    "eventName": "Ultimate Singles",
+    "tournamentName": "Sample Arcadian",
+    "ratingGap": 220,
+    "completedAt": "2026-10-01T20:36:53.655Z"
+   },
+   {
+    "setId": "9000000000142",
+    "winner": {
+     "playerId": "9000000000023",
+     "gamerTag": "Sample_Wisp",
+     "prefix": null
+    },
+    "loser": {
+     "playerId": "9000000000014",
+     "gamerTag": "Sample_Nova",
+     "prefix": null
+    },
+    "score": "3-2",
+    "eventName": "Ultimate Singles",
+    "tournamentName": "Sample Arcadian",
+    "ratingGap": 180,
+    "completedAt": "2026-10-01T08:39:52.538Z"
+   },
+   {
+    "setId": "9000000000137",
+    "winner": {
+     "playerId": "9000000000019",
+     "gamerTag": "Sample_Sage",
+     "prefix": null
+    },
+    "loser": {
+     "playerId": "9000000000012",
+     "gamerTag": "Sample_Lumen",
+     "prefix": null
+    },
+    "score": "2-1",
+    "eventName": "Ultimate Singles",
+    "tournamentName": "Sample Weekly",
+    "ratingGap": 140,
+    "completedAt": "2026-09-29T19:19:11.548Z"
+   },
+   {
+    "setId": "9000000000141",
+    "winner": {
+     "playerId": "9000000000024",
+     "gamerTag": "Sample_Xeno",
+     "prefix": null
+    },
+    "loser": {
+     "playerId": "9000000000022",
+     "gamerTag": "Sample_Vex",
+     "prefix": null
+    },
+    "score": "2-1",
+    "eventName": "Ultimate Singles",
+    "tournamentName": "Sample Arcadian",
+    "ratingGap": 40,
+    "completedAt": "2026-10-01T05:40:37.259Z"
+   }
+  ],
+  "weekEvents": [
+   {
+    "eventId": "9000000000004",
+    "eventName": "Ultimate Singles",
+    "tournamentName": "Sample Weekly",
+    "city": "San Antonio",
+    "startAt": "2026-09-29T13:20:40.990Z",
+    "numEntrants": 24,
+    "winner": {
+     "playerId": "9000000000008",
+     "gamerTag": "Sample_Halo",
+     "prefix": null
+    },
+    "startggUrl": "https://www.start.gg/tournament/synthetic-4/event/ultimate-singles"
+   },
+   {
+    "eventId": "9000000000005",
+    "eventName": "Ultimate Singles",
+    "tournamentName": "Sample Arcadian",
+    "city": null,
+    "startAt": "2026-10-01T02:41:21.980Z",
+    "numEntrants": 16,
+    "winner": {
+     "playerId": "9000000000023",
+     "gamerTag": "Sample_Wisp",
+     "prefix": null
+    },
+    "startggUrl": "https://www.start.gg/tournament/synthetic-5/event/ultimate-singles"
+   }
+  ],
+  "weekEventCount": 2,
+  "year": {
+   "eventCount": 5,
+   "totalEntrants": 232,
+   "uniquePlayers": 30,
+   "biggestEvent": {
+    "eventId": "9000000000003",
+    "eventName": "Ultimate Singles",
+    "tournamentName": "Sample Regional",
+    "numEntrants": 96,
+    "startggUrl": "https://www.start.gg/tournament/synthetic-3/event/ultimate-singles"
+   },
+   "mostWins": {
+    "player": {
+     "playerId": "9000000000001",
+     "gamerTag": "Sample_Ace",
+     "prefix": null
+    },
+    "wins": 3
+   }
+  },
+  "attribution": "Data from start.gg"
+ },
+ "leaderboard": {
+  "entries": [
+   {
+    "rank": 1,
+    "playerId": "9000000000004",
+    "gamerTag": "Sample_Dash",
+    "prefix": null,
+    "countryCode": "JP",
+    "conservativeScore": 1808,
+    "rating": 1940,
+    "ratingDeviation": 66,
+    "rankDelta7d": 1,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 2,
+    "playerId": "9000000000008",
+    "gamerTag": "Sample_Halo",
+    "prefix": null,
+    "countryCode": "CA",
+    "conservativeScore": 1712,
+    "rating": 1860,
+    "ratingDeviation": 74,
+    "rankDelta7d": 0,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 3,
+    "playerId": "9000000000011",
+    "gamerTag": "Sample_Kite",
+    "prefix": null,
+    "countryCode": "FR",
+    "conservativeScore": 1640,
+    "rating": 1800,
+    "ratingDeviation": 80,
+    "rankDelta7d": -2,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 4,
+    "playerId": "9000000000012",
+    "gamerTag": "Sample_Lumen",
+    "prefix": null,
+    "countryCode": "GB",
+    "conservativeScore": 1616,
+    "rating": 1780,
+    "ratingDeviation": 82,
+    "rankDelta7d": -1,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 5,
+    "playerId": "9000000000013",
+    "gamerTag": "Sample_Mako",
+    "prefix": null,
+    "countryCode": "US",
+    "conservativeScore": 1592,
+    "rating": 1760,
+    "ratingDeviation": 84,
+    "rankDelta7d": 0,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 6,
+    "playerId": "9000000000014",
+    "gamerTag": "Sample_Nova",
+    "prefix": null,
+    "countryCode": "CA",
+    "conservativeScore": 1568,
+    "rating": 1740,
+    "ratingDeviation": 86,
+    "rankDelta7d": 1,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 7,
+    "playerId": "9000000000019",
+    "gamerTag": "Sample_Sage",
+    "prefix": null,
+    "countryCode": "US",
+    "conservativeScore": 1448,
+    "rating": 1640,
+    "ratingDeviation": 96,
+    "rankDelta7d": 1,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 8,
+    "playerId": "9000000000020",
+    "gamerTag": "Sample_Tide",
+    "prefix": null,
+    "countryCode": "CA",
+    "conservativeScore": 1424,
+    "rating": 1620,
+    "ratingDeviation": 98,
+    "rankDelta7d": 2,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 9,
+    "playerId": "9000000000022",
+    "gamerTag": "Sample_Vex",
+    "prefix": null,
+    "countryCode": "JP",
+    "conservativeScore": 1376,
+    "rating": 1580,
+    "ratingDeviation": 102,
+    "rankDelta7d": -1,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 10,
+    "playerId": "9000000000023",
+    "gamerTag": "Sample_Wisp",
+    "prefix": null,
+    "countryCode": "FR",
+    "conservativeScore": 1352,
+    "rating": 1560,
+    "ratingDeviation": 104,
+    "rankDelta7d": 0,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 11,
+    "playerId": "9000000000024",
+    "gamerTag": "Sample_Xeno",
+    "prefix": null,
+    "countryCode": "GB",
+    "conservativeScore": 1328,
+    "rating": 1540,
+    "ratingDeviation": 106,
+    "rankDelta7d": 1,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   },
+   {
+    "rank": 12,
+    "playerId": "9000000000025",
+    "gamerTag": "Sample_Yarrow",
+    "prefix": null,
+    "countryCode": "US",
+    "conservativeScore": 1304,
+    "rating": 1520,
+    "ratingDeviation": 108,
+    "rankDelta7d": 2,
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
+   }
+  ],
+  "asOf": "2026-10-04T04:28:43.960Z",
+  "dataVersion": 1,
+  "attribution": "Data from start.gg"
+ },
+ "status": {
+  "jobs": [
+   {
+    "job": "discover",
+    "lastRunAt": "2026-10-04T02:22:43.960Z",
+    "lastFinishedAt": "2026-10-04T02:25:43.960Z",
+    "ok": true
+   },
+   {
+    "job": "sync",
+    "lastRunAt": "2026-10-04T03:22:43.960Z",
+    "lastFinishedAt": "2026-10-04T03:34:43.960Z",
+    "ok": true
+   },
+   {
+    "job": "backfill",
+    "lastRunAt": "2026-10-04T00:22:43.960Z",
+    "lastFinishedAt": "2026-10-04T00:52:43.960Z",
+    "ok": false
+   },
+   {
+    "job": "rate",
+    "lastRunAt": "2026-10-04T04:22:43.960Z",
+    "lastFinishedAt": "2026-10-04T04:28:43.960Z",
+    "ok": true
+   }
+  ],
+  "attribution": "Data from start.gg"
+ },
+ "players": {
+  "9000000000001": {
+   "playerId": "9000000000001",
+   "gamerTag": "Sample_Ace",
+   "prefix": null,
+   "countryCode": "US",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 1,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1880,
+   "rating": 2000,
+   "ratingDeviation": 60,
+   "ratedSets": 9,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 6,
+    "losses": 3
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 1,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 1,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 1,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000002": {
+   "playerId": "9000000000002",
+   "gamerTag": "Sample_Blaze",
+   "prefix": null,
+   "countryCode": "CA",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 3,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1856,
+   "rating": 1980,
+   "ratingDeviation": 62,
+   "ratedSets": 7,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 7,
+    "losses": 0
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 2,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 2,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 2,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000003": {
+   "playerId": "9000000000003",
+   "gamerTag": "Sample_Comet",
+   "prefix": null,
+   "countryCode": "MX",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 3,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1832,
+   "rating": 1960,
+   "ratingDeviation": 64,
+   "ratedSets": 7,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 5,
+    "losses": 2
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 3,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 3,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 3,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000004": {
+   "playerId": "9000000000004",
+   "gamerTag": "Sample_Dash",
+   "prefix": null,
+   "countryCode": "JP",
+   "startggUrl": null,
+   "rank": 1,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1808,
+   "rating": 1940,
+   "ratingDeviation": 66,
+   "ratedSets": 10,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 6,
+    "losses": 4
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 4,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 4,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 4,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000005": {
+   "playerId": "9000000000005",
+   "gamerTag": "Sample_Echo",
+   "prefix": null,
+   "countryCode": "FR",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 4,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1784,
+   "rating": 1920,
+   "ratingDeviation": 68,
+   "ratedSets": 6,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 5,
+    "losses": 1
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 5,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 5,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 5,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000006": {
+   "playerId": "9000000000006",
+   "gamerTag": "Sample_Flint",
+   "prefix": null,
+   "countryCode": "GB",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 2,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1760,
+   "rating": 1900,
+   "ratingDeviation": 70,
+   "ratedSets": 8,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 4,
+    "losses": 4
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 6,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 6,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 6,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000007": {
+   "playerId": "9000000000007",
+   "gamerTag": "Sample_Glide",
+   "prefix": null,
+   "countryCode": "US",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 1,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1736,
+   "rating": 1880,
+   "ratingDeviation": 72,
+   "ratedSets": 9,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 4,
+    "losses": 5
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 7,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 7,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 7,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000008": {
+   "playerId": "9000000000008",
+   "gamerTag": "Sample_Halo",
+   "prefix": null,
+   "countryCode": "CA",
+   "startggUrl": null,
+   "rank": 2,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1712,
+   "rating": 1860,
+   "ratingDeviation": 74,
+   "ratedSets": 13,
+   "qualifyingEvents": 4,
+   "setRecord": {
+    "wins": 10,
+    "losses": 3
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000004",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Weekly",
+     "date": "2026-09-29T13:20:40.990Z",
+     "placement": 1,
+     "entrants": 24
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 8,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 8,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 8,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000009": {
+   "playerId": "9000000000009",
+   "gamerTag": "Sample_Ion",
+   "prefix": null,
+   "countryCode": "MX",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 3,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1688,
+   "rating": 1840,
+   "ratingDeviation": 76,
+   "ratedSets": 7,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 4,
+    "losses": 3
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 9,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 9,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 9,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000010": {
+   "playerId": "9000000000010",
+   "gamerTag": "Sample_Jolt",
+   "prefix": null,
+   "countryCode": "JP",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 3,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1664,
+   "rating": 1820,
+   "ratingDeviation": 78,
+   "ratedSets": 7,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 5,
+    "losses": 2
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 10,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 10,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 10,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000011": {
+   "playerId": "9000000000011",
+   "gamerTag": "Sample_Kite",
+   "prefix": null,
+   "countryCode": "FR",
+   "startggUrl": null,
+   "rank": 3,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1640,
+   "rating": 1800,
+   "ratingDeviation": 80,
+   "ratedSets": 12,
+   "qualifyingEvents": 4,
+   "setRecord": {
+    "wins": 6,
+    "losses": 6
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000004",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Weekly",
+     "date": "2026-09-29T13:20:40.990Z",
+     "placement": 4,
+     "entrants": 24
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 11,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 11,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 11,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000012": {
+   "playerId": "9000000000012",
+   "gamerTag": "Sample_Lumen",
+   "prefix": null,
+   "countryCode": "GB",
+   "startggUrl": null,
+   "rank": 4,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1616,
+   "rating": 1780,
+   "ratingDeviation": 82,
+   "ratedSets": 17,
+   "qualifyingEvents": 5,
+   "setRecord": {
+    "wins": 10,
+    "losses": 7
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000005",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Arcadian",
+     "date": "2026-10-01T02:41:21.980Z",
+     "placement": 2,
+     "entrants": 16
+    },
+    {
+     "eventId": "9000000000004",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Weekly",
+     "date": "2026-09-29T13:20:40.990Z",
+     "placement": 5,
+     "entrants": 24
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 12,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 12,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 12,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000013": {
+   "playerId": "9000000000013",
+   "gamerTag": "Sample_Mako",
+   "prefix": null,
+   "countryCode": "US",
+   "startggUrl": null,
+   "rank": 5,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1592,
+   "rating": 1760,
+   "ratingDeviation": 84,
+   "ratedSets": 11,
+   "qualifyingEvents": 4,
+   "setRecord": {
+    "wins": 6,
+    "losses": 5
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000004",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Weekly",
+     "date": "2026-09-29T13:20:40.990Z",
+     "placement": 3,
+     "entrants": 24
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 13,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 13,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 13,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000014": {
+   "playerId": "9000000000014",
+   "gamerTag": "Sample_Nova",
+   "prefix": null,
+   "countryCode": "CA",
+   "startggUrl": null,
+   "rank": 6,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1568,
+   "rating": 1740,
+   "ratingDeviation": 86,
+   "ratedSets": 14,
+   "qualifyingEvents": 5,
+   "setRecord": {
+    "wins": 7,
+    "losses": 7
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000005",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Arcadian",
+     "date": "2026-10-01T02:41:21.980Z",
+     "placement": 3,
+     "entrants": 16
+    },
+    {
+     "eventId": "9000000000004",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Weekly",
+     "date": "2026-09-29T13:20:40.990Z",
+     "placement": 7,
+     "entrants": 24
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 14,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 14,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 14,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000015": {
+   "playerId": "9000000000015",
+   "gamerTag": "Sample_Onyx",
+   "prefix": null,
+   "countryCode": "MX",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 1,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1544,
+   "rating": 1720,
+   "ratingDeviation": 88,
+   "ratedSets": 9,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 4,
+    "losses": 5
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 15,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 15,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 15,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000016": {
+   "playerId": "9000000000016",
+   "gamerTag": "Sample_Pike",
+   "prefix": null,
+   "countryCode": "JP",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 3,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1520,
+   "rating": 1700,
+   "ratingDeviation": 90,
+   "ratedSets": 7,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 3,
+    "losses": 4
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 16,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 16,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 16,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000017": {
+   "playerId": "9000000000017",
+   "gamerTag": "Sample_Quill",
+   "prefix": null,
+   "countryCode": "FR",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 1,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1496,
+   "rating": 1680,
+   "ratingDeviation": 92,
+   "ratedSets": 9,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 5,
+    "losses": 4
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 17,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 17,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 17,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000018": {
+   "playerId": "9000000000018",
+   "gamerTag": "Sample_Rook",
+   "prefix": null,
+   "countryCode": "GB",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 4,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1472,
+   "rating": 1660,
+   "ratingDeviation": 94,
+   "ratedSets": 6,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 2,
+    "losses": 4
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 18,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 18,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 18,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000019": {
+   "playerId": "9000000000019",
+   "gamerTag": "Sample_Sage",
+   "prefix": null,
+   "countryCode": "US",
+   "startggUrl": null,
+   "rank": 7,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1448,
+   "rating": 1640,
+   "ratingDeviation": 96,
+   "ratedSets": 14,
+   "qualifyingEvents": 4,
+   "setRecord": {
+    "wins": 9,
+    "losses": 5
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000004",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Weekly",
+     "date": "2026-09-29T13:20:40.990Z",
+     "placement": 2,
+     "entrants": 24
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 19,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 19,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 19,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000020": {
+   "playerId": "9000000000020",
+   "gamerTag": "Sample_Tide",
+   "prefix": null,
+   "countryCode": "CA",
+   "startggUrl": null,
+   "rank": 8,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1424,
+   "rating": 1620,
+   "ratingDeviation": 98,
+   "ratedSets": 16,
+   "qualifyingEvents": 5,
+   "setRecord": {
+    "wins": 5,
+    "losses": 11
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000005",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Arcadian",
+     "date": "2026-10-01T02:41:21.980Z",
+     "placement": 5,
+     "entrants": 16
+    },
+    {
+     "eventId": "9000000000004",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Weekly",
+     "date": "2026-09-29T13:20:40.990Z",
+     "placement": 5,
+     "entrants": 24
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 20,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 20,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 20,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000021": {
+   "playerId": "9000000000021",
+   "gamerTag": "Sample_Umbra",
+   "prefix": null,
+   "countryCode": "MX",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 3,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1400,
+   "rating": 1600,
+   "ratingDeviation": 100,
+   "ratedSets": 7,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 2,
+    "losses": 5
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 21,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 21,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 21,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000022": {
+   "playerId": "9000000000022",
+   "gamerTag": "Sample_Vex",
+   "prefix": null,
+   "countryCode": "JP",
+   "startggUrl": null,
+   "rank": 9,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1376,
+   "rating": 1580,
+   "ratingDeviation": 102,
+   "ratedSets": 11,
+   "qualifyingEvents": 4,
+   "setRecord": {
+    "wins": 6,
+    "losses": 5
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000005",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Arcadian",
+     "date": "2026-10-01T02:41:21.980Z",
+     "placement": 5,
+     "entrants": 16
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 22,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 22,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 22,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000023": {
+   "playerId": "9000000000023",
+   "gamerTag": "Sample_Wisp",
+   "prefix": null,
+   "countryCode": "FR",
+   "startggUrl": null,
+   "rank": 10,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1352,
+   "rating": 1560,
+   "ratingDeviation": 104,
+   "ratedSets": 14,
+   "qualifyingEvents": 4,
+   "setRecord": {
+    "wins": 8,
+    "losses": 6
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000005",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Arcadian",
+     "date": "2026-10-01T02:41:21.980Z",
+     "placement": 1,
+     "entrants": 16
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 23,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 23,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 23,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000024": {
+   "playerId": "9000000000024",
+   "gamerTag": "Sample_Xeno",
+   "prefix": null,
+   "countryCode": "GB",
+   "startggUrl": null,
+   "rank": 11,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1328,
+   "rating": 1540,
+   "ratingDeviation": 106,
+   "ratedSets": 12,
+   "qualifyingEvents": 4,
+   "setRecord": {
+    "wins": 3,
+    "losses": 9
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000005",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Arcadian",
+     "date": "2026-10-01T02:41:21.980Z",
+     "placement": 4,
+     "entrants": 16
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 24,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 24,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 24,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000025": {
+   "playerId": "9000000000025",
+   "gamerTag": "Sample_Yarrow",
+   "prefix": null,
+   "countryCode": "US",
+   "startggUrl": null,
+   "rank": 12,
+   "eligible": true,
+   "notRankedReason": null,
+   "conservativeScore": 1304,
+   "rating": 1520,
+   "ratingDeviation": 108,
+   "ratedSets": 11,
+   "qualifyingEvents": 4,
+   "setRecord": {
+    "wins": 3,
+    "losses": 8
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000004",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Weekly",
+     "date": "2026-09-29T13:20:40.990Z",
+     "placement": 7,
+     "entrants": 24
+    },
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 25,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 25,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 25,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000026": {
+   "playerId": "9000000000026",
+   "gamerTag": "Sample_Zephyr",
+   "prefix": null,
+   "countryCode": "CA",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 5,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": false
+   },
+   "conservativeScore": 1280,
+   "rating": 1500,
+   "ratingDeviation": 110,
+   "ratedSets": 5,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 0,
+    "losses": 5
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 26,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 26,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 26,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000027": {
+   "playerId": "9000000000027",
+   "gamerTag": "Sample_Brook",
+   "prefix": null,
+   "countryCode": "MX",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 0,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": true
+   },
+   "conservativeScore": 1256,
+   "rating": 1480,
+   "ratingDeviation": 112,
+   "ratedSets": 10,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 3,
+    "losses": 7
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 27,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 27,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 27,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000028": {
+   "playerId": "9000000000028",
+   "gamerTag": "Sample_Cinder",
+   "prefix": null,
+   "countryCode": "JP",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 6,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": true
+   },
+   "conservativeScore": 1232,
+   "rating": 1460,
+   "ratingDeviation": 114,
+   "ratedSets": 4,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 0,
+    "losses": 4
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 28,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 28,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 28,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000029": {
+   "playerId": "9000000000029",
+   "gamerTag": "Sample_Drift",
+   "prefix": null,
+   "countryCode": "FR",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 1,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": true
+   },
+   "conservativeScore": 1208,
+   "rating": 1440,
+   "ratingDeviation": 116,
+   "ratedSets": 9,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 4,
+    "losses": 5
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 29,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 29,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 29,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  },
+  "9000000000030": {
+   "playerId": "9000000000030",
+   "gamerTag": "Sample_Ember",
+   "prefix": null,
+   "countryCode": "GB",
+   "startggUrl": null,
+   "rank": null,
+   "eligible": false,
+   "notRankedReason": {
+    "setsNeeded": 1,
+    "eventsNeeded": 0,
+    "uncertaintyTooHigh": true
+   },
+   "conservativeScore": 1184,
+   "rating": 1420,
+   "ratingDeviation": 118,
+   "ratedSets": 9,
+   "qualifyingEvents": 3,
+   "setRecord": {
+    "wins": 3,
+    "losses": 6
+   },
+   "recentResults": [
+    {
+     "eventId": "9000000000003",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Regional",
+     "date": "2026-09-13T05:22:43.960Z",
+     "placement": 30,
+     "entrants": 96
+    },
+    {
+     "eventId": "9000000000002",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Invitational",
+     "date": "2026-08-23T05:22:43.960Z",
+     "placement": 30,
+     "entrants": 64
+    },
+    {
+     "eventId": "9000000000001",
+     "eventName": "Ultimate Singles",
+     "tournamentName": "Sample Showdown",
+     "date": "2026-08-02T05:22:43.960Z",
+     "placement": 30,
+     "entrants": 32
+    }
+   ],
+   "attribution": "Data from start.gg"
+  }
+ }
+}

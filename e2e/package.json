@@ -6,7 +6,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "screenshots": "node scripts/screenshots.mjs",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:demo": "playwright test --config playwright.demo.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

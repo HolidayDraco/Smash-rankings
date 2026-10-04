@@ -4,7 +4,9 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "expo start --web",
+    "dev": "EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL:-http://localhost:${API_PORT:-8787}} expo start --web --clear",
+    "dev:demo": "EXPO_PUBLIC_DEMO=1 expo start --web --clear",
+    "demo:snapshot": "tsx scripts/snapshot-demo-data.mts",
     "build:web": "expo export -p web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -35,8 +37,10 @@
   },
   "devDependencies": {
     "@sr/config": "workspace:*",
+    "@sr/db": "workspace:*",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.7",
+    "tsx": "4.23.15",
     "typescript": "6.0.3",
     "vitest": "5.0.3"
   }

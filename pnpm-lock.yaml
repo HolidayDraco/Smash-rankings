@@ -157,12 +157,18 @@ importers:
       '@sr/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@sr/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
       '@types/react-dom':
         specifier: 19.2.7
         version: 19.2.7(@types/react@19.2.18)
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
       typescript:
         specifier: 6.0.3
         version: 6.0.3
