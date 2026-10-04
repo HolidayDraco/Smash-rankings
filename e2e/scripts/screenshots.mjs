@@ -87,7 +87,7 @@ const texasScenes = {
   async expanded(page) {
     await page.goto(`http://localhost:${port}/texas`);
     await page.getByRole("button", { name: "Pin Houston" }).click();
-    await page.getByRole("button", { name: /^Dallas-Fort Worth, / }).click();
+    await page.getByRole("button", { name: /^Dallas-Fort Worth, .* players$/ }).click();
     await page.getByRole("list", { name: "Dallas-Fort Worth ranking" }).waitFor();
   },
 };

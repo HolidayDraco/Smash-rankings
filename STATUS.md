@@ -625,6 +625,7 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 - Rio Grande Valley and San Antonio are formula-based (Braacket) rankings rather than panel-voted ones, so they carry a small "Calculated ranking" label.
 - The whole list comes from one hand-edited file, `data/scenes/texas.json`. A check in the tests rejects bad edits (ranks out of order, repeated city ids, links that are not https, HM entries before numbered ones), so a typo cannot go live. `data/scenes/README.md` explains the file in plain English.
 - Navigation to this page is added in a separate PR (the two-tab shell).
+- Clay accepted CC BY-SA share-alike for wiki-sourced scene rankings (Oct 4); they are shown with credit. Austin and Dallas-Fort Worth come from Liquipedia and Houston from SmashWiki, so each of those three shows "From <site> · CC BY-SA" with Source and License links when opened. The data check now requires a `credit` on any entry whose link points at liquipedia.net or ssbwiki.com, rejects misspelled keys, and rejects repeated city names. The exact CC BY-SA version still needs confirming from each site's footer, so the License links point at the source page for now.
 
 **How a city ranking gets added:** send the list (city, ranking name, season, link to the original post, players in order) to Genghis or Claude. They update `data/scenes/texas.json` in a pull request, and the site updates when it merges.
 

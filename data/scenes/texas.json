@@ -8,6 +8,11 @@
       "rankingName": "Austin Ultimate PR Winter 2025",
       "season": "Winter 2025",
       "sourceUrl": "https://liquipedia.net/smash/Texas_Power_Rankings/Austin/Ultimate",
+      "credit": {
+        "site": "Liquipedia",
+        "license": "CC BY-SA",
+        "licenseUrl": "https://liquipedia.net/smash/Texas_Power_Rankings/Austin/Ultimate"
+      },
       "type": "official",
       "players": [
         {
@@ -58,6 +63,11 @@
       "rankingName": "DFW Ultimate PR 2026 Q2",
       "season": "2026 Q2",
       "sourceUrl": "https://liquipedia.net/smash/Texas_Power_Rankings/Dallas-Fort_Worth",
+      "credit": {
+        "site": "Liquipedia",
+        "license": "CC BY-SA",
+        "licenseUrl": "https://liquipedia.net/smash/Texas_Power_Rankings/Dallas-Fort_Worth"
+      },
       "type": "official",
       "players": [
         {
@@ -112,6 +122,11 @@
       "rankingName": "Houston Ultimate PR 2026 Quarter 2",
       "season": "2026 Q2",
       "sourceUrl": "https://www.ssbwiki.com/Texas_Power_Rankings/Houston_Power_Rankings",
+      "credit": {
+        "site": "SmashWiki",
+        "license": "CC BY-SA",
+        "licenseUrl": "https://www.ssbwiki.com/Texas_Power_Rankings/Houston_Power_Rankings"
+      },
       "type": "official",
       "players": [
         {

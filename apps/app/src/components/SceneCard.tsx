@@ -27,7 +27,7 @@ export function SceneCard({
           role="button"
           aria-expanded={expanded}
           aria-controls={panelId}
-          aria-label={`${scene.city}, ${scene.players.length} ranked players`}
+          aria-label={`${scene.city}${scene.type === "calculated" ? ", calculated ranking" : ""}, ${scene.players.length} players`}
           onPress={onToggleExpanded}
           {...header.handlers}
           style={[styles.headerButton, header.style]}
@@ -70,7 +70,27 @@ export function SceneCard({
           <BodyText variant="bodySm" muted>
             {scene.updated ? `${scene.season} · Updated ${scene.updated}` : scene.season}
           </BodyText>
-          {scene.sourceUrl ? (
+          {scene.credit ? (
+            <View style={styles.creditRow}>
+              <BodyText variant="bodySm" muted>
+                From {scene.credit.site} · {scene.credit.license}
+              </BodyText>
+              {scene.sourceUrl ? (
+                <ActionLink
+                  label={`Source for ${scene.city} on ${scene.credit.site}`}
+                  text="Source"
+                  href={scene.sourceUrl}
+                  external
+                />
+              ) : null}
+              <ActionLink
+                label={`${scene.credit.license} license for ${scene.city}`}
+                text="License"
+                href={scene.credit.licenseUrl}
+                external
+              />
+            </View>
+          ) : scene.sourceUrl ? (
             <ActionLink
               label={`Source for ${scene.city}`}
               text="Source"
@@ -81,7 +101,12 @@ export function SceneCard({
           <View role="list" aria-label={`${scene.city} ranking`} style={styles.players}>
             {scene.players.map((player, index) => (
               <View key={`${player.rank}-${index}`} role="listitem" style={styles.player}>
-                <BodyText variant="stat" color={colors.accent} style={styles.rank}>
+                <BodyText
+                  variant="stat"
+                  color={colors.accent}
+                  style={styles.rank}
+                  aria-label={player.rank === "HM" ? "Honorable mention" : undefined}
+                >
                   {player.rank}
                 </BodyText>
                 <BodyText>{player.name}</BodyText>
@@ -127,6 +152,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.line,
     paddingTop: spacing.md,
+  },
+  creditRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    columnGap: spacing.md,
   },
   players: { marginTop: spacing.sm },
   player: {

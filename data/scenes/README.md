@@ -4,6 +4,25 @@ The **Texas tab** of the site lists every Texas city that has a published local 
 
 To add or change a city: send Clay or Genghis the list (city, ranking name, season, link to the original post, and the players in order). Genghis or Claude then edits `texas.json` in a pull request. The site updates when the pull request merges.
 
+## Licenses and credit (CC BY-SA wikis)
+
+- Entries that have a `credit` block come from wikis licensed under **CC BY-SA**: Austin and Dallas-Fort Worth from Liquipedia, Houston from SmashWiki. The Braacket entries (Rio Grande Valley, San Antonio) are not affected.
+- Our copy of those entries is shared under the **same license** (share-alike). Anyone may reuse them, as long as they credit the source wiki.
+- This applies only to the list data in this file. The app's code is unaffected and keeps its own license.
+- **Any new entry sourced from a wiki must include `credit`.** The automatic check fails if `sourceUrl` points at liquipedia.net or ssbwiki.com and `credit` is missing.
+- Each credited city shows "From <site> · CC BY-SA" on the page, with links to the source and the license.
+- ⚠ The exact CC BY-SA version (for example 3.0 or 4.0) should be confirmed from each site's footer. Until then, `licenseUrl` points at the source page, which states its own license, and we do not claim a version.
+
+Example `credit` block:
+
+```json
+"credit": {
+  "site": "Liquipedia",
+  "license": "CC BY-SA",
+  "licenseUrl": "https://liquipedia.net/smash/Texas_Power_Rankings/Dallas-Fort_Worth"
+}
+```
+
 ## The file
 
 ```json
@@ -38,6 +57,7 @@ To add or change a city: send Clay or Genghis the list (city, ranking name, seas
   - `rankingName`: what the organizers call the ranking.
   - `season`: the period it covers, such as `2026 Q2`.
   - `sourceUrl`: link to the original post. Must start with `https://`. Use `null` if there is no link.
+  - `credit` (required for wiki sources, see above): `site`, `license` (always `"CC BY-SA"`) and `licenseUrl` (https).
   - `type`: `"official"` for a panel-voted power ranking, or `"calculated"` for a formula-based one (for example a Braacket ranking). Calculated cities get a "Calculated ranking" label on the site.
   - `updated` (optional): the date this city's list was published or copied, as `YYYY-MM-DD`. Leave it out if you do not know it. Never guess.
   - `players`: the list, best first. Each has a `rank` and a `name`.
@@ -52,7 +72,9 @@ To add or change a city: send Clay or Genghis the list (city, ranking name, seas
 ## Rules (a mistake fails the automatic check, so it cannot go live)
 
 - Every player needs a name. Cities can have any number of players.
-- Every `id` must be different.
+- Every `id` must be different, and so must every `city`.
+- Misspelled or unknown keys (for example `upated`) are rejected.
+- Entries sourced from liquipedia.net or ssbwiki.com must have `credit`.
 - Links must be `https://`.
 - Dates must look like `2026-09-20`.
 - `type` must be `"official"` or `"calculated"`.

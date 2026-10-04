@@ -9,7 +9,7 @@ export const sceneIdSchema = z
 /** A numbered rank, or "HM" (honorable mention, listed after the numbered ranks). */
 export const HONORABLE_MENTION = "HM";
 
-export const scenePlayerSchema = z.object({
+export const scenePlayerSchema = z.strictObject({
   rank: z.union([z.number().int().positive(), z.literal(HONORABLE_MENTION)]),
   /** Kept exactly as published (sponsor tags, alternate tags); only checked to be non-blank. */
   name: z.string().refine((value) => value.trim().length > 0, "player name must not be empty"),
@@ -18,8 +18,30 @@ export const scenePlayerSchema = z.object({
 /** "official" is a panel-voted power ranking; "calculated" is formula-based (Braacket). */
 export const sceneTypeSchema = z.enum(["official", "calculated"]);
 
+/** Wiki hosts whose content is CC BY-SA: an entry sourced from one must carry `credit`. */
+export const CC_BY_SA_WIKI_HOSTS = ["liquipedia.net", "ssbwiki.com"] as const;
+
+function isCcBySaWikiUrl(url: string): boolean {
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return false; // not a URL at all; the sourceUrl check reports that
+  }
+  return CC_BY_SA_WIKI_HOSTS.some((wiki) => host === wiki || host.endsWith(`.${wiki}`));
+}
+
+/** Attribution for entries copied from a CC BY-SA wiki. */
+export const sceneCreditSchema = z.strictObject({
+  site: z.string().trim().min(1),
+  license: z.literal("CC BY-SA"),
+  licenseUrl: z
+    .url()
+    .refine((value) => value.startsWith("https://"), "licenseUrl must start with https://"),
+});
+
 export const sceneSchema = z
-  .object({
+  .strictObject({
     id: sceneIdSchema,
     city: z.string().trim().min(1),
     rankingName: z.string().trim().min(1),
@@ -32,9 +54,18 @@ export const sceneSchema = z
     type: sceneTypeSchema,
     /** Optional: when this city's list was published or copied. Never guessed. */
     updated: isoDate.optional(),
+    /** Required when sourceUrl is a CC BY-SA wiki (Liquipedia, SmashWiki). */
+    credit: sceneCreditSchema.optional(),
     players: z.array(scenePlayerSchema),
   })
   .superRefine((scene, ctx) => {
+    if (scene.sourceUrl && isCcBySaWikiUrl(scene.sourceUrl) && !scene.credit) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["credit"],
+        message: "entries sourced from Liquipedia or SmashWiki (CC BY-SA) must include credit",
+      });
+    }
     let expected = 1;
     let seenHonorableMention = false;
     scene.players.forEach((player, index) => {
@@ -60,14 +91,24 @@ export const sceneSchema = z
   });
 
 export const scenesFileSchema = z
-  .object({
+  .strictObject({
     version: z.literal(1),
     updated: isoDate,
     scenes: z.array(sceneSchema),
   })
   .superRefine((file, ctx) => {
     const seen = new Set<string>();
+    const seenCities = new Set<string>();
     file.scenes.forEach((scene, index) => {
+      const cityKey = scene.city.trim().toLowerCase();
+      if (seenCities.has(cityKey)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["scenes", index, "city"],
+          message: `duplicate city "${scene.city}"`,
+        });
+      }
+      seenCities.add(cityKey);
       if (seen.has(scene.id)) {
         ctx.addIssue({
           code: "custom",
@@ -80,5 +121,6 @@ export const scenesFileSchema = z
   });
 
 export type ScenePlayer = z.infer<typeof scenePlayerSchema>;
+export type SceneCredit = z.infer<typeof sceneCreditSchema>;
 export type Scene = z.infer<typeof sceneSchema>;
 export type ScenesFile = z.infer<typeof scenesFileSchema>;

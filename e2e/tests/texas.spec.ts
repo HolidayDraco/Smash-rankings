@@ -5,7 +5,7 @@ const ORDER = ["Austin", "Dallas-Fort Worth", "Houston", "Rio Grande Valley", "S
 
 async function cityOrder(page: Page) {
   const list = page.getByRole("list", { name: "Texas cities" });
-  const names = await list.getByRole("button", { name: /ranked players$/ }).allTextContents();
+  const names = await list.getByRole("button", { name: / players$/ }).allTextContents();
   return names.map((text) => text.replace(/(Calculated ranking)?(View|Hide)$/, "").trim());
 }
 
@@ -28,6 +28,12 @@ test("search filters by city and shows an empty state", async ({ page }) => {
   expect(await cityOrder(page)).toEqual(["San Antonio"]);
   await box.fill("zzz");
   await expect(page.getByText('No scenes match "zzz"')).toBeVisible();
+  const status = page.getByRole("status");
+  await expect(status).toHaveText('No scenes match "zzz"');
+  await box.fill("");
+  await expect(status).toHaveText("5 cities");
+  await box.fill("san");
+  await expect(status).toHaveText("1 city");
 });
 
 test("pinning moves a city to the top and survives a reload", async ({ page }) => {
@@ -59,7 +65,7 @@ test("works when storage is unavailable", async ({ page }) => {
 });
 
 test("expanding Dallas-Fort Worth shows its ranking, HM entries and source", async ({ page }) => {
-  const header = page.getByRole("button", { name: /^Dallas-Fort Worth, 11 ranked players$/ });
+  const header = page.getByRole("button", { name: /^Dallas-Fort Worth, 11 players$/ });
   await expect(header).toHaveAttribute("aria-expanded", "false");
   await header.click();
   await expect(header).toHaveAttribute("aria-expanded", "true");
@@ -70,6 +76,11 @@ test("expanding Dallas-Fort Worth shows its ranking, HM entries and source", asy
   await expect(items.first()).toContainText("Atomic");
   await expect(items.last()).toContainText("HM");
   await expect(items.last()).toContainText("Grapezard X");
+  await expect(page.getByText("From Liquipedia · CC BY-SA")).toBeVisible();
+  await expect(page.getByLabel("Honorable mention")).toHaveCount(1);
+  await expect(
+    page.getByRole("link", { name: /CC BY-SA license for Dallas-Fort Worth/ }),
+  ).toHaveAttribute("href", /^https:\/\//);
   const source = page.getByRole("link", { name: /Source for Dallas-Fort Worth/ });
   await expect(source).toHaveAttribute("target", "_blank");
   await expect(source).toHaveAttribute("href", /^https:\/\//);

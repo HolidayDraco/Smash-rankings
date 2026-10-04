@@ -31,7 +31,7 @@ describe("scenesFileSchema", () => {
     ]);
   });
   it("accepts a null source link and varying player counts", () => {
-    const ok = file([scene({ sourceUrl: null }), scene({ id: "b", players: [] })]);
+    const ok = file([scene({ sourceUrl: null }), scene({ id: "b", city: "Other", players: [] })]);
     expect(scenesFileSchema.safeParse(ok).success).toBe(true);
   });
   it("rejects ranks that skip, repeat or start wrong", () => {
@@ -88,5 +88,43 @@ describe("scenesFileSchema", () => {
   it("rejects bad dates and versions", () => {
     expect(scenesFileSchema.safeParse(file([scene({ updated: "9/20/2026" })])).success).toBe(false);
     expect(scenesFileSchema.safeParse({ ...file([]), version: 2 }).success).toBe(false);
+  });
+
+  it("rejects unknown keys such as a misspelled optional field", () => {
+    expect(scenesFileSchema.safeParse(file([scene({ upated: "2026-09-20" })])).success).toBe(false);
+    const players = [{ rank: 1, name: "A", nmae: "x" }];
+    expect(scenesFileSchema.safeParse(file([scene({ players })])).success).toBe(false);
+    expect(scenesFileSchema.safeParse({ ...file([scene()]), extra: 1 }).success).toBe(false);
+  });
+  it("rejects duplicate city names, ignoring case", () => {
+    const dupes = file([scene(), scene({ id: "other", city: "sampletown" })]);
+    expect(scenesFileSchema.safeParse(dupes).success).toBe(false);
+  });
+  describe("CC BY-SA credit", () => {
+    const credit = {
+      site: "Liquipedia",
+      license: "CC BY-SA",
+      licenseUrl: "https://liquipedia.net/smash/Texas_Power_Rankings",
+    };
+    it("requires credit for liquipedia.net and ssbwiki.com sources", () => {
+      for (const sourceUrl of [
+        "https://liquipedia.net/smash/Texas_Power_Rankings/Austin",
+        "https://www.ssbwiki.com/Texas_Power_Rankings/Houston_Power_Rankings",
+      ]) {
+        expect(scenesFileSchema.safeParse(file([scene({ sourceUrl })])).success).toBe(false);
+        expect(scenesFileSchema.safeParse(file([scene({ sourceUrl, credit })])).success).toBe(true);
+      }
+    });
+    it("does not require credit for other sources, and checks the credit shape", () => {
+      expect(scenesFileSchema.safeParse(file([scene({ credit })])).success).toBe(true);
+      const bad = { ...credit, licenseUrl: "http://example.com" };
+      expect(scenesFileSchema.safeParse(file([scene({ credit: bad })])).success).toBe(false);
+      const wrong = { ...credit, license: "MIT" };
+      expect(scenesFileSchema.safeParse(file([scene({ credit: wrong })])).success).toBe(false);
+    });
+    it("has credit on the three wiki-sourced real scenes only", () => {
+      const credited = texasScenes.scenes.filter((s) => s.credit).map((s) => s.city);
+      expect(credited).toEqual(["Austin", "Dallas-Fort Worth", "Houston"]);
+    });
   });
 });

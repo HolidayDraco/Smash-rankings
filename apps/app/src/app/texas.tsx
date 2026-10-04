@@ -46,6 +46,10 @@ export default function TexasPage() {
 
   const visible = useMemo(() => arrangeScenes(scenes, pins, query), [pins, query]);
   const trimmed = query.trim();
+  const liveMessage =
+    visible.length === 0
+      ? `No scenes match "${trimmed}"`
+      : `${visible.length} ${visible.length === 1 ? "city" : "cities"}`;
 
   return (
     <Page>
@@ -66,11 +70,12 @@ export default function TexasPage() {
         <BodyText variant="bodySm" muted style={styles.credit}>
           Rankings from local organizers
         </BodyText>
-        {visible.length === 0 ? (
-          <View role="status" style={styles.empty}>
-            <BodyText>No scenes match &quot;{trimmed}&quot;</BodyText>
-          </View>
-        ) : (
+        <View role="status" aria-live="polite" testID="scene-status" style={styles.live}>
+          <BodyText variant="bodySm" muted>
+            {liveMessage}
+          </BodyText>
+        </View>
+        {visible.length === 0 ? null : (
           <View role="list" aria-label="Texas cities" style={styles.list}>
             {visible.map((scene) => (
               <SceneCard
@@ -99,5 +104,5 @@ const styles = StyleSheet.create({
   search: { marginTop: spacing.lg },
   credit: { marginTop: spacing.md, marginBottom: spacing.sm },
   list: { gap: spacing.sm },
-  empty: { paddingVertical: spacing.xl },
+  live: { minHeight: 24, paddingBottom: spacing.sm },
 });
