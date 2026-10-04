@@ -14,6 +14,7 @@ coverage/
 .expo/
 web-build/
 apps/app/dist/
+apps/app/dist-demo/
 
 # Playwright
 test-results/

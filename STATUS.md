@@ -701,3 +701,29 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None new. Stated default: the page title stays "Dashboard | Smash Ultimate Rankings | Bracket Index".
 
 **Questions for Genghis:** None open.
+
+---
+
+## 2026-10-04 — Demo mode (issue #30)
+
+**Date:** 2026-10-04
+
+**What changed:**
+
+- **What demo mode is:** the app can now run with no API, database or start.gg connected. It answers every page from a small bundled file of fake data (the same `Sample_*` players the practice database and screenshots use). Nothing in it is real start.gg data. The production page at https://smash-rankings-app.vercel.app now shows the full app instead of error messages.
+- **A "Demo data" tag** (small yellow skewed label, read aloud as "Demo data: sample rankings, not real results") sits in the header on every page while demo mode is on. It is not there otherwise.
+- **How it switches on and off:** it is on when `EXPO_PUBLIC_API_URL` is not set (which is the case on Vercel today), or when `EXPO_PUBLIC_DEMO=1`. To turn it off, set `EXPO_PUBLIC_API_URL` on the Vercel app project to the real API address, then press Redeploy. No code change is needed. (Vercel bakes this value in when it builds, so a Redeploy is required.)
+- **The sample data is frozen.** The dates in it (this week, "Last updated") are from the day it was made, so over time the Dashboard will look a bit stale. That is fine for a demo. To refresh it: start a throwaway database, then run `pnpm db:migrate && pnpm db:seed`, then `DATABASE_URL=... pnpm --filter @sr/app demo:snapshot`, and commit `apps/app/src/demo/data.json`. A unit test checks the file against the same rules the real API uses, so a stale or broken file fails the build.
+- **One data path:** every page's data goes through one function that picks the bundled data or the network, and both are checked by the same rules. Search works like the API (ignores capital letters, matches anywhere in the name, at most 20 results). An unknown player shows "Player not found". The Texas tab is unchanged.
+- **Local development decision:** `pnpm dev` now sets the API address itself (`http://localhost:8787`, or whatever you put in `EXPO_PUBLIC_API_URL` or `API_PORT`). I chose that over keeping a hidden "if in dev, use localhost" fallback in the code, because the fallback could silently hide a missing setting and the code now has exactly one rule for demo versus real. `pnpm --filter @sr/app dev:demo` runs the app locally in demo mode.
+- **Vercel check:** the production build was run with no settings at all and works. `dist/player/[idSlug].html` exists, and `cleanUrls` is true, so the `/player/...` rewrite in `apps/app/vercel.json` still matches. We cannot reach vercel.app from here, so this was checked by serving the build with the test server, which copies those rules.
+- **Tests:** unit tests for the on/off decision, the demo data (every answer passes its schema, search, unknown player) and the tag. A new small browser test run, `pnpm e2e:demo`, builds the app with no API address into a separate folder (`apps/app/dist-demo`), serves it with no API and no database, and checks the Dashboard, the tag, Texas, search, opening a player, and accessibility. CI runs it right after the normal browser tests, reusing the same job, so it adds about a minute. The normal `pnpm e2e` is unchanged apart from one new check that the tag is absent there.
+
+**What's next:**
+
+- Clay: open https://smash-rankings-app.vercel.app after this merges and redeploys, and look for the yellow "Demo data" tag.
+- When the real API is deployed, set `EXPO_PUBLIC_API_URL` on the Vercel app project and Redeploy.
+
+**Questions for Clay:** None. Stated default: the tag text is "Demo data".
+
+**Questions for Genghis:** None.

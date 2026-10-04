@@ -100,6 +100,10 @@ jobs:
           pnpm db:seed
       # `pnpm e2e` builds the web app pointed at the API on :8787, and Playwright starts that API.
       - run: pnpm e2e
+      # Demo mode: a second web build with no API URL, served on its own port with no API and no
+      # database. Reuses the Chromium and install above, so it adds only a build plus ~15 s of tests.
+      - name: E2E demo mode (no API)
+        run: pnpm e2e:demo
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4

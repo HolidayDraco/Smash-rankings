@@ -32,6 +32,12 @@ async function expectNoSeriousViolations(page: Page) {
   );
 }
 
+test("the Demo data tag is absent when the app talks to the real API", async ({ page }) => {
+  await loaded(page);
+  await expect(page.getByRole("note", { name: /^Demo data/ })).toHaveCount(0);
+  await expect(page.getByText("Demo data")).toHaveCount(0);
+});
+
 test("header strip shows the region, year, week range and last-updated badge", async ({ page }) => {
   await loaded(page);
   await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toHaveCount(1);

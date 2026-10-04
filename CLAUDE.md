@@ -32,6 +32,9 @@ Web first, iOS/Android later from the same Expo codebase. The full plan is in `d
 - `pnpm test`: Vitest unit tests (all packages)
 - `pnpm test --filter @sr/ranking`: one package
 - `pnpm e2e`: Playwright against a local web build (`pnpm e2e --ui` to debug)
+- `pnpm e2e:demo`: Playwright against a demo-mode web build (no `EXPO_PUBLIC_API_URL`, no API server, no database), built into `apps/app/dist-demo`
+- `pnpm --filter @sr/app demo:snapshot`: regenerate the bundled demo data (`apps/app/src/demo/data.json`) from a migrated, seeded throwaway DB (`DATABASE_URL` required)
+- `pnpm --filter @sr/app dev:demo`: run the app locally in demo mode (`pnpm dev` talks to the local API on :8787)
 - `pnpm db:generate` / `pnpm db:migrate`: Drizzle migrations
 - `pnpm codegen`: regenerate start.gg GraphQL types
 - `pnpm job:discover -- --dry-run`: find events in the last 14 / next 30 days without writing to the DB (`--from` / `--to` override the window)

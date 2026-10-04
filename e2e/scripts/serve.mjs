@@ -4,7 +4,11 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = resolve(fileURLToPath(new URL("../../apps/app/dist", import.meta.url)));
+// E2E_DIST picks another build folder (the demo-mode build lives in apps/app/dist-demo).
+const root = resolve(
+  fileURLToPath(new URL("../../apps/app", import.meta.url)),
+  process.env.E2E_DIST ?? "dist",
+);
 const port = Number(process.env.E2E_PORT ?? 4173);
 const types = {
   ".html": "text/html; charset=utf-8",

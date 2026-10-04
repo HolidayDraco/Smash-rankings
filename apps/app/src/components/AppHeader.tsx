@@ -1,5 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { DisplayText, colors, minTouchTarget, spacing } from "@sr/ui";
+import { isDemoMode } from "../lib/demoMode";
+import { DemoTag } from "./DemoTag";
 import { PrimaryNav, useNavVariant } from "./PrimaryNav";
 
 export function AppHeader() {
@@ -12,6 +14,7 @@ export function AppHeader() {
         <DisplayText variant="h3" level={null} color={colors.ink}>
           Bracket Index
         </DisplayText>
+        {isDemoMode() ? <DemoTag /> : null}
       </View>
       {showTabs ? <PrimaryNav variant="top" /> : null}
     </View>

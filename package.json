@@ -18,6 +18,7 @@
     "db:migrate": "pnpm --filter @sr/db db:migrate",
     "codegen": "pnpm --filter @sr/startgg codegen",
     "e2e": "EXPO_PUBLIC_API_URL=http://localhost:${API_PORT:-8787} pnpm --filter @sr/app build:web --clear && pnpm --filter @sr/e2e e2e",
+    "e2e:demo": "env -u EXPO_PUBLIC_API_URL -u EXPO_PUBLIC_DEMO pnpm --filter @sr/app build:web --clear --output-dir dist-demo && pnpm --filter @sr/e2e e2e:demo",
     "job:discover": "pnpm --filter @sr/jobs discover",
     "job:sync": "pnpm --filter @sr/jobs sync",
     "job:rate": "pnpm --filter @sr/jobs rate",
