@@ -568,17 +568,12 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 
 ---
 
-<<<<<<< HEAD
 ## 2026-10-03 — tournaments now remember their city
-=======
-## 2026-10-03 — two-tab shell (Phase 2, PR 1 of 5)
->>>>>>> c589db2 (feat(app): two-tab shell with Dashboard and Texas)
 
 **Date:** 2026-10-03
 
 **What changed:**
 
-<<<<<<< HEAD
 - We now save the city of each tournament (for example "Austin" or "Houston"). This is groundwork for the Dashboard's "This week's events" list (issue #24), which shows name, city, date, entrants, winner and a start.gg link.
 - Discover asks start.gg for the city along with the other tournament details, saves it, and refreshes it if the organizer changes it. Tournaments with no city are saved with it blank.
 - The database got one new, empty-by-default "city" column (migration `0001_fast_white_tiger.sql`). It only adds a column, so nothing existing changes. The scheduled job runs migrations first, so the live database picks it up on its own.
@@ -594,7 +589,15 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None new.
 
 **Questions for Genghis:** If start.gg rejects the `city` field on the first live run, should we drop it or derive the city another way? Default: drop it and show only the state.
-=======
+
+---
+
+## 2026-10-03 — two-tab shell (Phase 2, PR 1 of 5)
+
+**Date:** 2026-10-03
+
+**What changed:**
+
 - The public site now has exactly two tabs: **Dashboard** (the home page, still showing the top-100 leaderboard for now) and **Texas** (a placeholder page saying city power rankings are coming).
 - On phones the tabs are a bar at the bottom of the screen. On wider screens (768 px and up) they sit in the header. Player pages count as part of Dashboard, so Dashboard stays highlighted there.
 - The Style guide link is gone from the header and the Status link is gone from the footer. Those pages, and Methodology, still work at `/style-guide`, `/status` and `/methodology`. The footer keeps one small "How rankings work" link plus the start.gg credit.
@@ -608,4 +611,3 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None. The defaults for character icons, upset size and weeks are listed in the plan; tell me if you want any changed.
 
 **Questions for Genghis:** None open.
->>>>>>> c589db2 (feat(app): two-tab shell with Dashboard and Texas)
