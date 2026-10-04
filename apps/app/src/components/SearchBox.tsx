@@ -14,9 +14,12 @@ import {
 export function SearchBox({
   value,
   onChange,
+  label = "Search players",
 }: {
   value: string;
   onChange: (text: string) => void;
+  /** Accessible name and placeholder. */
+  label?: string;
 }) {
   const input = useFocusRing();
   const clear = useFocusRing();
@@ -26,9 +29,9 @@ export function SearchBox({
       <TextInput
         ref={inputRef}
         maxLength={SEARCH_MAX_QUERY_LENGTH}
-        aria-label="Search players"
+        aria-label={label}
         role="searchbox"
-        placeholder="Search players"
+        placeholder={label}
         placeholderTextColor={colors.inkMuted}
         value={value}
         onChangeText={onChange}

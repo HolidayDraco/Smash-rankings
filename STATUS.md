@@ -611,3 +611,31 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None. The defaults for character icons, upset size and weeks are listed in the plan; tell me if you want any changed.
 
 **Questions for Genghis:** None open.
+
+---
+
+## 2026-10-03 — Texas tab page (city power rankings)
+
+**Date:** 2026-10-03
+
+**What changed:**
+
+- The `/texas` page now lists the five Texas cities with a published local power ranking, using the real lists Clay approved on issue #24: Austin, Dallas-Fort Worth, Houston, Rio Grande Valley and San Antonio. These are the local organizers' rankings, copied in by hand. They are not computed by us and not start.gg data. The page says "Rankings from local organizers" above the list, and the standard footer stays.
+- Cities are alphabetical. Tap the star to pin a city to the top (pins are remembered in your browser on the web). Tap a city to open its ranking in place: ranking name, season, a Source link, and the numbered player list, with honorable mentions shown as "HM" at the end. Names are shown exactly as published, sponsor tags included. A search box filters by city.
+- Rio Grande Valley and San Antonio are formula-based (Braacket) rankings rather than panel-voted ones, so they carry a small "Calculated ranking" label.
+- The whole list comes from one hand-edited file, `data/scenes/texas.json`. A check in the tests rejects bad edits (ranks out of order, repeated city ids, links that are not https, HM entries before numbered ones), so a typo cannot go live. `data/scenes/README.md` explains the file in plain English.
+- The page is reached from the Texas tab (two-tab navigation, merged in #27).
+- Clay accepted CC BY-SA share-alike for wiki-sourced scene rankings (Oct 4); they are shown with credit. Austin and Dallas-Fort Worth come from Liquipedia and Houston from SmashWiki, so each of those three shows "From <site> · CC BY-SA" next to its Source link when opened. The data check now requires a `credit` on any entry whose link points at liquipedia.net or ssbwiki.com, rejects misspelled keys, and rejects repeated city names. The exact CC BY-SA version still needs confirming from each site's footer; once it is, a License link to that Creative Commons page gets added.
+
+**How a city ranking gets added:** send the list (city, ranking name, season, link to the original post, players in order) to Genghis or Claude. They update `data/scenes/texas.json` in a pull request, and the site updates when it merges.
+
+**What's next:**
+
+- Add more cities as their lists arrive (about 15 are expected at launch).
+
+**Questions for Clay:**
+
+1. Pins are saved per browser on the web only. On the phone apps they will reset when the app closes until we add proper storage. Is that fine for now? (Default: yes.)
+2. The source data had no per-city "last updated" date, so none is shown. Do you want one added when you send lists? (Default: no.)
+
+**Questions for Genghis:** None open.

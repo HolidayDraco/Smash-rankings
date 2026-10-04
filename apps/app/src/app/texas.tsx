@@ -1,14 +1,59 @@
 import Head from "expo-router/head";
-import { StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Platform, StyleSheet, View } from "react-native";
+import { LAUNCH_REGIONS, STATE_NAMES } from "@sr/core";
+import { texasScenes } from "@sr/core/texas-scenes";
 import { BodyText, DisplayText, colors, spacing } from "@sr/ui";
 import { Page } from "../components/Page";
+import { SceneCard } from "../components/SceneCard";
+import { SearchBox } from "../components/SearchBox";
+import { PINS_STORAGE_KEY, arrangeScenes, parsePins, togglePin } from "../lib/scenes";
 
-const TITLE = "Texas | Bracket Index";
+/** Same name as the tab label, from the launch region config (ADR-0003). */
+const REGION_NAME = STATE_NAMES[LAUNCH_REGIONS.states[0]] ?? LAUNCH_REGIONS.states[0];
+const TITLE = `${REGION_NAME} local power rankings | Bracket Index`;
 const DESCRIPTION =
-  "Texas Super Smash Bros. Ultimate city power rankings, computed from start.gg results. Coming soon.";
+  "Local Smash Ultimate power rankings for Texas cities, as posted by each scene's organizers. Pin your city and see the full list.";
 
-/** Placeholder for the Texas tab. A later PR adds the city power rankings. */
-export default function Texas() {
+const scenes = texasScenes.scenes;
+const sceneIds = scenes.map((scene) => scene.id);
+
+/** localStorage on web only; every access is guarded because storage can be blocked. */
+function readPins(): Set<string> {
+  if (Platform.OS !== "web") return new Set();
+  try {
+    return parsePins(globalThis.localStorage?.getItem(PINS_STORAGE_KEY) ?? null, sceneIds);
+  } catch {
+    return new Set();
+  }
+}
+
+function writePins(pins: ReadonlySet<string>) {
+  if (Platform.OS !== "web") return;
+  try {
+    globalThis.localStorage?.setItem(PINS_STORAGE_KEY, JSON.stringify([...pins]));
+  } catch {
+    // Storage unavailable (private mode, blocked): pins just last for this visit.
+  }
+}
+
+export default function TexasPage() {
+  const [query, setQuery] = useState("");
+  const [pins, setPins] = useState<ReadonlySet<string>>(() => new Set());
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  // Read saved pins after mount so the server-rendered HTML and first client render match.
+  useEffect(() => {
+    setPins(readPins());
+  }, []);
+
+  const visible = useMemo(() => arrangeScenes(scenes, pins, query), [pins, query]);
+  const trimmed = query.trim();
+  const liveMessage =
+    visible.length === 0
+      ? `No scenes match "${trimmed}"`
+      : `${visible.length} ${visible.length === 1 ? "city" : "cities"}`;
+
   return (
     <Page>
       <Head>
@@ -17,17 +62,50 @@ export default function Texas() {
         <meta property="og:title" content={TITLE} />
         <meta property="og:description" content={DESCRIPTION} />
       </Head>
-      <View style={styles.top}>
-        <BodyText variant="label" color={colors.accent}>
-          Super Smash Bros. Ultimate
+      <View style={styles.column}>
+        <DisplayText variant="h1">{REGION_NAME}</DisplayText>
+        <BodyText muted style={styles.lead}>
+          Local power rankings, as posted by each scene&apos;s organizers.
         </BodyText>
-        <DisplayText variant="h1">Texas</DisplayText>
-        <BodyText variant="body">City power rankings are coming soon.</BodyText>
+        <View style={styles.search}>
+          <SearchBox value={query} onChange={setQuery} label="Search cities" />
+        </View>
+        <BodyText variant="bodySm" muted style={styles.credit}>
+          Rankings from local organizers
+        </BodyText>
+        <View role="status" aria-live="polite" testID="scene-status" style={styles.live}>
+          <BodyText variant="bodySm" muted>
+            {liveMessage}
+          </BodyText>
+        </View>
+        {visible.length === 0 ? null : (
+          <View role="list" aria-label="Texas cities" style={styles.list}>
+            {visible.map((scene) => (
+              <SceneCard
+                key={scene.id}
+                scene={scene}
+                pinned={pins.has(scene.id)}
+                expanded={openId === scene.id}
+                onToggleExpanded={() => setOpenId(openId === scene.id ? null : scene.id)}
+                onTogglePin={() => {
+                  const next = togglePin(pins, scene.id);
+                  setPins(next);
+                  writePins(next);
+                }}
+              />
+            ))}
+          </View>
+        )}
       </View>
     </Page>
   );
 }
 
 const styles = StyleSheet.create({
-  top: { paddingHorizontal: spacing.lg, gap: spacing.md },
+  column: { maxWidth: 720, width: "100%", alignSelf: "center", paddingHorizontal: spacing.lg },
+  lead: { marginTop: spacing.sm, color: colors.inkMuted },
+  search: { marginTop: spacing.lg },
+  credit: { marginTop: spacing.md, marginBottom: spacing.sm },
+  list: { gap: spacing.sm },
+  live: { minHeight: 24, paddingBottom: spacing.sm },
 });

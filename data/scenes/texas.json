@@ -1,0 +1,308 @@
+{
+  "version": 1,
+  "updated": "2026-10-03",
+  "scenes": [
+    {
+      "id": "austin",
+      "city": "Austin",
+      "rankingName": "Austin Ultimate PR Winter 2025",
+      "season": "Winter 2025",
+      "sourceUrl": "https://liquipedia.net/smash/Texas_Power_Rankings/Austin/Ultimate",
+      "credit": {
+        "site": "Liquipedia",
+        "license": "CC BY-SA"
+      },
+      "type": "official",
+      "players": [
+        {
+          "rank": 1,
+          "name": "Renegade"
+        },
+        {
+          "rank": 2,
+          "name": "Tybotexas"
+        },
+        {
+          "rank": 3,
+          "name": "Li'l BRO"
+        },
+        {
+          "rank": 4,
+          "name": "Ray"
+        },
+        {
+          "rank": 5,
+          "name": "BroKen"
+        },
+        {
+          "rank": 6,
+          "name": "zIP"
+        },
+        {
+          "rank": 7,
+          "name": "Soul"
+        },
+        {
+          "rank": 8,
+          "name": "Cliff"
+        },
+        {
+          "rank": 9,
+          "name": "SaSSy"
+        },
+        {
+          "rank": 10,
+          "name": "KG Wave"
+        }
+      ]
+    },
+    {
+      "id": "dallas-fort-worth",
+      "city": "Dallas-Fort Worth",
+      "rankingName": "DFW Ultimate PR 2026 Q2",
+      "season": "2026 Q2",
+      "sourceUrl": "https://liquipedia.net/smash/Texas_Power_Rankings/Dallas-Fort_Worth",
+      "credit": {
+        "site": "Liquipedia",
+        "license": "CC BY-SA"
+      },
+      "type": "official",
+      "players": [
+        {
+          "rank": 1,
+          "name": "Atomic"
+        },
+        {
+          "rank": 2,
+          "name": "DJDon"
+        },
+        {
+          "rank": 3,
+          "name": "Varun5"
+        },
+        {
+          "rank": 4,
+          "name": "Skitz"
+        },
+        {
+          "rank": 5,
+          "name": "Skinny the Pooh"
+        },
+        {
+          "rank": 6,
+          "name": "ICeless"
+        },
+        {
+          "rank": 7,
+          "name": "Lynxical"
+        },
+        {
+          "rank": 8,
+          "name": "SCents"
+        },
+        {
+          "rank": 9,
+          "name": "Kyle"
+        },
+        {
+          "rank": 10,
+          "name": "RuskiNurd"
+        },
+        {
+          "rank": "HM",
+          "name": "Grapezard X"
+        }
+      ]
+    },
+    {
+      "id": "houston",
+      "city": "Houston",
+      "rankingName": "Houston Ultimate PR 2026 Quarter 2",
+      "season": "2026 Q2",
+      "sourceUrl": "https://www.ssbwiki.com/Texas_Power_Rankings/Houston_Power_Rankings",
+      "credit": {
+        "site": "SmashWiki",
+        "license": "CC BY-SA"
+      },
+      "type": "official",
+      "players": [
+        {
+          "rank": 1,
+          "name": "Yalmanac"
+        },
+        {
+          "rank": 2,
+          "name": "Jakarot"
+        },
+        {
+          "rank": 3,
+          "name": "Vaeyguh"
+        },
+        {
+          "rank": 4,
+          "name": "Buandon"
+        },
+        {
+          "rank": 5,
+          "name": "Daveong"
+        },
+        {
+          "rank": 6,
+          "name": "INC"
+        },
+        {
+          "rank": 7,
+          "name": "Pugi"
+        },
+        {
+          "rank": 8,
+          "name": "Choir"
+        },
+        {
+          "rank": 9,
+          "name": "Suit"
+        },
+        {
+          "rank": 10,
+          "name": "SKZohar"
+        },
+        {
+          "rank": "HM",
+          "name": "Faru"
+        },
+        {
+          "rank": "HM",
+          "name": "Milkshake"
+        }
+      ]
+    },
+    {
+      "id": "rio-grande-valley",
+      "city": "Rio Grande Valley",
+      "rankingName": "RGV Smash Ultimate 2026 Rankings - 2026 Q3 Rankings (July - September)",
+      "season": "2026 Q3 (Jul 1 - Oct 1, 2026)",
+      "sourceUrl": "https://braacket.com/league/RGV2026/ranking/4597818A-823C-4D9B-A350-90058E82128B",
+      "type": "calculated",
+      "players": [
+        {
+          "rank": 1,
+          "name": "SHADIC"
+        },
+        {
+          "rank": 2,
+          "name": "Goblin Giant:) | flauTAS"
+        },
+        {
+          "rank": 3,
+          "name": "NBG | MinuteMaid"
+        },
+        {
+          "rank": 4,
+          "name": "Ego | MrWrigh"
+        },
+        {
+          "rank": 5,
+          "name": "BullHall"
+        },
+        {
+          "rank": 6,
+          "name": "G-Site | vacaTHEkiller"
+        },
+        {
+          "rank": 7,
+          "name": "PSG | Rubric"
+        },
+        {
+          "rank": 8,
+          "name": "Adolfo"
+        },
+        {
+          "rank": 9,
+          "name": "GS | lethalBLWR"
+        },
+        {
+          "rank": 10,
+          "name": "Ultimate"
+        },
+        {
+          "rank": 11,
+          "name": "VH | Dangeraffe"
+        },
+        {
+          "rank": 12,
+          "name": "PSG | Hope"
+        },
+        {
+          "rank": 13,
+          "name": "CRXZ | TAS | Pepexer"
+        },
+        {
+          "rank": 14,
+          "name": "Ego|psg | CRUZ"
+        },
+        {
+          "rank": 15,
+          "name": "SBG / B3RG | Osire"
+        },
+        {
+          "rank": 16,
+          "name": "G-Site | VH | DIAMOND"
+        },
+        {
+          "rank": 17,
+          "name": "ST | Alex"
+        },
+        {
+          "rank": 18,
+          "name": "TAS | galleTAS"
+        },
+        {
+          "rank": 19,
+          "name": "MYST | Luczou"
+        },
+        {
+          "rank": 20,
+          "name": "Machete"
+        }
+      ]
+    },
+    {
+      "id": "san-antonio",
+      "city": "San Antonio",
+      "rankingName": "San Antonio Smash Ultimate (Part 2) - Season 25",
+      "season": "Season 25 (Apr 1 - Jun 17, 2026)",
+      "sourceUrl": "https://braacket.com/league/sasu2/ranking",
+      "type": "calculated",
+      "players": [
+        {
+          "rank": 1,
+          "name": "MuteAce"
+        },
+        {
+          "rank": 2,
+          "name": "ToasT"
+        },
+        {
+          "rank": 3,
+          "name": "Renegade"
+        },
+        {
+          "rank": 4,
+          "name": "Ekoh / Khmaster69"
+        },
+        {
+          "rank": 5,
+          "name": "gold_ship_ / nadia_ / Winds"
+        },
+        {
+          "rank": 6,
+          "name": "Prez / Preston (La Vernia)"
+        },
+        {
+          "rank": 7,
+          "name": "Raze"
+        }
+      ]
+    }
+  ]
+}

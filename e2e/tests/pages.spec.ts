@@ -8,7 +8,7 @@ const routes = [
     title: "Dashboard | Smash Ultimate Rankings | Bracket Index",
     heading: "Dashboard",
   },
-  { path: "/texas", title: "Texas | Bracket Index", heading: "Texas" },
+  { path: "/texas", title: "Texas local power rankings | Bracket Index", heading: "Texas" },
   { path: "/style-guide", title: "Style guide | Bracket Index", heading: "Style guide" },
 ] as const;
 
@@ -67,6 +67,9 @@ test("keyboard focus shows an accent-colored outline", async ({ page }) => {
   // Header tabs are the first stop on desktop. On phones the bar is last, so Shift+Tab from the top wraps to it.
   const focusedLink = page.getByRole("navigation", { name: "Primary" }).locator("a:focus");
   const phone = (page.viewportSize()?.width ?? 1280) < 768;
+  // The bar replaces the header tabs only after the page loads; wait for that before tabbing,
+  // or Shift+Tab can wrap to the old last stop (a race, not a product bug).
+  if (phone) await expect(page.getByRole("banner").getByRole("navigation")).toHaveCount(0);
   await page.keyboard.press(phone ? "Shift+Tab" : "Tab");
   await expect(focusedLink).toHaveCount(1);
   const outline = await page.evaluate(() => {
