@@ -1,14 +1,13 @@
 /*
- * Vercel Function entry. `pnpm --filter @sr/api build` bundles this file (and
- * every workspace package it imports) into api/index.js with esbuild, because
- * Vercel's Node runtime only transpiles and can't resolve our raw-.ts
- * workspace exports. vercel.json rewrites every path to /api; the request keeps
+ * Vercel Function entry. `pnpm --filter @sr/api build` (scripts/build-vercel.mjs) bundles this file
+ * and every workspace package it imports into .vercel/output/functions/api.func/index.mjs, in
+ * Vercel's Build Output API format. Every path is routed to this one function; the request keeps
  * its original URL, so Hono routes on /v1/... as usual.
+ *
+ * Vercel's Node launcher calls the default export as a plain Node (req, res) handler, and
+ * getRequestListener turns that into a standard Request for Hono and writes the Response back.
  */
+import { getRequestListener } from "@hono/node-server";
 import { app } from "./server";
 
-const handler = (request: Request): Response | Promise<Response> => app.fetch(request);
-
-export const GET = handler;
-export const HEAD = handler;
-export const OPTIONS = handler;
+export default getRequestListener(app.fetch);

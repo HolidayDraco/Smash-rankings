@@ -8,7 +8,7 @@
     "./client": "./src/client.ts"
   },
   "scripts": {
-    "build": "esbuild src/vercel.ts --bundle --platform=node --format=esm --target=node22 --outfile=api/index.js",
+    "build": "node scripts/build-vercel.mjs",
     "dev": "tsx watch src/dev.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

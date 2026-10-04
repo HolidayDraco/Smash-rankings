@@ -56,11 +56,11 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
-      - name: Build the API bundle and check it loads
+      - name: Build the API for Vercel and check the function answers
         # Dummy URL: the bundle only validates it at import; nothing connects.
         run: |
           pnpm --filter @sr/api build
-          DATABASE_URL=postgres://u:p@localhost:5432/x node -e "import('./apps/api/api/index.js').then(async (m) => { if (typeof m.GET !== 'function') process.exit(1); const r = await m.GET(new Request('http://localhost/')); if (r.status !== 200) process.exit(1); })"
+          DATABASE_URL=postgres://u:p@localhost:5432/x node apps/api/scripts/check-vercel-output.mjs
 
   e2e:
     name: E2E (Playwright + axe)
