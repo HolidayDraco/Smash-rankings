@@ -36,5 +36,5 @@ export function searchDemoPlayers(data: DemoData, rawQuery: string): SearchRespo
 
 /** The demo player, or null for an id we don't have (the page then says "Player not found"). */
 export function findDemoPlayer(data: DemoData, playerId: string): PlayerResponse | null {
-  return data.players[playerId] ?? null;
+  return Object.hasOwn(data.players, playerId) ? (data.players[playerId] ?? null) : null;
 }

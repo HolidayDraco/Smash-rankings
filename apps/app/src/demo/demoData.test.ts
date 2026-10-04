@@ -37,6 +37,13 @@ describe("demo snapshot (src/demo/data.json)", () => {
     expect(players.every((player) => player.gamerTag.startsWith("Sample_"))).toBe(true);
   });
 
+  it("links no sample player to a start.gg profile, and has only Sample tournaments", async () => {
+    const data = await loadDemoData();
+    expect(Object.values(data.players).every((player) => player.startggUrl === null)).toBe(true);
+    const tournaments = data.dashboard.weekEvents.map((event) => event.tournamentName);
+    expect(tournaments.every((name) => name.startsWith("Sample "))).toBe(true);
+  });
+
   it("has a player page for every leaderboard and dashboard player", async () => {
     const data = await loadDemoData();
     for (const entry of data.leaderboard.entries) {
@@ -83,5 +90,6 @@ describe("demo search and player lookup", () => {
     const data = await loadDemoData();
     expect(findDemoPlayer(data, "999")).toBeNull();
     expect(findDemoPlayer(data, "not-a-number")).toBeNull();
+    expect(findDemoPlayer(data, "constructor")).toBeNull();
   });
 });

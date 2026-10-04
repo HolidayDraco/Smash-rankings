@@ -4,8 +4,8 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
-    "dev": "EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL:-http://localhost:${API_PORT:-8787}} expo start --web",
-    "dev:demo": "EXPO_PUBLIC_DEMO=1 expo start --web",
+    "dev": "EXPO_PUBLIC_API_URL=${EXPO_PUBLIC_API_URL:-http://localhost:${API_PORT:-8787}} expo start --web --clear",
+    "dev:demo": "EXPO_PUBLIC_DEMO=1 expo start --web --clear",
     "demo:snapshot": "tsx scripts/snapshot-demo-data.mts",
     "build:web": "expo export -p web",
     "typecheck": "tsc --noEmit",

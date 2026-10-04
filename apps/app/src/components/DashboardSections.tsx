@@ -21,6 +21,10 @@ import {
 import { ActionLink } from "./ActionLink";
 import { PlayerRow, SkeletonRow } from "./PlayerRow";
 import { Section } from "./Section";
+import { isDemoMode } from "../lib/demoMode";
+
+/** Demo events are made up, so their start.gg pages don't exist: show no link to them. */
+const showStartggLinks = !isDemoMode();
 
 type Player = DashboardResponse["upsets"][number]["winner"];
 
@@ -219,12 +223,14 @@ export function WeekEventsSection({
                   Winner TBD
                 </BodyText>
               )}
-              <ActionLink
-                external
-                href={event.startggUrl}
-                label={`${event.eventName} on start.gg`}
-                text="View on start.gg ↗"
-              />
+              {showStartggLinks ? (
+                <ActionLink
+                  external
+                  href={event.startggUrl}
+                  label={`${event.eventName} on start.gg`}
+                  text="View on start.gg ↗"
+                />
+              ) : null}
             </View>
           ))}
         </View>
@@ -275,12 +281,14 @@ export function YearSection({ year, data }: { year: number; data: DashboardRespo
                 <BodyText variant="bodySm" muted>
                   {data.biggestEvent.tournamentName} · {data.biggestEvent.numEntrants} entrants
                 </BodyText>
-                <ActionLink
-                  external
-                  href={data.biggestEvent.startggUrl}
-                  label={`${data.biggestEvent.eventName} on start.gg`}
-                  text="View on start.gg ↗"
-                />
+                {showStartggLinks ? (
+                  <ActionLink
+                    external
+                    href={data.biggestEvent.startggUrl}
+                    label={`${data.biggestEvent.eventName} on start.gg`}
+                    text="View on start.gg ↗"
+                  />
+                ) : null}
               </View>
             ) : null}
             {data.mostWins ? (

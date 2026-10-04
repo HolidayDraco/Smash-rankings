@@ -24,6 +24,8 @@ test("dashboard renders its sections from the bundled sample data", async ({ pag
   );
   await expect(page.getByRole("status", { name: /^Last updated / })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Try again/ })).toHaveCount(0);
+  // Sample events don't exist on start.gg, so there are no links to them.
+  await expect(page.getByRole("link", { name: /on start\.gg/ })).toHaveCount(0);
 });
 
 test("every page shows the Demo data tag and a sample-data footer", async ({ page }) => {
@@ -70,6 +72,7 @@ test("a player page opens from the leaderboard, and an unknown player says not f
   await expect(
     page.getByText("Sample data, not from start.gg").filter({ visible: true }),
   ).toBeVisible();
+  await expect(page.getByRole("link", { name: /View on start\.gg/ })).toHaveCount(0);
 
   await page.goto("/player/999999-nobody");
   await expect(page.getByText("Player not found")).toBeVisible();

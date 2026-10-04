@@ -1,7 +1,7 @@
 {
  "meta": {
   "dataVersion": 1,
-  "lastRatedAt": "2026-10-04T04:06:09.363Z",
+  "lastRatedAt": "2026-10-04T04:28:43.960Z",
   "attribution": "Data from start.gg"
  },
  "dashboard": {
@@ -9,7 +9,7 @@
    "year": 2026,
    "weekStart": "2026-09-28",
    "weekEnd": "2026-10-04",
-   "lastUpdated": "2026-10-04T04:06:09.363Z"
+   "lastUpdated": "2026-10-04T04:28:43.960Z"
   },
   "top10": [
    {
@@ -158,7 +158,7 @@
     "eventName": "Ultimate Singles",
     "tournamentName": "Sample Arcadian",
     "ratingGap": 220,
-    "completedAt": "2026-10-01T20:22:53.805Z"
+    "completedAt": "2026-10-01T20:36:53.655Z"
    },
    {
     "setId": "9000000000142",
@@ -176,7 +176,7 @@
     "eventName": "Ultimate Singles",
     "tournamentName": "Sample Arcadian",
     "ratingGap": 180,
-    "completedAt": "2026-10-01T08:27:41.056Z"
+    "completedAt": "2026-10-01T08:39:52.538Z"
    },
    {
     "setId": "9000000000137",
@@ -194,7 +194,7 @@
     "eventName": "Ultimate Singles",
     "tournamentName": "Sample Weekly",
     "ratingGap": 140,
-    "completedAt": "2026-09-29T19:12:38.715Z"
+    "completedAt": "2026-09-29T19:19:11.548Z"
    },
    {
     "setId": "9000000000141",
@@ -212,7 +212,7 @@
     "eventName": "Ultimate Singles",
     "tournamentName": "Sample Arcadian",
     "ratingGap": 40,
-    "completedAt": "2026-10-01T05:28:52.868Z"
+    "completedAt": "2026-10-01T05:40:37.259Z"
    }
   ],
   "weekEvents": [
@@ -221,7 +221,7 @@
     "eventName": "Ultimate Singles",
     "tournamentName": "Sample Weekly",
     "city": "San Antonio",
-    "startAt": "2026-09-29T13:15:02.340Z",
+    "startAt": "2026-09-29T13:20:40.990Z",
     "numEntrants": 24,
     "winner": {
      "playerId": "9000000000008",
@@ -235,7 +235,7 @@
     "eventName": "Ultimate Singles",
     "tournamentName": "Sample Arcadian",
     "city": null,
-    "startAt": "2026-10-01T02:30:04.681Z",
+    "startAt": "2026-10-01T02:41:21.980Z",
     "numEntrants": 16,
     "winner": {
      "playerId": "9000000000023",
@@ -280,7 +280,7 @@
     "rating": 1940,
     "ratingDeviation": 66,
     "rankDelta7d": 1,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 2,
@@ -292,7 +292,7 @@
     "rating": 1860,
     "ratingDeviation": 74,
     "rankDelta7d": 0,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 3,
@@ -304,7 +304,7 @@
     "rating": 1800,
     "ratingDeviation": 80,
     "rankDelta7d": -2,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 4,
@@ -316,7 +316,7 @@
     "rating": 1780,
     "ratingDeviation": 82,
     "rankDelta7d": -1,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 5,
@@ -328,7 +328,7 @@
     "rating": 1760,
     "ratingDeviation": 84,
     "rankDelta7d": 0,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 6,
@@ -340,7 +340,7 @@
     "rating": 1740,
     "ratingDeviation": 86,
     "rankDelta7d": 1,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 7,
@@ -352,7 +352,7 @@
     "rating": 1640,
     "ratingDeviation": 96,
     "rankDelta7d": 1,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 8,
@@ -364,7 +364,7 @@
     "rating": 1620,
     "ratingDeviation": 98,
     "rankDelta7d": 2,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 9,
@@ -376,7 +376,7 @@
     "rating": 1580,
     "ratingDeviation": 102,
     "rankDelta7d": -1,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 10,
@@ -388,7 +388,7 @@
     "rating": 1560,
     "ratingDeviation": 104,
     "rankDelta7d": 0,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 11,
@@ -400,7 +400,7 @@
     "rating": 1540,
     "ratingDeviation": 106,
     "rankDelta7d": 1,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    },
    {
     "rank": 12,
@@ -412,10 +412,10 @@
     "rating": 1520,
     "ratingDeviation": 108,
     "rankDelta7d": 2,
-    "lastActiveAt": "2026-09-13T05:00:09.363Z"
+    "lastActiveAt": "2026-09-13T05:22:43.960Z"
    }
   ],
-  "asOf": "2026-10-04T04:06:09.363Z",
+  "asOf": "2026-10-04T04:28:43.960Z",
   "dataVersion": 1,
   "attribution": "Data from start.gg"
  },
@@ -423,26 +423,26 @@
   "jobs": [
    {
     "job": "discover",
-    "lastRunAt": "2026-10-04T02:00:09.363Z",
-    "lastFinishedAt": "2026-10-04T02:03:09.363Z",
+    "lastRunAt": "2026-10-04T02:22:43.960Z",
+    "lastFinishedAt": "2026-10-04T02:25:43.960Z",
     "ok": true
    },
    {
     "job": "sync",
-    "lastRunAt": "2026-10-04T03:00:09.363Z",
-    "lastFinishedAt": "2026-10-04T03:12:09.363Z",
+    "lastRunAt": "2026-10-04T03:22:43.960Z",
+    "lastFinishedAt": "2026-10-04T03:34:43.960Z",
     "ok": true
    },
    {
     "job": "backfill",
-    "lastRunAt": "2026-10-04T00:00:09.363Z",
-    "lastFinishedAt": "2026-10-04T00:30:09.363Z",
+    "lastRunAt": "2026-10-04T00:22:43.960Z",
+    "lastFinishedAt": "2026-10-04T00:52:43.960Z",
     "ok": false
    },
    {
     "job": "rate",
-    "lastRunAt": "2026-10-04T04:00:09.363Z",
-    "lastFinishedAt": "2026-10-04T04:06:09.363Z",
+    "lastRunAt": "2026-10-04T04:22:43.960Z",
+    "lastFinishedAt": "2026-10-04T04:28:43.960Z",
     "ok": true
    }
   ],
@@ -476,7 +476,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 1,
      "entrants": 96
     },
@@ -484,7 +484,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 1,
      "entrants": 64
     },
@@ -492,7 +492,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 1,
      "entrants": 32
     }
@@ -526,7 +526,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 2,
      "entrants": 96
     },
@@ -534,7 +534,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 2,
      "entrants": 64
     },
@@ -542,7 +542,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 2,
      "entrants": 32
     }
@@ -576,7 +576,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 3,
      "entrants": 96
     },
@@ -584,7 +584,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 3,
      "entrants": 64
     },
@@ -592,7 +592,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 3,
      "entrants": 32
     }
@@ -604,7 +604,7 @@
    "gamerTag": "Sample_Dash",
    "prefix": null,
    "countryCode": "JP",
-   "startggUrl": "https://www.start.gg/user/sample-dash",
+   "startggUrl": null,
    "rank": 1,
    "eligible": true,
    "notRankedReason": null,
@@ -622,7 +622,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 4,
      "entrants": 96
     },
@@ -630,7 +630,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 4,
      "entrants": 64
     },
@@ -638,7 +638,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 4,
      "entrants": 32
     }
@@ -672,7 +672,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 5,
      "entrants": 96
     },
@@ -680,7 +680,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 5,
      "entrants": 64
     },
@@ -688,7 +688,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 5,
      "entrants": 32
     }
@@ -722,7 +722,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 6,
      "entrants": 96
     },
@@ -730,7 +730,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 6,
      "entrants": 64
     },
@@ -738,7 +738,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 6,
      "entrants": 32
     }
@@ -772,7 +772,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 7,
      "entrants": 96
     },
@@ -780,7 +780,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 7,
      "entrants": 64
     },
@@ -788,7 +788,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 7,
      "entrants": 32
     }
@@ -818,7 +818,7 @@
      "eventId": "9000000000004",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Weekly",
-     "date": "2026-09-29T13:15:02.340Z",
+     "date": "2026-09-29T13:20:40.990Z",
      "placement": 1,
      "entrants": 24
     },
@@ -826,7 +826,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 8,
      "entrants": 96
     },
@@ -834,7 +834,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 8,
      "entrants": 64
     },
@@ -842,7 +842,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 8,
      "entrants": 32
     }
@@ -876,7 +876,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 9,
      "entrants": 96
     },
@@ -884,7 +884,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 9,
      "entrants": 64
     },
@@ -892,7 +892,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 9,
      "entrants": 32
     }
@@ -926,7 +926,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 10,
      "entrants": 96
     },
@@ -934,7 +934,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 10,
      "entrants": 64
     },
@@ -942,7 +942,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 10,
      "entrants": 32
     }
@@ -972,7 +972,7 @@
      "eventId": "9000000000004",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Weekly",
-     "date": "2026-09-29T13:15:02.340Z",
+     "date": "2026-09-29T13:20:40.990Z",
      "placement": 4,
      "entrants": 24
     },
@@ -980,7 +980,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 11,
      "entrants": 96
     },
@@ -988,7 +988,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 11,
      "entrants": 64
     },
@@ -996,7 +996,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 11,
      "entrants": 32
     }
@@ -1026,7 +1026,7 @@
      "eventId": "9000000000005",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Arcadian",
-     "date": "2026-10-01T02:30:04.681Z",
+     "date": "2026-10-01T02:41:21.980Z",
      "placement": 2,
      "entrants": 16
     },
@@ -1034,7 +1034,7 @@
      "eventId": "9000000000004",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Weekly",
-     "date": "2026-09-29T13:15:02.340Z",
+     "date": "2026-09-29T13:20:40.990Z",
      "placement": 5,
      "entrants": 24
     },
@@ -1042,7 +1042,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 12,
      "entrants": 96
     },
@@ -1050,7 +1050,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 12,
      "entrants": 64
     },
@@ -1058,7 +1058,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 12,
      "entrants": 32
     }
@@ -1088,7 +1088,7 @@
      "eventId": "9000000000004",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Weekly",
-     "date": "2026-09-29T13:15:02.340Z",
+     "date": "2026-09-29T13:20:40.990Z",
      "placement": 3,
      "entrants": 24
     },
@@ -1096,7 +1096,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 13,
      "entrants": 96
     },
@@ -1104,7 +1104,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 13,
      "entrants": 64
     },
@@ -1112,7 +1112,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 13,
      "entrants": 32
     }
@@ -1142,7 +1142,7 @@
      "eventId": "9000000000005",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Arcadian",
-     "date": "2026-10-01T02:30:04.681Z",
+     "date": "2026-10-01T02:41:21.980Z",
      "placement": 3,
      "entrants": 16
     },
@@ -1150,7 +1150,7 @@
      "eventId": "9000000000004",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Weekly",
-     "date": "2026-09-29T13:15:02.340Z",
+     "date": "2026-09-29T13:20:40.990Z",
      "placement": 7,
      "entrants": 24
     },
@@ -1158,7 +1158,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 14,
      "entrants": 96
     },
@@ -1166,7 +1166,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 14,
      "entrants": 64
     },
@@ -1174,7 +1174,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 14,
      "entrants": 32
     }
@@ -1208,7 +1208,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 15,
      "entrants": 96
     },
@@ -1216,7 +1216,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 15,
      "entrants": 64
     },
@@ -1224,7 +1224,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 15,
      "entrants": 32
     }
@@ -1258,7 +1258,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 16,
      "entrants": 96
     },
@@ -1266,7 +1266,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 16,
      "entrants": 64
     },
@@ -1274,7 +1274,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 16,
      "entrants": 32
     }
@@ -1308,7 +1308,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 17,
      "entrants": 96
     },
@@ -1316,7 +1316,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 17,
      "entrants": 64
     },
@@ -1324,7 +1324,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 17,
      "entrants": 32
     }
@@ -1358,7 +1358,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 18,
      "entrants": 96
     },
@@ -1366,7 +1366,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 18,
      "entrants": 64
     },
@@ -1374,7 +1374,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 18,
      "entrants": 32
     }
@@ -1404,7 +1404,7 @@
      "eventId": "9000000000004",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Weekly",
-     "date": "2026-09-29T13:15:02.340Z",
+     "date": "2026-09-29T13:20:40.990Z",
      "placement": 2,
      "entrants": 24
     },
@@ -1412,7 +1412,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 19,
      "entrants": 96
     },
@@ -1420,7 +1420,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 19,
      "entrants": 64
     },
@@ -1428,7 +1428,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 19,
      "entrants": 32
     }
@@ -1458,7 +1458,7 @@
      "eventId": "9000000000005",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Arcadian",
-     "date": "2026-10-01T02:30:04.681Z",
+     "date": "2026-10-01T02:41:21.980Z",
      "placement": 5,
      "entrants": 16
     },
@@ -1466,7 +1466,7 @@
      "eventId": "9000000000004",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Weekly",
-     "date": "2026-09-29T13:15:02.340Z",
+     "date": "2026-09-29T13:20:40.990Z",
      "placement": 5,
      "entrants": 24
     },
@@ -1474,7 +1474,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 20,
      "entrants": 96
     },
@@ -1482,7 +1482,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 20,
      "entrants": 64
     },
@@ -1490,7 +1490,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 20,
      "entrants": 32
     }
@@ -1524,7 +1524,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 21,
      "entrants": 96
     },
@@ -1532,7 +1532,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 21,
      "entrants": 64
     },
@@ -1540,7 +1540,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 21,
      "entrants": 32
     }
@@ -1570,7 +1570,7 @@
      "eventId": "9000000000005",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Arcadian",
-     "date": "2026-10-01T02:30:04.681Z",
+     "date": "2026-10-01T02:41:21.980Z",
      "placement": 5,
      "entrants": 16
     },
@@ -1578,7 +1578,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 22,
      "entrants": 96
     },
@@ -1586,7 +1586,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 22,
      "entrants": 64
     },
@@ -1594,7 +1594,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 22,
      "entrants": 32
     }
@@ -1624,7 +1624,7 @@
      "eventId": "9000000000005",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Arcadian",
-     "date": "2026-10-01T02:30:04.681Z",
+     "date": "2026-10-01T02:41:21.980Z",
      "placement": 1,
      "entrants": 16
     },
@@ -1632,7 +1632,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 23,
      "entrants": 96
     },
@@ -1640,7 +1640,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 23,
      "entrants": 64
     },
@@ -1648,7 +1648,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 23,
      "entrants": 32
     }
@@ -1678,7 +1678,7 @@
      "eventId": "9000000000005",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Arcadian",
-     "date": "2026-10-01T02:30:04.681Z",
+     "date": "2026-10-01T02:41:21.980Z",
      "placement": 4,
      "entrants": 16
     },
@@ -1686,7 +1686,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 24,
      "entrants": 96
     },
@@ -1694,7 +1694,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 24,
      "entrants": 64
     },
@@ -1702,7 +1702,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 24,
      "entrants": 32
     }
@@ -1732,7 +1732,7 @@
      "eventId": "9000000000004",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Weekly",
-     "date": "2026-09-29T13:15:02.340Z",
+     "date": "2026-09-29T13:20:40.990Z",
      "placement": 7,
      "entrants": 24
     },
@@ -1740,7 +1740,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 25,
      "entrants": 96
     },
@@ -1748,7 +1748,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 25,
      "entrants": 64
     },
@@ -1756,7 +1756,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 25,
      "entrants": 32
     }
@@ -1790,7 +1790,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 26,
      "entrants": 96
     },
@@ -1798,7 +1798,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 26,
      "entrants": 64
     },
@@ -1806,7 +1806,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 26,
      "entrants": 32
     }
@@ -1840,7 +1840,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 27,
      "entrants": 96
     },
@@ -1848,7 +1848,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 27,
      "entrants": 64
     },
@@ -1856,7 +1856,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 27,
      "entrants": 32
     }
@@ -1890,7 +1890,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 28,
      "entrants": 96
     },
@@ -1898,7 +1898,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 28,
      "entrants": 64
     },
@@ -1906,7 +1906,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 28,
      "entrants": 32
     }
@@ -1940,7 +1940,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 29,
      "entrants": 96
     },
@@ -1948,7 +1948,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 29,
      "entrants": 64
     },
@@ -1956,7 +1956,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 29,
      "entrants": 32
     }
@@ -1990,7 +1990,7 @@
      "eventId": "9000000000003",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Regional",
-     "date": "2026-09-13T05:00:09.363Z",
+     "date": "2026-09-13T05:22:43.960Z",
      "placement": 30,
      "entrants": 96
     },
@@ -1998,7 +1998,7 @@
      "eventId": "9000000000002",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Invitational",
-     "date": "2026-08-23T05:00:09.363Z",
+     "date": "2026-08-23T05:22:43.960Z",
      "placement": 30,
      "entrants": 64
     },
@@ -2006,7 +2006,7 @@
      "eventId": "9000000000001",
      "eventName": "Ultimate Singles",
      "tournamentName": "Sample Showdown",
-     "date": "2026-08-02T05:00:09.363Z",
+     "date": "2026-08-02T05:22:43.960Z",
      "placement": 30,
      "entrants": 32
     }
