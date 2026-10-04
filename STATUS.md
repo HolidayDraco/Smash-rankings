@@ -751,3 +751,26 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None. Stated default: the icon is the text arrow, since no icon library is installed.
 
 **Questions for Genghis:** None.
+
+---
+
+## 2026-10-04 — API deploys on Vercel (issue #33)
+
+**Date:** 2026-10-04
+
+**What changed:**
+
+- **The API now builds in Vercel's own "prebuilt" format, so the deploy no longer fails.** Vercel stopped with "No Output Directory named "public" found" because, with the "Other" preset, it expects a folder of web pages, and the API has none. The API build (`pnpm --filter @sr/api build`, run by `apps/api/scripts/build-vercel.mjs`) now writes a `.vercel/output` folder: one server function holding the whole API, plus a routing file that sends every address to it. Vercel deploys that folder as-is.
+- **No source files are served.** The deploy has no static files at all, only the function. Unknown addresses answer "not found" from the API.
+- **The health check stays at the API's root address** (`/`). It answers `{"name":"smash-rankings-api","ok":true,...}`.
+- **How I checked it:** I ran Vercel's own build tool (`vercel build`, version 62.2.0) locally with the same settings as the Vercel project (root `apps/api`, preset Other). On the old code it fails with exactly the "public" error. On this branch it completes, with one function and no static files. A new CI step loads the built function the way Vercel runs it, sends `GET /` and checks for a 200 answer. It also checks that an unknown address gives a 404. I couldn't deploy to Vercel itself from my sandbox, so the first real deploy happens when this merges.
+- **The pnpm "ignored build scripts" warning (esbuild) is harmless.** pnpm installs esbuild's ready-made program as a separate package; the skipped script only double-checks that. The build log shows esbuild running fine.
+
+**What's next:**
+
+- Clay: after this merges, Vercel redeploys the API project by itself. Open the API's address (the "Domains" link on the `smash-rankings-api` project in Vercel). It should show `"ok":true`. Then copy that address into `EXPO_PUBLIC_API_URL` on the **app** project and press Redeploy. That switches the website from demo data to the real API.
+- No Vercel setting needs to change. Root Directory `apps/api`, preset "Other", and the build command from `apps/api/vercel.json` all stay as they are.
+
+**Questions for Clay:** None.
+
+**Questions for Genghis:** None.
