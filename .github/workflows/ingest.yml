@@ -19,14 +19,19 @@ on:
   workflow_dispatch:
     inputs:
       job:
-        description: Which job to run
+        description: >-
+          Which job to run. sync = fetch new results (what the schedule does).
+          backfill = load past months of history (set "months" below).
+          rate = recompute the rankings only.
         type: choice
         options: [sync, backfill, rate]
         default: sync
       months:
-        description: Backfill only, how many months back (1 to 24)
+        description: >-
+          Backfill only: how many months back, 1 to 24 (empty means 12).
+          Leave it empty for sync and rate, or the run stops with an error.
         type: string
-        default: "12"
+        default: ""
 
 concurrency:
   group: ingest
@@ -49,10 +54,24 @@ jobs:
         env:
           SCHEDULE: ${{ github.event.schedule }}
           REQUESTED: ${{ inputs.job }}
+          MONTHS: ${{ inputs.months }}
         run: |
           if [ "$SCHEDULE" = "41 7 * * *" ]; then job=backfill
           elif [ -n "$REQUESTED" ]; then job="$REQUESTED"
           else job=sync; fi
+          # "months" only means something to backfill: fail loudly instead of silently ignoring it.
+          if [ -n "$MONTHS" ] && [ "$job" != "backfill" ]; then
+            message="\"months\" is only used by backfill, but job is \"$job\". Run again with job = backfill, or leave months empty."
+            echo "::error::$message"
+            echo "Ingest: $message Nothing ran." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if [ -n "$MONTHS" ] && ! [[ "$MONTHS" =~ ^([1-9]|1[0-9]|2[0-4])$ ]]; then
+            message="\"months\" must be a whole number from 1 to 24 (got \"$MONTHS\")."
+            echo "::error::$message"
+            echo "Ingest: $message Nothing ran." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
           echo "job=$job" >> "$GITHUB_OUTPUT"
       - name: Check the secrets exist
         id: secrets
@@ -116,7 +135,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: pnpm db:migrate
-      - name: Backfill (75 minute budget, resumes next night)
+      - name: Backfill (75 minute budget, its own discover cap, resumes next run)
         env:
           STARTGG_TOKEN: ${{ secrets.STARTGG_TOKEN }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

@@ -774,3 +774,42 @@ Once 1 and 2 are done, the jobs start on their own schedule. Each run first crea
 **Questions for Clay:** None.
 
 **Questions for Genghis:** None.
+
+---
+
+## 2026-10-04 — First backfill loads history (issue #35)
+
+**Date:** 2026-10-04
+
+**What changed:**
+
+- **Backfill now has its own daily allowance for finding tournaments, so Sync can't use it up.** Before, Sync and Backfill shared 50 "discover" requests a day (the requests that list tournaments). From noon UTC, Sync was allowed to use whatever Backfill hadn't. On Oct 4 GitHub started the 07:41 nightly Backfill late, at 13:27. By then the hourly Syncs had used the whole 50, so Backfill found nothing ("0 requests").
+- **The new allowances:** Sync gets 50 a day of its own (unchanged, enough for its daily look). Backfill gets 2,000 a day of its own, enough to find about a year of tournaments in one run. Neither can use the other's.
+- **Still within start.gg's rules:** every request still goes through our limiter of at most 60 a minute. start.gg allows 80 a minute. The daily numbers only limit how much one day may do.
+- **The manual "Run workflow" form is safer:**
+  - "months" now stops the run with a clear error if the job isn't backfill. Before, it was silently ignored on a sync run.
+  - "months" is now empty by default. Empty means 12.
+  - A number outside 1 to 24 also stops the run with an error.
+  - The job choice now explains what sync, backfill and rate each do.
+- **Rate already runs right after a successful Backfill,** so the Texas Top 10 fills in as soon as enough history is loaded.
+- **Tests:**
+  - New tests for the exact Oct 4 case (Sync used up its day, then a late Backfill still gets its own allowance).
+  - New tests that each job stops at its own cap and that Sync never uses Backfill's.
+  - The workflow's job-and-months check was tried with every combination.
+
+**How to run the first backfill (about 5 minutes of clicking, then about an hour of waiting):**
+
+1. On GitHub, open the repo's **Actions** tab, pick **Ingest** on the left, then **Run workflow** (top right).
+2. Set **job** to **backfill** and **months** to **6**. Press **Run workflow**. Start it when nothing else is running on the Actions tab (a Sync takes a few minutes). If it later shows **cancelled**, a scheduled Sync took its place in the queue: just run it again.
+3. It runs for up to 75 minutes. When it finishes, **Rate** runs by itself. Open the Rate step's summary to see the top 20.
+4. If the Backfill summary says "stopped early: resumes next run", run it again the same way. It continues where it left off. The nightly backfill also continues it.
+5. Later, if you want more history, run backfill again with a larger months value (up to 24). Months already done are skipped.
+
+**What's next:**
+
+- Clay: run the first backfill as above, then check the Dashboard's Texas Top 10. A player is ranked only after 10 rated sets at 3 or more qualifying events, with an uncertainty (RD) of 110 or lower. That is why 6 months of history matters.
+- If 6 months still leaves the Top 10 short, run backfill with months = 12.
+
+**Questions for Clay:** None. Stated default: Backfill may use 2,000 tournament-listing requests a day. The real limit is start.gg's 80 a minute, and we stay at 60.
+
+**Questions for Genghis:** This replaces your 50-a-day shared rule with separate caps (Sync 50, Backfill 2,000), as issue #35 asks. Is 2,000 a day for Backfill acceptable, given every request stays at or under 60 a minute?
