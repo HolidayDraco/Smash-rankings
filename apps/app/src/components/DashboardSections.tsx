@@ -353,7 +353,7 @@ function BarBlock({ lines, height = 16 }: { lines: number; height?: number }) {
 /** Same grey-bar skeleton style as the leaderboard rows, one block per section. */
 export function DashboardSkeleton({ region }: { region: string }) {
   return (
-    <View aria-busy aria-label="Loading the dashboard" role="status">
+    <View aria-busy aria-label="Loading the dashboard">
       <Section title={`${region} Top 10`}>
         {Array.from({ length: 10 }, (_, index) => (
           <SkeletonRow key={index} />

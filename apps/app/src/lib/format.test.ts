@@ -94,6 +94,11 @@ describe("dashboard text", () => {
     expect(formatWeekRange("2026-12-28", "2027-01-03")).toBe("Week of Mon Dec 28 – Sun Jan 3"));
   it("formats an event day in UTC", () =>
     expect(formatEventDay("2026-10-03T23:30:00.000Z")).toBe("Sat Oct 3"));
+  it("shows the event day in Texas time, not UTC", () => {
+    // 8:30 pm Tuesday in Texas is 01:30 Wednesday UTC.
+    expect(formatEventDay("2026-09-30T01:30:00.000Z")).toBe("Tue Sep 29");
+    expect(formatEventDay("2026-09-30T01:30:00.000Z", "UTC")).toBe("Wed Sep 30");
+  });
   it("says 'and N more' only when events were cut off", () => {
     expect(moreEventsText(23, 20)).toBe("and 3 more");
     expect(moreEventsText(20, 20)).toBeNull();

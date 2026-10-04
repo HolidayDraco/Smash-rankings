@@ -24,6 +24,12 @@ export const LAUNCH_REGIONS = {
 } as const satisfies { countryCode: string; states: readonly string[] };
 
 /**
+ * Time zone used to show event days to people in the launch region (most of Texas is Central;
+ * El Paso is Mountain, a known one-hour edge case). Data stays in UTC; this is display only.
+ */
+export const REGION_TIME_ZONE = "America/Chicago";
+
+/**
  * Full names accepted for a state, because start.gg's `Tournament.addrState` format
  * (code or full name) is unverified. Add a name here when adding a state to `LAUNCH_REGIONS`.
  */

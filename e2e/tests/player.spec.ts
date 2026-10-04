@@ -63,7 +63,7 @@ test("a ranked player shows rank, score, rating, stats, results and attribution"
   await expect(page.getByRole("link", { name: /Data from start\.gg/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Back to leaderboard" })).toHaveAttribute(
     "href",
-    "/",
+    "/leaderboard",
   );
   await expectNoSeriousViolations(page);
 });

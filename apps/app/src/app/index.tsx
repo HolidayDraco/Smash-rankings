@@ -17,7 +17,7 @@ import { Page } from "../components/Page";
 import { useDashboard } from "../lib/api";
 import { formatWeekRange } from "../lib/format";
 
-const REGION = STATE_NAMES[LAUNCH_REGIONS.states[0] ?? ""] ?? "Texas";
+const REGION = STATE_NAMES[LAUNCH_REGIONS.states[0]] ?? LAUNCH_REGIONS.states[0];
 const TITLE = "Dashboard | Smash Ultimate Rankings | Bracket Index";
 const DESCRIPTION = `This week in ${REGION} Super Smash Bros. Ultimate: the top 10, biggest movers, upsets, events, and the year so far. Computed from start.gg results. Unofficial fan project.`;
 

@@ -1,3 +1,4 @@
+import { REGION_TIME_ZONE } from "@sr/core";
 /** URL-safe lowercase slug from a gamer tag ("Sample_Ace" becomes "sample-ace"). */
 export function slugify(tag: string): string {
   return (
@@ -111,7 +112,21 @@ export const formatWeekRange = (weekStart: string, weekEnd: string) =>
   `Week of ${dayText(utcDay(weekStart))} – ${dayText(utcDay(weekEnd))}`;
 
 /** "Sat Oct 3" (UTC, like the rest of the app). */
-export const formatEventDay = (iso: string) => dayText(new Date(iso));
+/**
+ * "Tue Sep 29" in the launch region's time zone, so an 8 pm Tuesday weekly (01:00 UTC Wednesday)
+ * still reads as Tuesday. Same output on every machine, so it is safe for the static export.
+ */
+export function formatEventDay(iso: string, timeZone: string = REGION_TIME_ZONE): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).formatToParts(new Date(iso));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? "";
+  return `${part("weekday")} ${part("month")} ${part("day")}`;
+}
 
 /** "and 3 more" when the API matched more events than it listed; null otherwise. */
 export const moreEventsText = (total: number, shown: number): string | null =>

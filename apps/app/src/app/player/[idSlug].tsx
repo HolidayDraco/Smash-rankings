@@ -134,7 +134,7 @@ export default function PlayerPage() {
         <meta property="og:description" content={description} />
       </Head>
       <View style={styles.pad}>
-        <ActionLink label="Back to leaderboard" text="← Leaderboard" href="/" />
+        <ActionLink label="Back to leaderboard" text="← Leaderboard" href="/leaderboard" />
       </View>
       {notFound ? (
         <View role="alert" style={styles.pad}>
